@@ -1,0 +1,40 @@
+# ---------------------------------------------------------------------------
+# SATIR SONLARI
+# ---------------------------------------------------------------------------
+# Depoda TEK biçim tutulur: LF. Windows'ta çalışan geliştiricinin diskinde
+# CRLF olabilir (core.autocrlf=true), ama commit edilen içerik her zaman LF'tir.
+#
+# Neden ilk commit'ten ÖNCE: bu dosya sonradan eklenirse, ilk `git add`
+# sırasında CRLF ile kaydedilmiş dosyaların tamamı "değişti" görünür ve
+# tek satırı bile düzenlenmemiş yüzlerce dosya için sahte bir fark oluşur.
+* text=auto eol=lf
+
+# ---------------------------------------------------------------------------
+# İKİLİ DOSYALAR — dönüştürme UYGULANMAZ
+# ---------------------------------------------------------------------------
+# Bu türlerde satır sonu değişimi dosyayı BOZAR. Şu an depoda yoklar
+# (yüklenen medya .gitignore'da), ancak logo/favicon gibi bir varlık
+# eklendiğinde koruma hazır olsun.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.ico    binary
+*.pdf    binary
+*.mp4    binary
+*.webm   binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.otf    binary
+
+# ---------------------------------------------------------------------------
+# ÜRETİLMİŞ DOSYALAR — incelemede katlanır, dil istatistiğine girmez
+# ---------------------------------------------------------------------------
+# Depoya GİRERLER (drizzle bir sonraki migration farkını bu anlık
+# görüntülerle hesaplar), ama elle yazılmadıkları için PR incelemesinde
+# varsayılan olarak açılmaları gereksiz gürültü yaratır.
+src/migrations/*.json   linguist-generated=true -diff
+src/payload-types.ts    linguist-generated=true
+pnpm-lock.yaml          linguist-generated=true -diff

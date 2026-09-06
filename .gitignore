@@ -1,0 +1,81 @@
+# ---------------------------------------------------------------------------
+# Bağımlılıklar
+# ---------------------------------------------------------------------------
+node_modules
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/versions
+
+# ---------------------------------------------------------------------------
+# Derleme çıktıları
+# ---------------------------------------------------------------------------
+.next
+out
+dist
+build
+.turbo
+.vercel
+.swc
+
+# TypeScript artımlı derleme önbelleği. ~930 KB'lik bir makine üretimi
+# dosyadır; her derlemede değişir ve depoda tutulmasının hiçbir faydası yok.
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# next-env.d.ts Next.js tarafından üretilir ama depoya GİRER: TypeScript
+# derlemesi bu dosya olmadan tip tanımlarını bulamaz (Next'in kendi
+# şablonu da onu izler).
+
+# ---------------------------------------------------------------------------
+# Ortam değişkenleri — SIRLAR
+# ---------------------------------------------------------------------------
+# .env.example depoya girer (şablon, gerçek değer içermez); geri kalan HERŞEY
+# dışarıda kalır. Veritabanı adresi ve PAYLOAD_SECRET bu dosyalarda durur.
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------------------
+# Yüklenen medya — kullanıcı içeriği, kod değil
+# ---------------------------------------------------------------------------
+# Yerel disk depolamada Payload dosyaları buraya yazar. Üretimde S3 kullanılır
+# (MEDIA_STORAGE_ADAPTER=s3); bu klasörler yalnızca geliştirme içindir.
+public/media
+public/documents
+
+# ---------------------------------------------------------------------------
+# Test / araç çıktıları
+# ---------------------------------------------------------------------------
+coverage
+.nyc_output
+playwright-report
+test-results
+
+# ---------------------------------------------------------------------------
+# Günlükler ve işletim sistemi artıkları
+# ---------------------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Editör
+# ---------------------------------------------------------------------------
+.idea
+*.swp
+
+# ---------------------------------------------------------------------------
+# NOT — src/migrations/*.json DIŞARIDA BIRAKILMAZ
+# ---------------------------------------------------------------------------
+# Bu dosyalar büyüktür (her biri ~900 KB, dördü toplam ~137.000 satır) ve ilk
+# bakışta derleme artığı gibi görünür. DEĞİLDİR: drizzle bir sonraki
+# migration'ın farkını bu anlık görüntülerle hesaplar. Silinirlerse
+# `payload migrate:create` şemayı sıfırdan varsayar ve mevcut tabloları
+# yeniden oluşturmaya çalışan bir migration üretir.

@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: aiftc-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aiftc
+      POSTGRES_PASSWORD: aiftc
+      POSTGRES_DB: aiftc
+      # Turkce/Rusca siralama ve arama icin
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C.UTF-8'
+    ports:
+      - '5432:5432'
+    volumes:
+      - aiftc_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U aiftc -d aiftc']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Gelistirme sirasinda opsiyonel: S3 uyumlu yerel object storage.
+  # `docker compose --profile s3 up -d` ile ayaga kalkar.
+  minio:
+    image: minio/minio:latest
+    container_name: aiftc-minio
+    profiles: ['s3']
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: aiftc
+      MINIO_ROOT_PASSWORD: aiftc12345
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - aiftc_miniodata:/data
+
+  # Uygulamayi konteynerde calistirmak icin: `docker compose --profile app up -d --build`
+  # Gunluk gelistirmede app'i host'ta `pnpm dev` ile calistirmak daha hizlidir.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aiftc-app
+    profiles: ['app']
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URI: postgres://aiftc:aiftc@db:5432/aiftc
+    ports:
+      - '3000:3000'
+    volumes:
+      - aiftc_media:/app/public/media
+
+volumes:
+  aiftc_pgdata:
+  aiftc_miniodata:
+  aiftc_media:

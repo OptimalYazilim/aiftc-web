@@ -1,0 +1,214 @@
+/* ==========================================================================
+   YÖNETİM PANELİ — KURUMSAL STİL KATMANI
+   --------------------------------------------------------------------------
+   Payload'ın kendi stillerinin ÜZERİNE binen ince bir katman. `layout.tsx`
+   içinde `@payloadcms/next/css` importundan SONRA yüklenir; sıra değişirse
+   bu kurallar ezilir.
+
+   İKİ KURAL:
+
+   1. SABİT RENK KULLANILMAZ, TEMA DEĞİŞKENİ KULLANILIR.
+      Panel açık ve koyu temayı kendisi değiştirir (`html[data-theme]`).
+      `--theme-elevation-0` taban zemin, artan sayılar daha "yükseltilmiş"
+      yüzeylerdir ve her iki temada da doğru yönde hareket ederler. Buraya
+      `#fafafa` gibi bir değer yazılsaydı koyu temada panel kırılırdı.
+
+   2. SEÇİCİLER PAYLOAD'IN GERÇEK SINIF ADLARIDIR.
+      `.template-default__wrap`, `.nav`, `.nav__link`, `.nav-group__toggle`,
+      `.card` — bunlar Payload 3.88'in derlenmiş CSS'inden çıkarılmıştır,
+      tahmin değildir. Payload sürümü yükseltilirken bu dosya gözden
+      geçirilmelidir: sınıf adı değişirse kural sessizce etkisiz kalır.
+   ========================================================================== */
+
+:root {
+  /* Kurumsal zümrüt. Koyu temada bir tık açılır ki koyu zeminde kaybolmasın. */
+  --aiftc-accent: #0b6b3a;
+  --aiftc-accent-strong: #0a4423;
+}
+
+html[data-theme='dark'] {
+  --aiftc-accent: #189a5a;
+  --aiftc-accent-strong: #22b06b;
+}
+
+/* --------------------------------------------------------------------------
+   1) ÇALIŞMA ZEMİNİ
+   Ana içerik alanı taban zeminden bir kademe ayrılır; böylece üzerindeki
+   beyaz kartlar "zemine yapışık" değil, yüzen bloklar gibi okunur.
+   -------------------------------------------------------------------------- */
+.template-default__wrap {
+  background-color: var(--theme-elevation-50);
+}
+
+/* --------------------------------------------------------------------------
+   2) SOL MENÜ
+   -------------------------------------------------------------------------- */
+.nav {
+  background-color: var(--theme-elevation-0);
+  border-right: 1px solid var(--theme-elevation-100);
+}
+
+/* Grup başlıkları ("Eğitim", "İçerik", "Medya"): küçük, geniş harf aralıklı,
+   tok. Varsayılan hâlde menü öğeleriyle aynı ağırlıkta oldukları için
+   gruplar gözle ayrışmıyordu. */
+.nav-group__toggle {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+/* Menü öğeleri: yumuşak hover, belirgin aktif durum.
+   Aktif öğe SOL ŞERİTLE de işaretlenir — rengi göremeyen kullanıcı için
+   konum bilgisi tek başına renge bağlı kalmaz (WCAG 2.2 — 1.4.1). */
+.nav__link {
+  border-radius: 4px;
+  border-left: 3px solid transparent;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.nav__link:hover {
+  background-color: var(--theme-elevation-100);
+}
+
+.nav__link.active,
+.nav__link[aria-current='page'] {
+  background-color: var(--theme-elevation-100);
+  border-left-color: var(--aiftc-accent);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   3) KONTROL PANELİ KOLEKSİYON KARTLARI
+   -------------------------------------------------------------------------- */
+.card {
+  background-color: var(--theme-elevation-0);
+  border: 1px solid var(--theme-elevation-100);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.08);
+  border-color: color-mix(in srgb, var(--aiftc-accent) 35%, transparent);
+}
+
+.card__title {
+  font-weight: 600;
+}
+
+/* Kartın sağ üstündeki "+" (yeni kayıt) butonu.
+   DİKKAT — hedef `.card__actions` DEĞİL, onun içindeki `.btn__icon`'dur.
+   `.card__actions` yalnızca hizalama sarmalayıcısıdır; Payload butonun
+   kendi kenarlığını ve zeminini `.card__actions .btn__icon` üzerinde
+   tanımlar. Sarmalayıcıyı boyamak görünür bir etki üretmez.
+
+   Davranış: normalde sönük bir çerçeve; kartın üzerine gelindiğinde DOLGUN
+   zümrüt bir aksiyon butonuna döner. Beyaz "+" simgesi zümrüt zemin
+   üzerinde ≈7:1 kontrast verir. */
+.card__actions {
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.card:hover .card__actions {
+  opacity: 1;
+}
+
+.card__actions .btn__icon {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.card:hover .card__actions .btn__icon {
+  background-color: var(--aiftc-accent);
+  border-color: var(--aiftc-accent);
+  color: #ffffff;
+}
+
+/* Simge `stroke` ile çizildiği için rengi ayrıca verilmelidir. */
+.card:hover .card__actions .btn__icon svg .stroke,
+.card:hover .card__actions .btn__icon svg path {
+  stroke: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   4) KONTROL PANELİ ÖZET BİLEŞENİ (DashboardOverview)
+   Butonların hover durumu satır içi stille verilemez; sınıf olarak burada
+   tanımlanır. Bileşen bu sınıf adlarını kullanır — biri değişirse diğeri de
+   güncellenmelidir.
+   -------------------------------------------------------------------------- */
+.aiftc-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 1.1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.aiftc-btn--primary {
+  background-color: var(--aiftc-accent-strong);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+.aiftc-btn--primary:hover {
+  /* Bir tık daha koyu: beyaz metnin kontrastı artar, azalmaz. */
+  background-color: #062e15;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.18);
+}
+
+html[data-theme='dark'] .aiftc-btn--primary {
+  background-color: var(--aiftc-accent);
+  color: #06210f;
+}
+
+html[data-theme='dark'] .aiftc-btn--primary:hover {
+  background-color: var(--aiftc-accent-strong);
+}
+
+.aiftc-btn--secondary {
+  border: 1px solid var(--theme-elevation-200);
+  color: var(--theme-text);
+}
+
+.aiftc-btn--secondary:hover {
+  border-color: var(--aiftc-accent);
+  background-color: var(--theme-elevation-50);
+}
+
+/* --------------------------------------------------------------------------
+   HAREKET TERCİHİ
+   Sitenin ön yüzünde olduğu gibi panelde de hareketten rahatsız olan
+   kullanıcı için geçişler kapatılır (WCAG 2.2 — 2.3.3). Durum yine doğru
+   kalır; yalnızca animasyon kaybolur.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card:hover,
+  .nav__link,
+  .card__actions {
+    transition-duration: 0.01ms !important;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+}
