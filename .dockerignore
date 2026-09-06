@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+# DOCKER YAPI BAĞLAMI (build context)
+# ---------------------------------------------------------------------------
+# Bu dosya YOKTU. Dockerfile `COPY . .` yaptığı için host'taki node_modules
+# (yüz binlerce dosya) ve .next klasörü imaja kopyalanıyordu. Sonuçları:
+#   - yapı bağlamı gereksiz yere yüzlerce MB,
+#   - deps katmanında kurulan bağımlılıklar host'un (muhtemelen Windows/
+#     farklı libc'li) sürümleriyle EZİLİYOR — sharp gibi ikili paketler
+#     konteynerde çalışmayabilir,
+#   - önbellek her yerel derlemede geçersizleşiyor.
+# ---------------------------------------------------------------------------
+
+# Bağımlılıklar — konteynerde `pnpm install` ile yeniden kurulur
+node_modules
+.pnpm-store
+
+# Derleme çıktıları — imaj kendi derlemesini yapar
+.next
+out
+dist
+build
+.turbo
+.swc
+*.tsbuildinfo
+
+# SIRLAR — imaja ASLA girmez. Ortam değişkenleri çalışma anında verilir
+# (docker compose `env_file` / `environment`).
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Yüklenen medya — kalıcı birim (volume) olarak bağlanır, imaja gömülmez
+public/media
+public/documents
+
+# Sürüm kontrolü ve editör
+.git
+.gitignore
+.gitattributes
+.github
+.idea
+.vscode
+
+# Yerel araç yapılandırması
+.claude
+
+# Günlükler ve test çıktıları
+*.log
+coverage
+playwright-report
+test-results
+
+# İşletim sistemi
+.DS_Store
+Thumbs.db
+
+# Belgeler — çalışma zamanı için gerekli değil
+README.md

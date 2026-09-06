@@ -37,9 +37,11 @@ import { FOCUS_COUNTRIES, SUBMISSION_STATUSES, SUBMISSION_TYPES } from '@/fields
  *    metne onay verildiğini göstermeye devam eder.
  *  - VERİ ASGARİLİĞİ: IP adresi, tarayıcı bilgisi veya oturum kimliği
  *    TOPLANMAZ.
- *  - SAKLAMA SÜRESİ: `forms` kaydındaki `retentionDays` alanı bağlayıcıdır;
- *    silme işlemi yönetim tarafında yürütülür — AÇIK MADDE (otomatik temizlik
- *    görevi kurulmadı).
+ *  - SAKLAMA SÜRESİ: `forms` kaydındaki `retentionDays` alanı bağlayıcıdır.
+ *    Süresi dolan kayıtlar `lib/kvkkRetention.ts` tarafından silinir; işlem
+ *    `POST /api/kvkk/temizlik` ucundan tetiklenir.
+ *    AÇIK MADDE — o ucu ÇAĞIRAN ZAMANLAYICI dağıtım tarafında kurulmalıdır;
+ *    kurulmazsa temizlik hiç çalışmaz (bkz. .env.example > CRON_SECRET).
  * ============================================================================
  */
 export const FormRequests: CollectionConfig = {

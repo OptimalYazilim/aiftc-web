@@ -1,63 +1,165 @@
+# ============================================================================
+# AIFTC WEB — ÜRETİM YIĞINI
+# ============================================================================
+# Kullanım:
+#   cp .env.production.example .env.production   ve İÇİNİ DOLDURUN
+#   docker compose --env-file .env.production up -d --build
+#
+# Servisler tek bir özel ağdadır (`aiftc`). Yalnızca `app` dışarı port açar;
+# veritabanı ve MinIO ana makineye AÇILMAZ.
+#
+# ---------------------------------------------------------------------------
+# ÖNCEKİ SÜRÜMDEN FARKLAR — hepsi üretim gerekçeli
+# ---------------------------------------------------------------------------
+#   - Şifreler artık gömülü değil; `${VAR:?}` sözdizimi eksik değişkende
+#     yığını BAŞLATMAZ. Eskiden `aiftc:aiftc` sabitti ve üretime öylece
+#     çıkabilirdi.
+#   - `db` ve `minio` ana makineye port AÇMIYOR. Eskiden 5432 dışarıdaydı:
+#     sunucuda güvenlik duvarı yoksa veritabanı internete açıktı.
+#   - Göçler ayrı ve tek seferlik bir servisle çalışır; `app` ancak göç
+#     BAŞARIYLA bittikten sonra başlar.
+#   - MinIO kovası `minio-init` ile otomatik oluşturulur; elle kurulum adımı
+#     unutulduğunda yüklemeler sessizce başarısız oluyordu.
+#
+# NOT — GELİŞTİRME: günlük geliştirmede uygulama ana makinede `pnpm dev` ile
+# çalıştırılır ve veritabanı olarak yönetilen Postgres (Neon) kullanılır.
+# Bu dosya ÜRETİM içindir.
+# ============================================================================
+
+name: aiftc
+
 services:
+  # --- Veritabanı -----------------------------------------------------------
   db:
     image: postgres:16-alpine
     container_name: aiftc-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: aiftc
-      POSTGRES_PASSWORD: aiftc
-      POSTGRES_DB: aiftc
-      # Turkce/Rusca siralama ve arama icin
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER tanimlanmali}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimlanmali}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB tanimlanmali}
+      # C.UTF-8: Türkçe/Rusça karakterlerin doğru saklanması için. Sıralama
+      # (collation) uygulama tarafında `localeCompare` ile yapılır.
       POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C.UTF-8'
-    ports:
-      - '5432:5432'
     volumes:
-      - aiftc_pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    networks: [aiftc]
+    # Ana makineye port AÇILMAZ. Yedekleme/inceleme için:
+    #   docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U aiftc -d aiftc']
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
 
-  # Gelistirme sirasinda opsiyonel: S3 uyumlu yerel object storage.
-  # `docker compose --profile s3 up -d` ile ayaga kalkar.
+  # --- Nesne depolama (S3 uyumlu) -------------------------------------------
+  # MEDIA_STORAGE_ADAPTER=local ise bu iki servise gerek yoktur:
+  #   docker compose --env-file .env.production up -d db migrate app
   minio:
     image: minio/minio:latest
     container_name: aiftc-minio
-    profiles: ['s3']
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: aiftc
-      MINIO_ROOT_PASSWORD: aiftc12345
-    ports:
-      - '9000:9000'
-      - '9001:9001'
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID tanimlanmali}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY tanimlanmali}
     volumes:
-      - aiftc_miniodata:/data
+      - miniodata:/data
+    networks: [aiftc]
+    # Yönetim konsolu (9001) ve S3 ucu (9000) dışarı AÇILMAZ. Konsola erişim
+    # gerekiyorsa SSH tüneli kullanın:
+    #   ssh -L 9001:localhost:9001 sunucu
+    # ve buraya geçici olarak `ports: ['127.0.0.1:9001:9001']` ekleyin.
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
-  # Uygulamayi konteynerde calistirmak icin: `docker compose --profile app up -d --build`
-  # Gunluk gelistirmede app'i host'ta `pnpm dev` ile calistirmak daha hizlidir.
+  # Kovayı bir kez oluşturur ve çıkar. Elle oluşturma adımı unutulduğunda
+  # Payload yüklemeleri "NoSuchBucket" ile düşüyordu.
+  minio-init:
+    image: minio/mc:latest
+    container_name: aiftc-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks: [aiftc]
+    environment:
+      S3_BUCKET: ${S3_BUCKET:?S3_BUCKET tanimlanmali}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set aiftc http://minio:9000 \"$$S3_ACCESS_KEY_ID\" \"$$S3_SECRET_ACCESS_KEY\" &&
+      mc mb --ignore-existing aiftc/\"$$S3_BUCKET\" &&
+      mc anonymous set download aiftc/\"$$S3_BUCKET\" &&
+      echo 'MinIO kovasi hazir.'
+      "
+    restart: 'no'
+
+  # --- Veritabanı göçleri (tek seferlik) ------------------------------------
+  # `app` bu servis BAŞARIYLA bitmeden başlamaz. Göç düşerse uygulama da
+  # ayağa kalkmaz: eski şemayla çalışan bir sürüm, veriyi bozmaktan iyidir.
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    container_name: aiftc-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: [.env.production]
+    environment:
+      DATABASE_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    networks: [aiftc]
+    restart: 'no'
+
+  # --- Uygulama -------------------------------------------------------------
   app:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
+      args:
+        # DERLEME ANINDA gömülür; `environment` altında vermek ETKİSİZDİR.
+        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:?NEXT_PUBLIC_SERVER_URL tanimlanmali}
+        NEXT_PUBLIC_LIBRARY_URL: ${NEXT_PUBLIC_LIBRARY_URL:-}
+        NEXT_PUBLIC_PORTAL_URL: ${NEXT_PUBLIC_PORTAL_URL:-}
+        NEXT_PUBLIC_ANALYTICS_DOMAIN: ${NEXT_PUBLIC_ANALYTICS_DOMAIN:-}
+        NEXT_PUBLIC_ANALYTICS_SCRIPT_URL: ${NEXT_PUBLIC_ANALYTICS_SCRIPT_URL:-}
     container_name: aiftc-app
-    profiles: ['app']
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
-    env_file:
-      - .env
+      migrate:
+        condition: service_completed_successfully
+    env_file: [.env.production]
     environment:
-      DATABASE_URI: postgres://aiftc:aiftc@db:5432/aiftc
+      DATABASE_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
     ports:
-      - '3000:3000'
+      # Yalnızca localhost'a bağlanır: dışarıya TLS sonlandıran ters vekil
+      # (nginx/Traefik) açılır. Konteyneri doğrudan 0.0.0.0:3000'e açmak,
+      # HSTS başlığı gönderen bir uygulamayı düz HTTP ile yayımlamak olurdu.
+      - '127.0.0.1:3000:3000'
     volumes:
-      - aiftc_media:/app/public/media
+      # MEDIA_STORAGE_ADAPTER=local için kalıcılık. S3 kullanılıyorsa boş kalır
+      # ama bağlı olması zarar vermez.
+      - media:/app/public/media
+      - documents:/app/public/documents
+    networks: [aiftc]
+
+networks:
+  aiftc:
+    driver: bridge
 
 volumes:
-  aiftc_pgdata:
-  aiftc_miniodata:
-  aiftc_media:
+  pgdata:
+  miniodata:
+  media:
+  documents:

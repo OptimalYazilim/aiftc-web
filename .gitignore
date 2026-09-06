@@ -32,11 +32,19 @@ tsconfig.tsbuildinfo
 # ---------------------------------------------------------------------------
 # Ortam değişkenleri — SIRLAR
 # ---------------------------------------------------------------------------
-# .env.example depoya girer (şablon, gerçek değer içermez); geri kalan HERŞEY
-# dışarıda kalır. Veritabanı adresi ve PAYLOAD_SECRET bu dosyalarda durur.
+# `*.example` şablonları depoya GİRER (gerçek değer içermezler); geri kalan
+# HERŞEY dışarıda kalır. Veritabanı adresi, PAYLOAD_SECRET ve S3 anahtarları
+# bu dosyalarda durur.
+#
+# Sıralama önemlidir: `.env.*` önce her şeyi dışlar, sonraki `!` satırları
+# şablonları geri alır. `!.env.production.example` EKSİKTİ ve şablon sessizce
+# depo dışında kalıyordu (ölçüldü: `git check-ignore` yoksaydığını gösterdi) —
+# sunucu kurulumunda rehber olacak dosyanın kaybolması en sinsi hatadır.
 .env
 .env.*
 !.env.example
+!.env.production.example
+!.env.*.example
 
 # ---------------------------------------------------------------------------
 # Yüklenen medya — kullanıcı içeriği, kod değil

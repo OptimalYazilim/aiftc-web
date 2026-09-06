@@ -2,6 +2,7 @@ import * as migration_20260903_172619_ilk_surum from './20260903_172619_ilk_suru
 import * as migration_20260903_200613_anasayfa_menu_ve_durum_enum from './20260903_200613_anasayfa_menu_ve_durum_enum';
 import * as migration_20260905_213907_kutuphane_media_ve_polimorfik_iliskiler from './20260905_213907_kutuphane_media_ve_polimorfik_iliskiler';
 import * as migration_20260905_235038_sanal_sinif_odalari from './20260905_235038_sanal_sinif_odalari';
+import * as migration_20260906_004002_form_gonderimleri from './20260906_004002_form_gonderimleri';
 
 export const migrations = [
   {
@@ -22,6 +23,11 @@ export const migrations = [
   {
     up: migration_20260905_235038_sanal_sinif_odalari.up,
     down: migration_20260905_235038_sanal_sinif_odalari.down,
-    name: '20260905_235038_sanal_sinif_odalari'
+    name: '20260905_235038_sanal_sinif_odalari',
+  },
+  {
+    up: migration_20260906_004002_form_gonderimleri.up,
+    down: migration_20260906_004002_form_gonderimleri.down,
+    name: '20260906_004002_form_gonderimleri'
   },
 ];
