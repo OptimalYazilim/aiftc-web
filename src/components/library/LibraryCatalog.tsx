@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl'
 import React, { useDeferredValue, useId, useMemo, useState } from 'react'
 
+import type { Locale } from '@/i18n/locales'
 import { matchesQuery } from '@/lib/searchText'
 
 import {
@@ -61,9 +62,11 @@ type Props = {
   items: LibraryResourceItem[]
   types: LibraryFilterOption[]
   topics: LibraryFilterOption[]
+  /** Kartın künye sayfası adresini üretebilmesi için gerekir. */
+  locale: Locale
 }
 
-export const LibraryCatalog: React.FC<Props> = ({ items, types, topics }) => {
+export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, locale }) => {
   const t = useTranslations('library')
 
   const [query, setQuery] = useState('')
@@ -190,30 +193,19 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics }) => {
             <LibraryResourceCard
               key={String(item.id)}
               item={item}
+              locale={locale}
               /*
                 Etiketler kart bileşenine PROP olarak verilir, bileşen kendi
-                `useTranslations`'ını çağırmaz. Sebep: kart hem burada hem
+                useTranslations çağrısını yapmaz. Sebep: kart hem burada hem
                 ileride sunucu bileşenlerinden çağrılabilsin diye SAF tutulur
-                (eğitim kartında da aynı kural uygulanıyor).
+                (eğitim kartında da aynı kural uygulanıyor). Kart artık pencere
+                açmadığı için liste ÜÇ etikete inmiştir; oynatıcı ve albüm
+                etiketleri künye sayfasında toplanır.
               */
               labels={{
-                download: t('download'),
-                watch: t('watch'),
-                openAlbum: t('openAlbum'),
-                openExternal: t('openExternal'),
-                unavailable: t('fileUnavailable'),
-                closeDialog: t('closeDialog'),
-                downloadVideo: t('downloadVideo'),
-                videoUnsupported: t('videoUnsupported'),
-                formatLabel: t('formatLabel'),
+                viewRecord: t('viewRecord'),
                 downloadsBadge: (count) => t('downloadsBadge', { count }),
                 photoCount: (count) => t('photoCount', { count }),
-                openAlbumWithCount: (count) => t('openAlbumWithCount', { count }),
-                galleryPrevious: t('galleryPrevious'),
-                galleryNext: t('galleryNext'),
-                galleryCounter: (current, total) => t('galleryCounter', { current, total }),
-                galleryDownloadImage: t('galleryDownloadImage'),
-                galleryThumbnails: t('galleryThumbnails'),
               }}
             />
           ))}

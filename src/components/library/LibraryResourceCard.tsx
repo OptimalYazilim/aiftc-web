@@ -1,14 +1,11 @@
-'use client'
-
 import Image from 'next/image'
-import React, { useState } from 'react'
+import Link from 'next/link'
+import React from 'react'
 
 import { LIBRARY_ALBUM_TYPE, LIBRARY_VIDEO_TYPE } from '@/fields/options'
+import type { Locale } from '@/i18n/locales'
+import { detailHref } from '@/i18n/routes'
 import { resolveMedia, type ResolvedImage, type ResolvedVideo } from '@/lib/media'
-
-import { ExternalLink } from '../ui/ExternalLink'
-import { GalleryLightbox } from './GalleryLightbox'
-import { MediaDialog } from './MediaDialog'
 
 /**
  * KÜTÜPHANE KAYIT KARTI — WHO EDİTORYAL STİLİ  (Şartname 6.6, 11.3, 13)
@@ -18,7 +15,33 @@ import { MediaDialog } from './MediaDialog'
  *   sol    → kapak görseli veya tür panosu (3/4 oranında), üstünde biçim
  *            rozeti ("PDF · 4,2 MB" / "45 dk" / "12 fotoğraf")
  *   orta   → yıl · tür · sayaç üst başlığı, kalın başlık, 1–2 cümlelik özet
- *   alt    → aksiyon: indir / izle / albümü aç / dış yayına git
+ *   alt    → tek aksiyon: KÜNYE SAYFASINA git
+ *
+ * ---------------------------------------------------------------------------
+ * KART ARTIK İNDİRMİYOR  (Şartname EK-2 Madde 1.5)
+ * ---------------------------------------------------------------------------
+ * Önceki sürümde kart doğrudan dosyayı indiriyor, videoyu bir pencerede
+ * açıyordu. EK-2 Madde 1.2 künyeye kurum, ülke, dil, sürüm, lisans, telif ve
+ * DOI/ISBN alanlarını eklediğinde bu düzen taşınamaz hâle geldi: bu bilgiler
+ * bir kart yüzeyine sığmaz, sığdırılsaydı kart okunmaz olurdu.
+ *
+ * Bu yüzden kart tek bir yere bakar — künye sayfasına. Ziyaretçi neyi
+ * indirdiğini indirmeden ÖNCE görür. Oynatıcı, albüm penceresi ve indirme
+ * sayacı künye sayfasına taşındı (bkz. components/library/
+ * LibraryDetailActions), böylece bu bileşenden durum (`useState`) ve
+ * `'use client'` gereksinimi tamamen kalktı.
+ *
+ * ---------------------------------------------------------------------------
+ * TÜM KART TIKLANABİLİR — TEK BAĞLANTI
+ * ---------------------------------------------------------------------------
+ * Başlıktaki bağlantı `after:absolute after:inset-0` ile kartın tamamına
+ * yayılır (eğitim kartıyla aynı desen). Böylece:
+ *   - imleç kartın her yerinde el işaretine döner,
+ *   - ekran okuyucu ve klavye kullanıcısı TEK bağlantı görür — aynı hedefe
+ *     giden ikinci bir "Künyeyi İncele" bağlantısı sekme sırasını iki katına
+ *     çıkarırdı (WCAG 2.4.4 / 2.4.9).
+ * Alt satırdaki "Künyeyi İncele" ibaresi bu yüzden bir bağlantı DEĞİL,
+ * yalnızca görsel bir işarettir (`aria-hidden`).
  *
  * Neden yatay: kütüphane kartları TARANARAK okunur. Dikey bir ızgarada göz
  * her kartta yeniden yukarıdan aşağı iner; yatay satırlarda başlıklar tek bir
@@ -40,31 +63,31 @@ import { MediaDialog } from './MediaDialog'
  * ---------------------------------------------------------------------------
  * DOSYA BİLGİSİ NEREDEN GELİYOR
  * ---------------------------------------------------------------------------
- * Boyut ve tür `document-files` kaydından okunur; katalog kaydına
- * kopyalanmaz (bkz. collections/LibraryResources.ts). Şartname 11.3 ve 13:
- * ziyaretçi neyi, hangi biçimde ve ne büyüklükte indireceğini TIKLAMADAN
- * ÖNCE görür. Ölçülü bağlantıda 40 MB'lık bir PDF'i habersiz indirtmek
- * erişilebilirlik sorunudur. Videoda aynı işi `videoDuration` yapar.
+ * Boyut ve biçim ÖNCE yüklü dosyadan (`document-files` / `media`) okunur;
+ * bu değerler ölçülmüştür. Dosya yoksa — kayıt başka bir kurumun sitesine
+ * bağlanıyorsa — katalogdaki `fileFormat` / `fileSize` alanlarına düşülür.
+ * Şartname 11.3 ve 13: ziyaretçi neyi, hangi biçimde ve ne büyüklükte
+ * indireceğini TIKLAMADAN ÖNCE görür. Ölçülü bağlantıda 40 MB'lık bir PDF'i
+ * habersiz indirtmek erişilebilirlik sorunudur. Videoda aynı işi
+ * `videoDuration` yapar.
  *
  * ---------------------------------------------------------------------------
  * ERİŞİLEBİLİRLİK
  * ---------------------------------------------------------------------------
- *   - Kartta TEK odak durağı vardır: aksiyon düğmesi. Başlık bağlantı
- *     DEĞİLDİR çünkü kaydın ayrı bir detay sayfası yoktur; başlığı da
- *     tıklanabilir yapmak aynı hedefe ikinci bir durak eklerdi (2.4.3).
- *   - Düğmenin erişilebilir adı yalnızca "Dokümanı İndir" değildir: `sr-only`
- *     olarak yayının adı ve biçimi eklenir. Ekran okuyucu kullanıcısı
- *     bağlantı listesinde on tane özdeş "Dokümanı İndir" görmez (2.4.4).
- *   - `download` özniteliği KULLANILMAZ: tarayıcının PDF'i sekmede açma
- *     tercihi kullanıcıya bırakılır.
+ *   - Kartta TEK odak durağı vardır: başlıktaki bağlantı. Alt satırdaki
+ *     "Künyeyi İncele" ibaresi `aria-hidden`dır; aynı hedefe ikinci bir durak
+ *     eklemek sekme sırasını gereksiz yere uzatırdı (2.4.3).
+ *   - Bağlantının erişilebilir adı YAYININ ADIDIR. Ekran okuyucu kullanıcısı
+ *     bağlantı listesinde on tane özdeş "Künyeyi İncele" görmez (2.4.4) —
+ *     ibare bağlantı metni olsaydı tam olarak bu olurdu.
  *   - Sol pano ve içindeki işaret `aria-hidden`; taşıdıkları bilgi üst
  *     başlıkta METİN olarak da vardır (1.4.1).
+ *   - Gerilmiş bağlantı `<li>` sınırında durur, kartlar arasına taşmaz.
  *
  * KONTRAST — ölçülen:
  *     shell-900 başlık / beyaz        15.74:1
  *     ink-600   özet / beyaz           7.39:1
  *     brand-700 üst başlık / beyaz     6.61:1
- *     beyaz / brand-700 buton          6.61:1
  *     beyaz rozet / shell-900 pano    15.74:1
  * ============================================================================
  */
@@ -78,6 +101,8 @@ export type LibraryFile = {
 
 export type LibraryResourceItem = {
   id: string | number
+  /** Künye sayfasının adresi bundan üretilir; boşsa kart bağlantısız kalır. */
+  slug?: string | null
   title?: string | null
   description?: string | null
   author?: string | null
@@ -87,6 +112,9 @@ export type LibraryResourceItem = {
   /** Tür etiketi, ziyaretçinin dilinde. */
   resourceTypeLabel?: string | null
   file?: LibraryFile | null
+  /** Künyeden gelen biçim/boyut — yalnızca dosyasız (dış bağlantılı) kayıtlarda dolu. */
+  fileFormat?: string | null
+  fileSize?: string | null
   externalUrl?: string | null
   coverImage?: unknown
   /** Video kayıtlarında: `lib/media.ts` ile çözülmüş dosya (url + MIME). */
@@ -104,31 +132,17 @@ export type LibraryResourceItem = {
   topicTitles: string[]
 }
 
+/**
+ * Kart artık pencere açmadığı için oynatıcı/lightbox etiketleri BU LİSTEDE
+ * DEĞİLDİR; onlar künye sayfasında `LibraryActionLabels` altında durur.
+ */
 export type LibraryCardLabels = {
-  download: string
-  watch: string
-  openAlbum: string
-  openExternal: string
-  unavailable: string
-  closeDialog: string
-  /** Oynatıcının altındaki indirme bağlantısı. */
-  downloadVideo: string
-  /** Tarayıcı kodeği oynatamadığında gösterilecek açıklama. */
-  videoUnsupported: string
-  /** Ekran okuyucuya okunacak "biçim" sözcüğü. */
-  formatLabel: string
+  /** Alt satırdaki görsel işaret, örn. "Künyeyi İncele". */
+  viewRecord: string
   /** Sayaç rozeti, örn. "{count} indirme". */
   downloadsBadge: (count: number) => string
   /** Albüm görsel sayısı rozeti, örn. "12 fotoğraf". */
   photoCount: (count: number) => string
-  /** Albüm düğmesi, örn. "Galeriyi İncele (12 Fotoğraf)". */
-  openAlbumWithCount: (count: number) => string
-  /** Lightbox etiketleri. */
-  galleryPrevious: string
-  galleryNext: string
-  galleryCounter: (current: number, total: number) => string
-  galleryDownloadImage: string
-  galleryThumbnails: string
 }
 
 /**
@@ -152,6 +166,30 @@ const FORMAT_BY_MIME: Record<string, string> = {
 
 export const formatOf = (file: LibraryFile | null | undefined): string | null =>
   file?.mimeType ? (FORMAT_BY_MIME[file.mimeType] ?? null) : null
+
+/**
+ * Katalog kaydının ELLE girilmiş biçimi (`LibraryResources.fileFormat`)
+ * → rozet etiketi.
+ *
+ * Bu yol YALNIZCA dosyasız kayıtlar (dış bağlantı) içindir; yüklü dosya varsa
+ * biçim MIME'den okunur ve panelde alan zaten gizlenir. İki kaynak aynı anda
+ * dolamaz, dolayısıyla çelişemez.
+ *
+ * `other` KASITLI OLARAK EKSİK: "DİĞER" yazan bir rozet ziyaretçiye hiçbir şey
+ * söylemez. `FORMAT_BY_MIME` ile aynı kural — bilinmeyen biçimde etiket
+ * gösterilmez.
+ */
+const FORMAT_BY_KEY: Record<string, string> = {
+  pdf: 'PDF',
+  docx: 'DOCX',
+  xlsx: 'XLSX',
+  pptx: 'PPTX',
+  epub: 'EPUB',
+  mp4: 'MP4',
+  mp3: 'MP3',
+  zip: 'ZIP',
+  html: 'WEB',
+}
 
 /** Play üçgeni — video panosunun ortasında. */
 const PlayGlyph = () => (
@@ -201,10 +239,9 @@ const AlbumGlyph = () => (
 
 export const LibraryResourceCard: React.FC<{
   item: LibraryResourceItem
+  locale: Locale
   labels: LibraryCardLabels
-}> = ({ item, labels }) => {
-  const [dialogOpen, setDialogOpen] = useState(false)
-
+}> = ({ item, locale, labels }) => {
   /**
    * KAPAK SEÇİMİ
    * Editörün seçtiği kapak her zaman kazanır. Albümlerde kapak
@@ -213,8 +250,17 @@ export const LibraryResourceCard: React.FC<{
    * neyi vaat ettiğini doğrudan anlatır.
    */
   const explicitCover = resolveMedia(item.coverImage, 'card')
-  const format = formatOf(item.file)
-  const size = item.file?.humanFileSize?.trim() || null
+  /*
+    BİÇİM VE BOYUT — ÖNCE DOSYADAN, SONRA KÜNYEDEN.
+    Yüklü dosya varsa gerçek dosya kazanır; bu değerler ölçülmüştür, elle
+    girilen künye eskimiş olabilir. Dosya yoksa (kayıt başka bir kurumun
+    sitesine bağlanıyorsa) katalogdaki alanlara düşülür — Şartname 11.3 ve 13,
+    ziyaretçinin tıklamadan önce ne indireceğini bilmesini ister ve dış
+    bağlantılı kayıtlarda bunu söyleyebilecek tek yer künyedir.
+  */
+  const format =
+    formatOf(item.file) ?? (item.fileFormat ? (FORMAT_BY_KEY[item.fileFormat] ?? null) : null)
+  const size = item.file?.humanFileSize?.trim() || item.fileSize?.trim() || null
 
   const isVideo = item.resourceType === LIBRARY_VIDEO_TYPE
   const isAlbum = item.resourceType === LIBRARY_ALBUM_TYPE
@@ -223,38 +269,13 @@ export const LibraryResourceCard: React.FC<{
   const cover = explicitCover ?? (isAlbum ? (gallery[0] ?? null) : null)
 
   /**
-   * AKSİYON HEDEFİ — SIRALAMA ÖNEMLİ
-   * Video ve albüm pencerede açılır. Belge için yüklenmiş dosya kazanır:
-   * kendi sunucumuzdan servis edilir, ziyaretçinin IP'si üçüncü tarafa
-   * gitmez (KVKK 12.2/12.3). Dosya yoksa dış adrese düşülür. Hiçbiri yoksa
-   * düğme BASILMAZ — tıklandığında hiçbir şey yapmayan bir düğme bırakılmaz.
+   * KÜNYE SAYFASININ ADRESİ.
+   * Slug'ı olmayan bir kayıt bağlantısız kalır — uydurma bir adrese götüren
+   * ölü bir bağlantı basmaktansa kartı sessizce bağlantısız bırakmak yeğdir.
+   * (Slug alanı zorunludur ve boş bırakılırsa başlıktan üretilir; bu durum
+   * ancak veri elle bozulursa oluşur.)
    */
-  const canPlay = isVideo && Boolean(item.video)
-  const canBrowseAlbum = isAlbum && gallery.length > 0
-  const fileHref = !canPlay && !canBrowseAlbum ? (item.file?.url?.trim() || null) : null
-  const externalHref = !canPlay && !canBrowseAlbum && !fileHref
-    ? (item.externalUrl?.trim() || null)
-    : null
-
-  /**
-   * SAYACI ARTIR — ziyaretçiyi BEKLETMEDEN.
-   * `sendBeacon` isteği tarayıcının kuyruğuna bırakır ve hemen döner; sayfa
-   * indirme yüzünden değişse bile istek gider. Desteklenmiyorsa `keepalive`
-   * ile `fetch`e düşülür. Hata YUTULUR: sayaç bir yan işlevdir, indirmenin
-   * önüne asla geçmemelidir (bkz. app/api/library/[id]/hit/route.ts).
-   */
-  const countHit = () => {
-    const url = `/api/library/${item.id}/hit`
-    try {
-      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        navigator.sendBeacon(url)
-        return
-      }
-      void fetch(url, { method: 'POST', keepalive: true }).catch(() => {})
-    } catch {
-      /* sessizce geç */
-    }
-  }
+  const recordHref = item.slug ? detailHref('library-resource', locale, item.slug) : null
 
   /** Sol panodaki rozet: biçim+boyut, süre veya fotoğraf sayısı. */
   const badge = isVideo
@@ -267,16 +288,12 @@ export const LibraryResourceCard: React.FC<{
 
   const downloads = Number(item.downloads) || 0
 
-  const buttonClass =
-    'group/action inline-flex min-h-11 items-center gap-2 rounded-sm bg-brand-700 px-5 text-sm font-bold text-white transition-colors hover:bg-brand-800'
-
-  /** Ekran okuyucuya okunacak ek: "— 2027 Faaliyet Raporu, PDF biçiminde". */
-  const accessibleSuffix = [item.title, format ? `${format} ${labels.formatLabel}` : null]
-    .filter(Boolean)
-    .join(', ')
-
   return (
-    <li className="group flex flex-col gap-5 border-b border-line-soft py-6 sm:flex-row sm:gap-7">
+    <li
+      className={`group relative flex flex-col gap-5 border-b border-line-soft py-6 transition-colors duration-500 sm:flex-row sm:gap-7 ${
+        recordHref ? 'cursor-pointer hover:border-shell-900' : ''
+      }`}
+    >
       {/* --- SOL: kapak veya tür panosu ---------------------------------- */}
       <div className="w-full shrink-0 sm:w-40">
         <div
@@ -385,7 +402,22 @@ export const LibraryResourceCard: React.FC<{
         </p>
 
         <h3 className="mt-1.5 text-lg font-bold leading-snug tracking-tight text-shell-900 sm:text-xl">
-          {item.title}
+          {recordHref ? (
+            /*
+              GERİLMİŞ BAĞLANTI: `after:absolute after:inset-0` bağlantının
+              tıklanabilir alanını `<li className="relative">` sınırına kadar
+              yayar. Kartın tamamı tıklanır ama DOM'da tek bir bağlantı vardır
+              — eğitim kartıyla aynı desen.
+            */
+            <Link
+              href={recordHref}
+              className="transition-colors duration-500 after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800"
+            >
+              {item.title}
+            </Link>
+          ) : (
+            item.title
+          )}
         </h3>
 
         {item.author ? <p className="mt-1 text-sm text-ink-600">{item.author}</p> : null}
@@ -394,127 +426,37 @@ export const LibraryResourceCard: React.FC<{
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-600">{item.description}</p>
         ) : null}
 
-        {/* --- Aksiyon --------------------------------------------------- */}
-        <div className="mt-4">
-          {canPlay || canBrowseAlbum ? (
-            <button
-              type="button"
-              onClick={() => {
-                setDialogOpen(true)
-                countHit()
-              }}
-              className={buttonClass}
+        {/* --- Aksiyon: tek hedef, künye sayfası ------------------------ */}
+        {/*
+          Bu bir BAĞLANTI DEĞİLDİR. Başlıktaki gerilmiş bağlantı zaten kartın
+          tamamını kapsıyor; buraya ikinci bir <a> konsaydı klavye kullanıcısı
+          aynı hedefe giden iki durak arasında gezinmek zorunda kalırdı.
+          İbare yalnızca görsel bir işarettir ve ekran okuyucudan gizlenir
+          (WCAG 2.4.4 — bağlantı amacı zaten başlıkta).
+        */}
+        {recordHref ? (
+          <p
+            aria-hidden="true"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-800"
+          >
+            {labels.viewRecord}
+            <svg
+              focusable="false"
+              viewBox="0 0 16 16"
+              width="1em"
+              height="1em"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="transition-transform duration-500 ease-editorial group-hover:translate-x-1"
             >
-              {canPlay ? labels.watch : labels.openAlbumWithCount(gallery.length)}
-              <span className="sr-only"> — {item.title}</span>
-              {canPlay ? (
-                <svg
-                  aria-hidden="true"
-                  focusable="false"
-                  viewBox="0 0 16 16"
-                  width="1em"
-                  height="1em"
-                  className="transition-transform duration-300 group-hover/action:translate-x-0.5"
-                >
-                  <path fill="currentColor" d="M4.5 3.2 12.8 8l-8.3 4.8V3.2Z" />
-                </svg>
-              ) : (
-                <svg
-                  aria-hidden="true"
-                  focusable="false"
-                  viewBox="0 0 16 16"
-                  width="1em"
-                  height="1em"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transition-transform duration-300 group-hover/action:translate-x-0.5"
-                >
-                  <rect x="2.5" y="3.5" width="11" height="9" rx="1.5" />
-                  <path d="M3 11l3-3 2.2 2.2L10 8.5l3 2.8" />
-                </svg>
-              )}
-            </button>
-          ) : fileHref ? (
-            <a href={fileHref} onClick={countHit} className={buttonClass}>
-              {labels.download}
-              <span className="sr-only"> — {accessibleSuffix}</span>
-              <svg
-                aria-hidden="true"
-                focusable="false"
-                viewBox="0 0 16 16"
-                width="1em"
-                height="1em"
-                className="transition-transform duration-300 group-hover/action:translate-y-0.5"
-              >
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8 2.5v9M4 7.5l4 4 4-4M2.5 13.5h11"
-                />
-              </svg>
-            </a>
-          ) : externalHref ? (
-            <ExternalLink
-              href={externalHref}
-              trackId="library:external"
-              className={buttonClass}
-              onActivate={countHit}
-            >
-              {labels.openExternal}
-              <span className="sr-only"> — {item.title}</span>
-            </ExternalLink>
-          ) : (
-            /*
-              Ne dosya, ne video, ne albüm, ne dış adres: kayıt künye olarak
-              listelenir ama açılabilir bir şey yoktur. Bu durum editöre de
-              bilgi verir ("dosyayı bağlamayı unutmuşum") ve ziyaretçiyi ölü
-              bir düğmeye tıklatmaz.
-            */
-            <p className="text-sm italic text-ink-500">{labels.unavailable}</p>
-          )}
-        </div>
+              <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" />
+            </svg>
+          </p>
+        ) : null}
       </div>
-
-      {/*
-        Pencere yalnızca açıkken DOM'a girer (bkz. MediaDialog): kapalıyken
-        ne iframe kurulur ne de albüm görselleri istenir.
-      */}
-      {dialogOpen && canPlay ? (
-        <MediaDialog
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          title={item.title ?? ''}
-          closeLabel={labels.closeDialog}
-          video={item.video ?? null}
-          poster={cover?.url ?? null}
-          allowDownload={item.allowVideoDownload !== false}
-          downloadLabel={labels.downloadVideo}
-          unsupportedLabel={labels.videoUnsupported}
-        />
-      ) : null}
-
-      {dialogOpen && canBrowseAlbum ? (
-        <GalleryLightbox
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          title={item.title ?? ''}
-          images={gallery}
-          labels={{
-            close: labels.closeDialog,
-            previous: labels.galleryPrevious,
-            next: labels.galleryNext,
-            counter: labels.galleryCounter,
-            downloadImage: labels.galleryDownloadImage,
-            thumbnailsLabel: labels.galleryThumbnails,
-          }}
-        />
-      ) : null}
     </li>
   )
 }

@@ -6,7 +6,6 @@ import { detailHref } from '@/i18n/routes'
 import { formatDateRange } from '@/lib/dates'
 import { trainingStatusClasses, trainingStatusLabel } from '@/lib/trainingStatus'
 
-import { TopicIcon } from './TopicIcon'
 
 /**
  * EĞİTİM KARTI — TEK GÖRÜNÜM KAYNAĞI
@@ -22,10 +21,10 @@ import { TopicIcon } from './TopicIcon'
  * okuyucuya okunacak durum ön eki `statusPrefix` ile DIŞARIDAN verilir.
  *
  * ERİŞİLEBİLİRLİK
- *   - Kartın tamamı tıklanabilir DEĞİLDİR. Odaklanılabilir tek öğe başlıktaki
- *     bağlantıdır (WCAG 2.2 — 2.4.3 Odak Sırası, 2.4.4 Bağlantı Amacı).
- *     Kart yüzeyine tıklama isteniyorsa `::after` ile genişletilmeli, ikinci
- *     bir odak durağı eklenmemelidir.
+ *   - Kartın TAMAMI tıklanabilirdir: başlık bağlantısı `::after` ile kart
+ *     yüzeyine yayılır. Ama ODAKLANILABİLİR TEK ÖĞE yine başlıktır —
+ *     ikinci bir odak durağı eklenmez (WCAG 2.2 — 2.4.3 Odak Sırası,
+ *     2.4.4 Bağlantı Amacı).
  *   - Durum rozeti renge ek olarak METİN taşır (1.4.1 Rengin Kullanımı).
  * ============================================================================
  */
@@ -38,7 +37,11 @@ export type TrainingCardItem = {
   status?: string | null
   startDate?: string | null
   endDate?: string | null
-  /** İlk konusunun kategorisi; tematik ikonu seçer. */
+  /**
+   * İlk konusunun kategorisi. Karttaki dekoratif ikon kaldırıldığı için
+   * ARTIK GÖRÜNÜM ÜRETMEZ; alan, çağıran sayfaların veri eşlemesini bozmamak
+   * ve ileride konu bazlı bir gruplama gerekirse hazır olmak için duruyor.
+   */
   categoryKey?: string | null
 }
 
@@ -69,10 +72,12 @@ export const TrainingCard: React.FC<Props> = ({
   footer,
 }) => {
   /**
-   * MİKRO ETKİLEŞİM
-   * `hover:-translate-y-1` + gölge derinleşmesi. `transition-all duration-200`
-   * globals.css'teki `prefers-reduced-motion` kuralıyla otomatik olarak
-   * 0.01ms'ye iner: hareketten rahatsız olan kullanıcı yer değiştirmeyi
+   * MİKRO ETKİLEŞİM — AĞIRBAŞLI
+   * Kart yerinden oynamaz, gölge büyümez. Üç şey değişir: kenar çizgisi
+   * koyulaşır, alttaki ok 4px sağa kayar ve mikro metin en koyu orman tonuna
+   * iner. Üçü de 500ms ve aynı editoryal eğriyle.
+   * globals.css'teki `prefers-reduced-motion` kuralı bu süreleri otomatik
+   * olarak 0.01ms'ye indirir: hareketten rahatsız olan kullanıcı geçişi
    * animasyon olarak GÖRMEZ, durum yine de doğru kalır (WCAG 2.2 — 2.3.3).
    */
   const dateRange = formatDateRange(locale, item.startDate, item.endDate)
@@ -81,46 +86,107 @@ export const TrainingCard: React.FC<Props> = ({
   return (
     <li
       /*
-        HOVER'DA ÜÇ ŞEY BİRDEN DEĞİŞİR — hepsi aynı süreyle:
-          yükselme (-translate-y-1) · gölge derinliği · kenarlık rengi
-        Tek başına gölge yeterince okunmuyordu; kenarlığın kurumsal yeşile
-        dönmesi kartın tıklanabilir olduğunu söyler. Renk TEK TAŞIYICI değil:
-        kart içindeki "Detayları İncele →" mikro metni ve başlık bağlantısı
-        zaten görünür durumdadır (WCAG 2.2 — 1.4.1).
+        GÖLGE VE ZIPLAMA KALDIRILDI — EDİTORYAL DİL.
+        Kart artık sayfadan "kalkmıyor". Ayrım tek bir 1px çizgiyle kuruluyor;
+        hover'da o çizgi en koyu orman tonuna dönüyor ve altındaki ok kayıyor.
+        Yükselme + gölge büyümesi, bir liste ekranında on iki kez tekrarlanınca
+        arayüzü huzursuz ve şablon görünümlü yapıyordu.
+
+        Dolgu daraltıldı (p-6 → p-5): bilgi yoğunluğu arttı, nefes alma
+        satır aralıklarına ve başlık ile gövde arasındaki ritme bırakıldı.
+
+        Hover renk TEK TAŞIYICI DEĞİL: başlık bağlantısı ve "Detayları İncele"
+        mikro metni zaten görünür (WCAG 2.2 — 1.4.1).
       */
-      className={`group flex flex-col rounded-card border border-line bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-700/45 hover:shadow-xl ${
-        size === 'large' ? 'justify-center md:p-8' : ''
+      className={`group ease-editorial relative flex cursor-pointer flex-col rounded-card border border-line bg-surface p-5 transition-colors duration-500 hover:border-shell-900 ${
+        size === 'large' ? 'justify-center md:p-7' : ''
       } ${className}`}
     >
-      {/* Rozet + tematik ikon aynı satırda; ikon dekoratiftir. */}
-      <div className="mb-3 flex items-center gap-2">
-        <TopicIcon category={item.categoryKey} className="text-brand-700" />
-        {statusText ? (
-          <p className={trainingStatusClasses(item.status)}>
-            <span className="sr-only">{statusPrefix}: </span>
-            {statusText}
-          </p>
-        ) : null}
-      </div>
+      {/*
+        TEMATİK İKON KALDIRILDI.
+        Kartın sol üstünde konuya göre değişen dekoratif bir sembol vardı.
+        Hiçbir bilgi taşımıyordu — konu adı zaten kartın altında etiket olarak
+        yazılı. On iki kartlık bir listede on iki farklı sembol, tipografik
+        hiyerarşiyi bozup göz akışını dağıtıyordu. Yerini durum rozetinin
+        kendi ağırlığı alıyor.
+      */}
+      {statusText ? (
+        <p className={`mb-3 ${trainingStatusClasses(item.status)}`}>
+          <span className="sr-only">{statusPrefix}: </span>
+          {statusText}
+        </p>
+      ) : null}
 
+      {/*
+        DİKEY RİTİM — BOŞLUKLAR MANTIKSAL GRUP ANLATIR
+        ---------------------------------------------------------------------
+        Kartta üç grup vardır ve aralarındaki mesafe onları AYIRIR:
+
+          rozet                         ── mb-3 ──┐  bağımsız etiket
+          tarih  +  BAŞLIK              (mt-1.5)  │  tek bir künye
+          açıklama                      (mt-3)    │  ikinci kademe
+          alt bilgi ızgarası            (mt-5)    ┘  ayrı bir blok
+
+        Tarih ile başlık arasındaki 1.5 birim, başlık ile açıklama arasındaki
+        3 birimden KÜÇÜKTÜR: tarih başlığın parçasıdır, açıklama değildir.
+        Eşit boşluk verilseydi dört öğe tek bir sıralı liste gibi okunur,
+        hangisinin ana odak olduğu kaybolurdu.
+
+        `text-sm` (14px) tarih ve açıklama için ORTAK ölçüdür; ikisi de
+        başlığın altındaki ikincil kademedir.
+      */}
       {dateRange ? (
         <time dateTime={item.startDate ?? undefined} className="text-sm text-ink-600">
           {dateRange}
         </time>
       ) : null}
 
-      <h3 className={`mt-1 font-semibold ${size === 'large' ? 'text-xl lg:text-2xl' : 'text-lg'}`}>
+      {/*
+        BAŞLIK KARTIN ODAK NOKTASIDIR.
+        Bir kademe büyütüldü (text-lg → text-xl), `font-bold` yapıldı ve
+        satır aralığı sıkıştırıldı. `leading-tight` + `tracking-tight`,
+        globals.css'teki genel h3 kuralını (1.32 / -0.008em) bilerek ezer:
+        kart başlığı sayfa içi bir bölüm başlığı değil, bir KÜNYEDİR ve
+        iki satıra düştüğünde blok gibi durmalıdır.
+      */}
+      <h3
+        className={`mt-1.5 font-bold leading-tight tracking-tight ${
+          size === 'large' ? 'text-2xl lg:text-3xl' : 'text-xl'
+        }`}
+      >
         <Link
           href={detailHref('training-program', locale, item.slug ?? '')}
-          className="text-brand-800 underline-offset-4 hover:underline"
+          /*
+            YAYILAN BAĞLANTI (`after:absolute after:inset-0`).
+            Bağlantının tıklama alanı kartın TAMAMINA genişler. Böylece
+            "Detayları İncele" mikro metnine tıklamak da çalışır — eskiden
+            hiçbir şey yapmıyordu ve imleç metin imleci kalıyordu.
+
+            İKİNCİ BİR BAĞLANTI EKLENMEDİ. Mikro metni ayrı bir <a> yapmak
+            klavye kullanıcısını aynı hedefe iki kez uğratırdı
+            (WCAG 2.2 — 2.4.3). Odak durağı hâlâ TEK: başlık.
+
+            Takas: kart yüzeyindeki metin artık kolay seçilemez. Kartlarda
+            yaygın ve kabul edilen bir takastır; okunacak metin (özet, konum)
+            zaten detay sayfasında tam hâliyle var.
+          */
+          className="text-brand-800 underline-offset-4 after:absolute after:inset-0 after:content-[''] hover:underline"
         >
           {item.title}
         </Link>
       </h3>
 
-      {item.summary ? <p className="mt-2 text-ink-600">{item.summary}</p> : null}
+      {/*
+        AÇIKLAMA BAŞLIKLA YARIŞMAZ.
+        Gövde ölçüsündeydi (17px) ve başlıkla neredeyse aynı ağırlıkta bir
+        blok oluşturuyordu. 14px + rahat satır aralığı ile ikincil kademeye
+        iner; renk ink-600 (beyaz kartta 7.39:1) okunabilirliği korur.
+      */}
+      {item.summary ? (
+        <p className="mt-3 text-sm leading-relaxed text-ink-600">{item.summary}</p>
+      ) : null}
 
-      {footer ? <div className="mt-4">{footer}</div> : null}
+      {footer ? <div className="mt-5">{footer}</div> : null}
 
       {/*
         MİKRO METİN — bağlantı DEĞİLDİR.
@@ -132,14 +198,14 @@ export const TrainingCard: React.FC<Props> = ({
       {detailLabel ? (
         <p
           aria-hidden="true"
-          className="mt-auto flex items-center gap-1.5 pt-4 text-sm font-medium text-brand-800"
+          className="ease-editorial mt-auto flex items-center gap-1.5 pt-4 text-sm font-medium text-brand-800 transition-colors duration-500 group-hover:text-shell-950"
         >
           {detailLabel}
           <svg
             viewBox="0 0 16 16"
             width="1em"
             height="1em"
-            className="transition-transform duration-300 group-hover:translate-x-1"
+            className="ease-editorial transition-transform duration-500 group-hover:translate-x-1"
           >
             <path
               fill="none"

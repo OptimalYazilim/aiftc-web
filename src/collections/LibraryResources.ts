@@ -1,12 +1,17 @@
 import type { CollectionConfig } from 'payload'
 
-import { canAuthorContent, canDeleteContent, publishedOrAuthenticated } from '@/access'
+import { canDeleteContent, canManageLibrary, libraryReadAccess } from '@/access'
 import {
+  FOCUS_COUNTRIES,
+  INSTRUCTION_LANGUAGES,
+  LIBRARY_ACCESS_LEVELS,
   LIBRARY_ALBUM_TYPE,
+  LIBRARY_FILE_FORMATS,
   LIBRARY_RESOURCE_TYPES,
   LIBRARY_VIDEO_TYPE,
+  LICENSE_TYPES,
 } from '@/fields/options'
-import { publishingFields, translationStatusField } from '@/fields/publishing'
+import { publishingFields, reviewStatusField, translationStatusField } from '@/fields/publishing'
 import { slugField } from '@/fields/slug'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
@@ -19,18 +24,34 @@ import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
  * İki koleksiyon birbirinin yerine geçmez, birbirini TAMAMLAR:
  *
  *   document-files   → DOSYANIN KENDİSİ. Upload koleksiyonudur: MIME beyaz
- *                      listesi, boyut hesabı, sürüm, lisans, erişim seviyesi.
- *                      Sitenin her yerinde kullanılır (eğitim eki, form,
- *                      duyuru eki).
- *   library-resources → KATALOG KAYDI. Kütüphanede yayımlanan bir yayının
- *                      künyesidir: başlık, özet, tür, konu, yayın yılı.
- *                      Dosyayı `document-files`ten İLİŞKİYLE alır.
+ *                      listesi, boyut hesabı, arşiv bayrağı. Sitenin her
+ *                      yerinde kullanılır (eğitim eki, form, duyuru eki) —
+ *                      bu kullanımların çoğunda ortada bir katalog kaydı YOKTUR.
+ *   library-resources → KATALOG KAYDI (künye). Kütüphanede yayımlanan bir
+ *                      yayının kimliğidir. Dosyayı ilişkiyle alır ama
+ *                      künye bilgisini KENDİ TUTAR.
  *
- * Bu ayrım bilinçlidir. Aynı PDF birden fazla katalog kaydına bağlanabilir
- * (örneğin bir rehberin hem "Teknik Rehber" hem eğitim eki olması), ve bir
- * katalog kaydı dosya yerine dış bir adrese de işaret edebilir (`externalUrl`).
- * Dosya alanları katalog kaydına kopyalansaydı boyut/sürüm bilgisi iki yerde
- * tutulur ve zamanla ayrışırdı.
+ * KÜNYE NEDEN BURADA DURUR (Şartname EK-2 Madde 1.2)
+ * ---------------------------------------------------------------------------
+ * Dil, biçim, boyut, sürüm ve lisans alanları başlangıçta yalnızca
+ * `document-files` içindeydi. Şartname bunları KATALOG ALANI olarak sayar ve
+ * pratikte de oraya aittir:
+ *
+ *   - Katalog kaydı dosyasız olabilir (`externalUrl`). Dosya yoksa dil, biçim,
+ *     boyut ve lisansın tutulacağı bir yer de kalmıyordu.
+ *   - Aynı dosya birden çok katalog kaydına bağlanabilir; künye kayda özeldir.
+ *   - Yayının dili ile dosyanın dili aynı şey değildir: iki dilli bir raporun
+ *     tek bir PDF'i olabilir.
+ *
+ * Bu yüzden alanlar `document-files`ten SİLİNMEDİ, buraya EKLENDİ. Silinselerdi
+ * katalog kaydı olmayan ekler (TrainingPrograms.relatedDocuments,
+ * News.attachments, InternationalGuide) sürüm ve lisans bilgisini tümüyle
+ * kaybederdi.
+ *
+ * ÇAKIŞMA KURALI: `fileFormat` ve `fileSize` yüklü dosya varken ELLE
+ * GİRİLMEZ — kart bunları dosyanın `mimeType`/`filesize` alanından okur
+ * (components/library/LibraryResourceCard.tsx). Bu iki alan yalnızca dış
+ * bağlantılı kayıtlar içindir.
  *
  * ---------------------------------------------------------------------------
  * NEDEN ARTIK SİTE İÇİNDE
@@ -47,9 +68,12 @@ import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
  * ---------------------------------------------------------------------------
  * ÇOK DİLLİLİK
  * ---------------------------------------------------------------------------
- * `title`, `description` ve `slug` yerelleştirilmiştir. Dosyanın KENDİSİ
- * değildir: bir rapor tek dilde yayımlanmış olabilir. Yayının dili
- * `document-files.language` alanında durur ve kartta gösterilir.
+ * `title`, `description`, `slug` ve `keywords` yerelleştirilmiştir; künyenin
+ * çevrilebilir kısmı budur. Yayının KENDİSİ çevrilmez: bir rapor tek dilde
+ * yayımlanmış olabilir. Yayının hangi dil(ler)de olduğu ayrı bir alanda
+ * (`language`) durur ve arayüz dilinden bağımsızdır — Rusça gezinen bir
+ * ziyaretçi de yalnızca Türkçe yayımlanmış bir raporun Türkçe olduğunu
+ * görebilmelidir.
  * ============================================================================
  */
 export const LibraryResources: CollectionConfig = {
@@ -62,7 +86,7 @@ export const LibraryResources: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'resourceType', 'publicationYear', '_status'],
     group: { tr: 'Medya', en: 'Media', ru: 'Медиа' },
-    listSearchableFields: ['title', 'description'],
+    listSearchableFields: ['title', 'description', 'institution', 'identifier'],
     description: {
       tr: 'Kütüphanede yayımlanan yayınların künyesi. Dosyayı önce “Site Belgeleri”ne yükleyin, sonra buradan ilişkilendirin.',
       en: 'Catalogue records for library publications. Upload the file under “Site documents” first, then link it here.',
@@ -70,9 +94,10 @@ export const LibraryResources: CollectionConfig = {
     },
   },
   access: {
-    read: publishedOrAuthenticated,
-    create: canAuthorContent,
-    update: canAuthorContent,
+    // Sartname 1.7 — karar sirasi ve gerekcesi access/index.ts icinde.
+    read: libraryReadAccess,
+    create: canManageLibrary,
+    update: canManageLibrary,
     delete: canDeleteContent,
   },
   versions: {
@@ -94,6 +119,42 @@ export const LibraryResources: CollectionConfig = {
   },
   fields: [
     slugField(),
+    reviewStatusField,
+
+    {
+      /*
+        ERİŞİM SEVİYESİ — ŞARTNAME 1.7
+        ---------------------------------------------------------------------
+        Bu alan bir ETİKET DEĞİL, ZORLANAN bir kuraldır: koleksiyonun `read`
+        erişimi (access/index.ts → `libraryReadAccess`) doğrudan bu değere
+        bakar ve yetkisi olmayan kullanıcının sorgusundan kaydı ÇIKARIR.
+
+        Varsayılan `public` DEĞİLDİR — `staff`. Yanlış tarafa düşen varsayılan
+        seçilirken şu soru sorulur: "editör alanı doldurmayı unutursa ne olsun?"
+        Kapalı bir kaydın yanlışlıkla herkese açılması, açık bir kaydın
+        yanlışlıkla kapalı kalmasından çok daha pahalıdır.
+
+        DEĞERLER `Users.role` ile `ACCESS_LEVEL_TO_ROLE` haritası üzerinden
+        eşleşir (fields/options.ts). Harita TEK YERDEDİR; yeni bir seviye
+        eklenip haritaya yazılmazsa o seviyedeki kayıtları kimse göremez —
+        yani hata güvenli tarafa düşer.
+      */
+      name: 'accessLevel',
+      type: 'select',
+      required: true,
+      defaultValue: 'staff',
+      index: true,
+      options: LIBRARY_ACCESS_LEVELS,
+      label: { tr: 'Erişim Seviyesi', en: 'Access level', ru: 'Уровень доступа' },
+      admin: {
+        position: 'sidebar',
+        description: {
+          tr: 'Bu kaydı kimler görebilir. "Herkese açık" dışındaki seçenekler oturum açmayı ZORUNLU kılar. DİKKAT: bu kural kaydı gizler, ekli dosyanın doğrudan adresini KORUMAZ (bkz. docs/access-control-guide.md).',
+          en: 'Who can see this record. Anything other than Public requires a login. NOTE: this hides the record but does not protect the attached file URL.',
+          ru: 'Кто видит эту запись. Любой уровень кроме «Открытый» требует входа.',
+        },
+      },
+    },
 
     {
       name: 'resourceType',
@@ -187,6 +248,46 @@ export const LibraryResources: CollectionConfig = {
         },
       },
     },
+    {
+      /**
+       * YÜKLEYEN KULLANICI  (Şartname EK-2 Madde 1.2)
+       * ---------------------------------------------------------------------
+       * Kaydı kimin kütüphaneye koyduğunu tutar. `versions` zaten sürüm başına
+       * bir yazar tutuyor ama o kayıt SON DÜZENLEYENİ gösterir; künyede
+       * istenen bilgi ilk yükleyendir ve düzenlemelerle değişmemelidir.
+       *
+       * OTOMATİK DOLDURULUR, KİLİTLENMEZ. `create` işleminde alan boşsa
+       * oturumdaki kullanıcı yazılır. Salt okunur yapılmadı: içerik bir
+       * kurumdan toplu geldiğinde (örneğin FAO'nun gönderdiği 40 yayın)
+       * gerçek yükleyen, kaydı panele giren editörden farklı olabilir ve
+       * künye gerçeği söylemelidir.
+       *
+       * `seed-*.ts` betikleri `overrideAccess` ile ve çoğu zaman kullanıcısız
+       * çalışır; orada alan boş kalır — bu doğru davranıştır, uydurma bir
+       * kullanıcı yazmaktansa boş bırakmak yeğdir.
+       */
+      name: 'uploadedBy',
+      type: 'relationship',
+      relationTo: 'users',
+      label: { tr: 'Yükleyen', en: 'Uploaded by', ru: 'Загрузил' },
+      admin: {
+        position: 'sidebar',
+        description: {
+          tr: 'Kaydı oluştururken otomatik doldurulur. Yayın başka biri adına giriliyorsa değiştirebilirsiniz.',
+          en: 'Filled in automatically on creation. Change it if you are entering the record on someone else’s behalf.',
+          ru: 'Заполняется автоматически при создании записи.',
+        },
+      },
+      hooks: {
+        beforeChange: [
+          ({ operation, req, value }) => {
+            if (value) return value
+            if (operation !== 'create') return value
+            return req.user?.id ?? value
+          },
+        ],
+      },
+    },
     translationStatusField,
     publishingFields,
 
@@ -222,12 +323,178 @@ export const LibraryResources: CollectionConfig = {
               name: 'author',
               type: 'text',
               localized: true,
-              label: { tr: 'Yazar / Kurum', en: 'Author / institution', ru: 'Автор / организация' },
+              label: { tr: 'Yazar / Editör', en: 'Author / editor', ru: 'Автор / редактор' },
               admin: {
                 description: {
-                  tr: 'Örn. “FAO” veya “Orman Genel Müdürlüğü”. Boş bırakılabilir.',
-                  en: 'e.g. “FAO” or “General Directorate of Forestry”. Optional.',
-                  ru: 'Например «ФАО». Необязательно.',
+                  tr: 'Yayını YAZAN kişi veya ekip. Örn. “Dr. A. Yılmaz” ya da “Yangın Çalışma Grubu”. Yayımlayan kurum için alttaki alanı kullanın. Boş bırakılabilir.',
+                  en: 'The person or team who wrote the publication. Use the field below for the issuing institution. Optional.',
+                  ru: 'Автор публикации. Для организации-издателя используйте поле ниже.',
+                },
+              },
+            },
+            {
+              /**
+               * KURUM `author`DAN AYRI TUTULUR (Şartname EK-2 Madde 1.2).
+               * Alan eskiden "Yazar / Kurum" tek kutusuydu; künyede ikisi
+               * farklı bilgidir ve çoğu kurumsal yayında ikisi de vardır
+               * ("Dr. A. Yılmaz" yazmıştır, "FAO" yayımlamıştır). Tek kutuda
+               * tutulsaydı kuruma göre listeleme mümkün olmazdı.
+               *
+               * Serbest metin, çünkü kurum listesi kapalı bir küme değildir:
+               * FAO, OGM, UNDP, üniversiteler, ortak yayınlar. Kapalı bir
+               * seçim listesi ilk yabancı ortak yayında tıkanırdı.
+               */
+              name: 'institution',
+              type: 'text',
+              localized: true,
+              index: true,
+              label: { tr: 'Kurum / Yayıncı', en: 'Institution / publisher', ru: 'Организация / издатель' },
+              admin: {
+                description: {
+                  tr: 'Yayını çıkaran kurum. Örn. “FAO”, “Orman Genel Müdürlüğü”, “AIFTC”. Ortak yayınlarda kurumları eğik çizgiyle ayırın.',
+                  en: 'The institution that issued the publication, e.g. “FAO”, “General Directorate of Forestry”.',
+                  ru: 'Организация, выпустившая публикацию, например «ФАО».',
+                },
+              },
+            },
+            {
+              /**
+               * YAYININ DİLİ — ARAYÜZ DİLİ DEĞİL.
+               * `title`/`description` yerelleştirilmiştir (künyeyi her ziyaretçi
+               * kendi dilinde okur); bu alan ise YAYININ KENDİSİNİN hangi
+               * dil(ler)de olduğunu söyler ve çevrilmez.
+               *
+               * `hasMany`: kurumsal yayınların çoğu iki dillidir (TR+EN) ve
+               * çoğu zaman tek bir PDF içinde gelir.
+               */
+              name: 'language',
+              type: 'select',
+              hasMany: true,
+              index: true,
+              options: INSTRUCTION_LANGUAGES,
+              label: { tr: 'Yayın Dili', en: 'Publication language', ru: 'Язык публикации' },
+              admin: {
+                description: {
+                  tr: 'Yayının kendi dili. Sitenin arayüz dilinden bağımsızdır; iki dilli yayınlarda birden çok seçin.',
+                  en: 'The language of the publication itself, independent of the site’s interface language.',
+                  ru: 'Язык самой публикации, независимо от языка интерфейса сайта.',
+                },
+              },
+            },
+            {
+              /**
+               * ÜLKE — `News.countries` ve `Projects.focusCountries` ile AYNI
+               * SÖZLÜK. Ziyaretçi "Kazakistan" etiketini haberde, projede ve
+               * kütüphanede aynı adla görür.
+               *
+               * `hasMany`: bölgesel yayınlar tek ülkeye ait değildir
+               * ("Orta Asya Yangın Raporu" beş ülkeyi birden kapsar).
+               */
+              name: 'countries',
+              type: 'select',
+              hasMany: true,
+              index: true,
+              options: FOCUS_COUNTRIES,
+              label: { tr: 'Ülke / Bölge', en: 'Country / region', ru: 'Страна / регион' },
+              admin: {
+                description: {
+                  tr: 'Yayının ilgilendirdiği ülke(ler). Bölgesel yayınlarda birden çok seçin; listede yoksa “Diğer”i işaretleyip ülkeyi özete yazın.',
+                  en: 'The country or countries the publication concerns. Pick several for regional publications.',
+                  ru: 'Страны, к которым относится публикация.',
+                },
+              },
+            },
+            {
+              /**
+               * ANAHTAR KELİMELER — `TrainingTopics.keywords` ile aynı desen.
+               * `topics` kapalı bir sözlüktür (filtre çubuğunu üretir);
+               * bu alan serbesttir ve site içi aramayı besler (Şartname 11.4):
+               * "GCP/SEC/024/TUR", "orman yangını sonrası rehabilitasyon" gibi
+               * konu listesine girmeyecek kadar özel terimler buraya yazılır.
+               *
+               * `localized`: arama sorgusu ziyaretçinin dilinde gelir.
+               */
+              name: 'keywords',
+              type: 'text',
+              hasMany: true,
+              localized: true,
+              label: { tr: 'Anahtar Kelimeler', en: 'Keywords', ru: 'Ключевые слова' },
+              admin: {
+                description: {
+                  tr: 'Site içi aramayı besler (Şartname 11.4). Her terimi ayrı ayrı girin; konu listesindekileri tekrar etmeyin.',
+                  en: 'Feeds on-site search. Enter one term per entry; do not repeat the topics above.',
+                  ru: 'Используются для поиска по сайту. Вводите по одному термину.',
+                },
+              },
+            },
+            {
+              /**
+               * KALICI TANIMLAYICI — DOI / ISBN / ISSN
+               * ---------------------------------------------------------------
+               * Tek bir serbest metin alanı, üç ayrı alan değil: bir yayında
+               * bunlardan genellikle YALNIZCA BİRİ bulunur ve üç kutu açmak
+               * editöre ikisini boş bırakma yükü bindirirdi.
+               *
+               * YERELLEŞTİRİLMEZ: tanımlayıcı dilden bağımsızdır, aynı yayının
+               * Türkçe ve İngilizce künyesinde aynı DOI durur.
+               *
+               * Biçim DOĞRULANMAZ. Üç şemanın (DOI 10.x/…, ISBN-10/13, ISSN
+               * ####-####) hepsini kapsayan bir düzenli ifade, geçerli ama
+               * beklenmedik bir tanımlayıcıyı reddedip editörü kilitleme
+               * riskini taşır; alan zaten isteğe bağlıdır.
+               */
+              name: 'identifier',
+              type: 'text',
+              index: true,
+              label: { tr: 'DOI / ISBN / ISSN', en: 'DOI / ISBN / ISSN', ru: 'DOI / ISBN / ISSN' },
+              admin: {
+                description: {
+                  tr: 'Yayının kalıcı tanımlayıcısı. Ön ek ile birlikte yazın: “DOI: 10.4060/cb1234tr” veya “ISBN 978-605-…”. Yoksa boş bırakın.',
+                  en: 'Persistent identifier, written with its prefix, e.g. “DOI: 10.4060/cb1234en”. Leave empty if there is none.',
+                  ru: 'Постоянный идентификатор публикации с префиксом, например «DOI: 10.4060/…».',
+                },
+              },
+            },
+            {
+              /**
+               * EĞİTİM BAĞLANTISI — `TrainingPrograms.libraryCollectionKey`
+               * İLE KARIŞTIRILMAMALIDIR.
+               *
+               * O alan, EK-2'de AYRI BİR SİSTEM olarak kurulacak kütüphanedeki
+               * koleksiyon/etiket kodunu tutan bir METİNDİR ve altı eğitim
+               * kaydında gerçek değerlerle doludur. Bu alan ise SİTE İÇİ
+               * kütüphanenin kendi ilişkisidir: gerçek bir yabancı anahtar
+               * kurar, kayıt silindiğinde bozulmaz ve iki yönlü gezinmeye
+               * izin verir.
+               *
+               * İkisi bir arada yaşayabilir; biri dış sisteme, öteki içeriye
+               * bakar. Metin alanı SİLİNMEDİ çünkü içindeki değerler
+               * kurtarılamaz veri olurdu.
+               */
+              name: 'relatedTrainings',
+              type: 'relationship',
+              relationTo: 'training-programs',
+              hasMany: true,
+              label: { tr: 'İlgili Eğitimler', en: 'Related trainings', ru: 'Связанные обучения' },
+              admin: {
+                description: {
+                  tr: 'Bu yayının materyali olduğu eğitim programları.',
+                  en: 'Training programmes this publication belongs to.',
+                  ru: 'Программы обучения, к которым относится публикация.',
+                },
+              },
+            },
+            {
+              name: 'relatedProjects',
+              type: 'relationship',
+              relationTo: 'projects',
+              hasMany: true,
+              label: { tr: 'İlgili Projeler', en: 'Related projects', ru: 'Связанные проекты' },
+              admin: {
+                description: {
+                  tr: 'Yayın bir proje çıktısıysa (örn. GCP/SEC/024/TUR) projeyi buradan bağlayın.',
+                  en: 'If the publication is a project output, link the project here.',
+                  ru: 'Если публикация является результатом проекта, укажите проект.',
                 },
               },
             },
@@ -356,6 +623,50 @@ export const LibraryResources: CollectionConfig = {
             },
             {
               /**
+               * ALTYAZI DOSYASI — WCAG 2.2 ÖLÇÜTÜ 1.2.2 (Kayıtlı Ses için
+               * Altyazı, Seviye A) · Şartname Madde 13
+               * ---------------------------------------------------------------
+               * `GalleryAlbums.captionsUrl` ile AYNI DESEN; kütüphanedeki video
+               * kayıtları da aynı yükümlülük altındadır ve orada olup burada
+               * olmaması bir boşluktu.
+               *
+               * WebVTT seçildi çünkü HTML5 `<video>` öğesinin `<track>` alt
+               * öğesi tarayıcıda YALNIZCA bu biçimi okur; SRT dosyası
+               * yüklenirse hiçbir şey görünmez ve hata da vermez.
+               *
+               * DÜRÜST SINIR: bu alan boş bırakılabilir. Zorunlu yapılsaydı
+               * editör alanı doldurmak için altyazısı olmayan bir dosya adresi
+               * uydurmak zorunda kalır, kayıt teknik olarak "uyumlu" görünür
+               * ama ziyaretçi hâlâ altyazı göremezdi. Uyum, alanın dolu
+               * olmasıyla değil altyazının VAR OLMASIYLA sağlanır.
+               */
+              name: 'captionsUrl',
+              type: 'text',
+              label: { tr: 'Altyazı (WebVTT)', en: 'Captions (WebVTT)', ru: 'Субтитры (WebVTT)' },
+              admin: {
+                condition: (_, siblingData) => siblingData?.resourceType === LIBRARY_VIDEO_TYPE,
+                description: {
+                  tr: 'WCAG 2.2 ölçütü 1.2.2 gereği önerilir. Yalnızca .vtt (WebVTT) biçimi tarayıcıda çalışır; SRT dosyası görünmez. Dosyayı Site Belgeleri’ne yükleyip adresini buraya yapıştırın.',
+                  en: 'Recommended by WCAG 2.2 (1.2.2). Only .vtt (WebVTT) works in the browser; SRT files will not display.',
+                  ru: 'Рекомендуется по WCAG 2.2 (1.2.2). В браузере работает только формат .vtt (WebVTT).',
+                },
+              },
+              validate: (value: unknown) => {
+                if (!value) return true
+                if (typeof value !== 'string') return 'Geçersiz değer.'
+                /*
+                  Değer bir <track src> içine basılır. `externalUrl` ile aynı
+                  gerekçe: `javascript:` ve `data:` şemaları engellenir.
+                  Site içi yüklemeler `/api/...` ile başlayan göreli adres
+                  olduğu için "/" ile başlayanlar da kabul edilir.
+                */
+                return /^(https?:\/\/|\/)/i.test(value)
+                  ? true
+                  : 'Adres http://, https:// ya da / ile başlamalıdır.'
+              },
+            },
+            {
+              /**
                * FOTOĞRAF ALBÜMÜ
                * `hasMany` bir upload ilişkisi: aynı görsel birden fazla
                * albümde kullanılabilir ve Medya kitaplığında tek kopya kalır.
@@ -423,6 +734,113 @@ export const LibraryResources: CollectionConfig = {
                 return typeof value === 'string' && /^https?:\/\//i.test(value)
                   ? true
                   : 'Adres http:// veya https:// ile başlamalıdır.'
+              },
+            },
+
+            /* ================================================================
+               KÜNYENİN DOSYA TARAFI  (Şartname EK-2 Madde 1.2)
+               ----------------------------------------------------------------
+               Aşağıdaki beş alan `document-files` içinde de vardır ve orada
+               KALMIŞTIR (gerekçe dosyanın başındaki blokta). Buradakiler
+               katalog kaydının kendi künyesidir; kayıt dosyasız olduğunda
+               (dış bağlantı) tek bilgi kaynağıdır.
+               ================================================================ */
+            {
+              /**
+               * BİÇİM — YALNIZCA DOSYASIZ KAYITLAR İÇİN.
+               * Yüklü dosya varsa kart biçimi `mimeType`ten okur
+               * (LibraryResourceCard → FORMAT_BY_MIME) ve bu alan kullanılmaz.
+               * `admin.condition` bu yüzden alanı yalnızca dosya seçilmemişken
+               * gösterir: editöre ikinci bir "doğru" girme fırsatı verilmezse
+               * iki değer birbiriyle çelişemez.
+               */
+              name: 'fileFormat',
+              type: 'select',
+              options: LIBRARY_FILE_FORMATS,
+              label: { tr: 'Dosya Biçimi', en: 'File format', ru: 'Формат файла' },
+              admin: {
+                condition: (_, siblingData) => !siblingData?.file,
+                description: {
+                  tr: 'Yalnızca dış bağlantılı kayıtlarda doldurun. Dosya yüklüyse biçim dosyadan otomatik okunur ve bu alan gizlenir.',
+                  en: 'Fill in only for records that link out. When a file is attached the format is read from it automatically.',
+                  ru: 'Заполняйте только для записей с внешней ссылкой.',
+                },
+              },
+            },
+            {
+              /**
+               * BOYUT — aynı gerekçe. Serbest metin, sayı değil: değer
+               * ziyaretçiye okunacak şekilde ("4,2 MB") yazılır ve dış
+               * kaynakta boyut çoğu zaman ancak yaklaşık bilinir.
+               * `document-files.humanFileSize` ile aynı biçimi kullanın ki
+               * kartlar tek tip görünsün.
+               */
+              name: 'fileSize',
+              type: 'text',
+              label: { tr: 'Dosya Boyutu', en: 'File size', ru: 'Размер файла' },
+              admin: {
+                condition: (_, siblingData) => !siblingData?.file,
+                description: {
+                  tr: 'Yalnızca dış bağlantılı kayıtlarda. Okunabilir biçimde yazın: “4,2 MB”. Dosya yüklüyse boyut otomatik hesaplanır.',
+                  en: 'Only for records that link out. Write it readably, e.g. “4.2 MB”.',
+                  ru: 'Только для внешних ссылок. Указывайте в читаемом виде, например «4,2 МБ».',
+                },
+              },
+            },
+            {
+              /**
+               * SÜRÜM — varsayılan DEĞERİ YOK.
+               * `document-files.version` alanı "1.0" ile başlar çünkü orada
+               * her yükleme bir dosya sürümüdür. Katalogda ise yayınların
+               * çoğunun sürümü YOKTUR; herkese "1.0" yazmak künyeye uydurma
+               * bilgi koymak olurdu. Sürümlü yayınlar (güncellenen rehberler,
+               * standartlar) bu alanı elle doldurur.
+               */
+              name: 'version',
+              type: 'text',
+              label: { tr: 'Sürüm', en: 'Version', ru: 'Версия' },
+              admin: {
+                description: {
+                  tr: 'Yayının sürümü varsa yazın (örn. “2.1” ya da “Gözden geçirilmiş 2. baskı”). Çoğu yayında boş kalır.',
+                  en: 'Version of the publication, if it has one. Usually left empty.',
+                  ru: 'Версия публикации, если она есть. Обычно остаётся пустой.',
+                },
+              },
+            },
+            {
+              /**
+               * LİSANS — `LICENSE_TYPES` ORTAK LİSTESİ.
+               * Liste `document-files` ile aynıdır; iki yerde ayrı bir lisans
+               * sözlüğü tutulsaydı "CC BY 4.0" ile "CC-BY 4.0" gibi ayrışmalar
+               * kaçınılmaz olurdu.
+               *
+               * VARSAYILAN YOK. Telif durumu bilinmeyen bir yayına varsayılan
+               * atamak — hangi yöne olursa olsun — kurum adına yanlış bir
+               * hukuki beyandır. Boş bırakılan alan "belirtilmemiş" demektir
+               * ve kartta lisans rozeti basılmaz.
+               */
+              name: 'license',
+              type: 'select',
+              options: LICENSE_TYPES,
+              label: { tr: 'Lisans / Kullanım Hakkı', en: 'License', ru: 'Лицензия' },
+              admin: {
+                description: {
+                  tr: 'Yayının kullanım koşulu. Emin değilseniz BOŞ BIRAKIN — yanlış lisans beyanı kurumu bağlar.',
+                  en: 'Terms of use. Leave empty if unsure — an incorrect licence statement binds the institution.',
+                  ru: 'Условия использования. Если не уверены — оставьте пустым.',
+                },
+              },
+            },
+            {
+              name: 'copyrightHolder',
+              type: 'text',
+              label: { tr: 'Telif Sahibi', en: 'Copyright holder', ru: 'Правообладатель' },
+              admin: {
+                description: {
+                  tr: 'Telif hakkı sahibi, yayımlayan kurumdan farklıysa yazın (örn. ortak yayınlarda).',
+                  en: 'Fill in when the rights holder differs from the issuing institution.',
+                  ru: 'Укажите, если правообладатель отличается от издателя.',
+                },
               },
             },
             {

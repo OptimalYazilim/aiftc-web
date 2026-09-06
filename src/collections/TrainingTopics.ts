@@ -3,7 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { canAuthorContent, canDeleteContent, publishedOrAuthenticated } from '@/access'
 import { publishingFields, translationStatusField } from '@/fields/publishing'
 import { slugField } from '@/fields/slug'
-import { TRAINING_LEVELS } from '@/fields/options'
+import { TRAINING_LEVELS, TRAINING_TOPIC_CATEGORIES } from '@/fields/options'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
 
@@ -135,27 +135,7 @@ export const TrainingTopics: CollectionConfig = {
                   ru: 'Общий словарь с цифровой библиотекой (EK-2).',
                 },
               },
-              options: [
-                { value: 'forest-fires', label: { tr: 'Orman yangınları', en: 'Forest fires', ru: 'Лесные пожары' } },
-                {
-                  value: 'integrated-fire-management',
-                  label: { tr: 'Entegre yangın yönetimi', en: 'Integrated fire management', ru: 'Интегрированное управление пожарами' },
-                },
-                { value: 'sfm', label: { tr: 'Sürdürülebilir orman yönetimi', en: 'Sustainable forest management', ru: 'Устойчивое лесоуправление' } },
-                { value: 'flr', label: { tr: 'Orman peyzaj restorasyonu', en: 'Forest landscape restoration', ru: 'Восстановление лесных ландшафтов' } },
-                { value: 'land-degradation', label: { tr: 'Arazi bozulumuyla mücadele', en: 'Combating land degradation', ru: 'Борьба с деградацией земель' } },
-                { value: 'climate-change', label: { tr: 'İklim değişikliği', en: 'Climate change', ru: 'Изменение климата' } },
-                { value: 'nursery-afforestation', label: { tr: 'Fidanlık ve ağaçlandırma', en: 'Nursery & afforestation', ru: 'Питомники и облесение' } },
-                { value: 'silviculture', label: { tr: 'Silvikültür', en: 'Silviculture', ru: 'Лесоводство' } },
-                { value: 'protected-areas', label: { tr: 'Korunan alan yönetimi', en: 'Protected area management', ru: 'Управление ООПТ' } },
-                { value: 'nature-conservation', label: { tr: 'Doğa koruma', en: 'Nature conservation', ru: 'Охрана природы' } },
-                { value: 'gis-rs', label: { tr: 'CBS ve uzaktan algılama', en: 'GIS & remote sensing', ru: 'ГИС и ДЗЗ' } },
-                { value: 'forest-pests', label: { tr: 'Orman zararlıları ve hastalıkları', en: 'Forest pests & diseases', ru: 'Вредители и болезни леса' } },
-                { value: 'nwfp', label: { tr: 'Odun dışı orman ürünleri', en: 'Non-wood forest products', ru: 'Недревесная продукция леса' } },
-                { value: 'forest-livelihoods', label: { tr: 'Orman temelli geçim kaynakları', en: 'Forest-based livelihoods', ru: 'Лесные средства к существованию' } },
-                { value: 'gender', label: { tr: 'Toplumsal cinsiyet ve ormancılık', en: 'Gender & forestry', ru: 'Гендер и лесное хозяйство' } },
-                { value: 'capacity-development', label: { tr: 'Kurumsal kapasite geliştirme', en: 'Institutional capacity development', ru: 'Развитие институционального потенциала' } },
-              ],
+              options: TRAINING_TOPIC_CATEGORIES,
             },
             {
               name: 'level',

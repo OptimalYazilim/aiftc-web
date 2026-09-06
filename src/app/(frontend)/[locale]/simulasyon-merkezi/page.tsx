@@ -264,7 +264,7 @@ export default async function SimulationCentrePage({ params }: Props) {
                     /* `scroll-mt`: eğitim sayfasından çıpayla gelindiğinde
                        yapışkan başlık kartı örtmesin. */
                     id={system.slug ?? undefined}
-                    className="scroll-mt-24 overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-xs"
+                    className="ease-editorial scroll-mt-24 overflow-hidden rounded-card border border-line bg-surface transition-colors duration-500 hover:border-shell-900"
                   >
                     <div className="grid gap-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
                       {/* Görsel */}

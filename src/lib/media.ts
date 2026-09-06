@@ -119,6 +119,42 @@ export const humanBytes = (bytes: unknown): string | null => {
   const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), units.length - 1)
   return `${(n / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`
 }
+export type ResolvedAttachment = {
+  url: string
+  mimeType: string | null
+  humanFileSize: string | null
+  filesize: number | null
+}
+
+/**
+ * İNDİRİLEBİLİR EK — `document-files` VEYA `media`.
+ * ============================================================================
+ * Kütüphane listesi ve künye sayfası AYNI çözümlemeye ihtiyaç duyar; iki
+ * yerde ayrı yazılsaydı biri düzeltilip öteki unutulurdu.
+ *
+ * ÇOK HEDEFLİ: `file` alanı hem `document-files` hem `media` koleksiyonuna
+ * bakabiliyor (ikisi de PDF kabul ediyor). Payload çok hedefli ilişkiyi
+ * `{ relationTo, value }` zarfıyla döndürür; `unwrapRelation` onu açar.
+ *
+ * BOYUT İKİ KAYNAKTAN GELEBİLİR:
+ *   document-files → `humanFileSize` alanı (koleksiyonun kendi hook'u doldurur)
+ *   media          → böyle bir alan YOK, ham `filesize` bayttan hesaplanır
+ * Bu yüzden önce hazır değere bakılır, yoksa hesaplanır.
+ */
+export const resolveAttachment = (value: unknown): ResolvedAttachment | null => {
+  const doc = unwrapRelation(value)
+  if (!doc || typeof doc.url !== 'string') return null
+
+  const ready = typeof doc.humanFileSize === 'string' ? doc.humanFileSize.trim() : ''
+
+  return {
+    url: doc.url,
+    mimeType: typeof doc.mimeType === 'string' ? doc.mimeType : null,
+    humanFileSize: ready || humanBytes(doc.filesize),
+    filesize: typeof doc.filesize === 'number' ? doc.filesize : null,
+  }
+}
+
 export type ResolvedVideo = {
   url: string
   mimeType: string

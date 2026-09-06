@@ -146,13 +146,29 @@ export default async function NewsListPage({ params, searchParams }: Props) {
           <>
             <p className="text-ink-600">{t('resultsCount', { count: result.totalDocs })}</p>
 
-            <ul className="mt-6 grid auto-rows-fr gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {items.map((item) => (
+            {/*
+              --- EDİTORYAL IZGARA — ASİMETRİK ------------------------------
+              Eşit on iki kutu, bir dergi sayfası değil bir katalogdur. İlk
+              haber SAYFANIN MANŞETİdir ve iki sütun genişliğinde durur;
+              geri kalanlar normal ölçekte akar.
+
+              Asimetri `auto-rows-fr` ile birlikte çalışmaz — o kural tüm
+              satırları eşitler ve manşetin geniş durmasını engellerdi;
+              bu yüzden kaldırıldı. Kart yükseklikleri artık içeriklerine
+              göre değişir, ki editoryal yerleşimde beklenen budur.
+
+              Mobilde asimetri YOKTUR: tek sütunda "geniş" diye bir şey
+              yoktur ve manşet zaten en üstte, yani en görünür yerdedir.
+            */}
+            <ul className="mt-6 grid gap-x-6 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
+              {items.map((item, index) => (
                 <NewsCard
                   key={String(item.id)}
                   locale={locale}
                   item={item}
                   readMoreLabel={t('readMore')}
+                  size={index === 0 ? 'feature' : 'default'}
+                  className={index === 0 ? 'sm:col-span-2' : ''}
                 />
               ))}
             </ul>

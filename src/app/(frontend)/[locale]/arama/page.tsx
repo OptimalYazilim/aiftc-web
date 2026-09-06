@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import type { CollectionSlug } from 'payload'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -51,6 +52,7 @@ const DETAIL_BY_COLLECTION = {
   'training-topics': 'training-topic',
   news: 'news-item',
   'simulation-systems': 'simulation-system',
+  'library-resources': 'library-resource',
 } as const
 
 type IndexedCollection = keyof typeof DETAIL_BY_COLLECTION | 'pages' | 'faqs'
@@ -80,9 +82,105 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 type Row = {
   id: string | number
+  /** İndekslenen KAYDIN id'si (arama kaydının değil) — erişim süzgeci bunu kullanır. */
+  docId: string | number | null
   title: string
   collection: IndexedCollection
   slug: string | null
+}
+
+/** Slug taşıyan (yani bağlantılanabilen) kaynak koleksiyonlar. */
+const SLUG_COLLECTIONS = [
+  'training-programs',
+  'training-topics',
+  'news',
+  'simulation-systems',
+  'library-resources',
+  'pages',
+] as const
+
+/**
+ * SATIRLARI KAYNAK KOLEKSİYONDAN ZENGİNLEŞTİR — SLUG + ERİŞİM DENETİMİ
+ * ============================================================================
+ * TEK BİR ADIMDA İKİ AYRI ARIZAYI KAPATIR.
+ *
+ * 1) BAĞLANTILAR HİÇ ÇALIŞMIYORDU (ölçüldü, 2026-09-06)
+ * ---------------------------------------------------------------------------
+ * Sorgu `depth: 1` ile atılıyordu ve koddaki not "`doc` ilişkisinin içindeki
+ * kaydın `slug` alanı için gerekli" diyordu. VARSAYIM YANLIŞTI: arama
+ * eklentisinin çok hedefli `doc` alanı derinlik 1'de bile ÇÖZÜLMÜYOR, ham id
+ * dönüyor. Ölçüm:
+ *
+ *     başlık "Uluslararası Entegre Yangın Yönetimi"
+ *       relationTo = training-programs
+ *       value      = 7            ← nesne değil, SAYI
+ *
+ * `slug` her zaman `null` kaldığı için `rowHref` her satırda `null` dönüyor
+ * ve sayfada TEK BİR BAĞLANTI BİLE basılmıyordu (tarayıcıda doğrulandı:
+ * `document.querySelectorAll('main a').length === 0`). Arama sonuçları
+ * okunabiliyor ama tıklanamıyordu.
+ *
+ * 2) ERİŞİM DENETİMİ ATLANIYORDU
+ * ---------------------------------------------------------------------------
+ * `search-index` eklentinin ürettiği AYRI bir koleksiyondur; kaynak
+ * koleksiyonun `read` kuralını DEVRALMAZ. Kütüphanede `accessLevel: 'staff'`
+ * olan bir kaydın BAŞLIĞI, kayıt listede hiç görünmese bile arama
+ * sonuçlarında çıkıyordu.
+ *
+ * ÇÖZÜM: satırların kaynak id'leri koleksiyona göre gruplanır ve her grup
+ * için `overrideAccess: false` ile TEK bir sorgu atılır. Bu sorgu hem slug'ı
+ * getirir hem de erişim süzgecini uygular:
+ *   - dönen kayıt  → slug'ı yazılır, satır bağlantılı olur,
+ *   - dönmeyen id  → o ziyaretçinin göremeyeceği (ya da artık yayında
+ *                    olmayan) kayıttır; satır listeden DÜŞÜRÜLÜR.
+ *
+ * Maliyet: koleksiyon başına bir sorgu, sayfa başına en fazla `LIMIT` id.
+ *
+ * `faqs` bu listede YOKTUR: SSS kayıtlarının slug'ı ve detay sayfası yoktur,
+ * ilgili sayfanın içinde yaşarlar. O satırlar bağlantısız ama görünür kalır.
+ */
+const satirlariZenginlestir = async (rows: Row[], locale: Locale): Promise<Row[]> => {
+  const gruplar = new Map<string, (string | number)[]>()
+
+  for (const row of rows) {
+    if (row.docId == null) continue
+    if (!(SLUG_COLLECTIONS as readonly string[]).includes(row.collection)) continue
+    const mevcut = gruplar.get(row.collection) ?? []
+    mevcut.push(row.docId)
+    gruplar.set(row.collection, mevcut)
+  }
+
+  if (gruplar.size === 0) return rows
+
+  const payload = await payloadClient()
+  const sluglar = new Map<string, string>()
+
+  await Promise.all(
+    [...gruplar].map(async ([collection, ids]) => {
+      const sonuc = await payload.find({
+        collection: collection as CollectionSlug,
+        locale,
+        where: { id: { in: ids } },
+        limit: ids.length,
+        depth: 0,
+        overrideAccess: false,
+      })
+
+      for (const doc of sonuc.docs as unknown as { id: string | number; slug?: unknown }[]) {
+        if (typeof doc.slug === 'string' && doc.slug) {
+          sluglar.set(`${collection}:${doc.id}`, doc.slug)
+        }
+      }
+    }),
+  )
+
+  return rows
+    .filter(
+      (row) =>
+        !(SLUG_COLLECTIONS as readonly string[]).includes(row.collection) ||
+        sluglar.has(`${row.collection}:${row.docId}`),
+    )
+    .map((row) => ({ ...row, slug: sluglar.get(`${row.collection}:${row.docId}`) ?? row.slug }))
 }
 
 /**
@@ -149,12 +247,20 @@ export default async function SearchPage({ params, searchParams }: Props) {
 
         return {
           id: doc.id,
+          docId:
+            related && typeof related === 'object' && 'id' in related
+              ? ((related as { id?: string | number }).id ?? null)
+              : typeof related === 'number' || typeof related === 'string'
+                ? related
+                : null,
           title: doc.title ?? '',
           collection: (doc.doc?.relationTo ?? 'pages') as IndexedCollection,
           slug,
         }
       })
       .filter((row) => row.title)
+
+    rows = await satirlariZenginlestir(rows, locale)
   }
 
   return (
@@ -193,7 +299,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
             />
             <button
               type="submit"
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-700 px-7 font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow active:scale-[0.98]"
+              className="ease-editorial inline-flex min-h-12 items-center justify-center rounded-full bg-shell-950 px-7 font-bold text-white transition-colors duration-300 hover:bg-shell-900"
             >
               {t('submit')}
             </button>

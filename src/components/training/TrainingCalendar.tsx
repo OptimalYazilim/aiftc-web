@@ -6,6 +6,8 @@ import React, { useMemo, useState } from 'react'
 
 import type { Locale } from '@/i18n/locales'
 
+import { CardMeta } from '../ui/CardMeta'
+
 import {
   FilterConsole,
   FilterGroup,
@@ -383,59 +385,39 @@ const CalendarRow: React.FC<{
             {item.title}
           </Link>
         </h4>
+        {/*
+          Durum rozeti alt bilgiden AYRI durur: o bir etiket, alt bilgi ise
+          etiket/değer listesi. İkisi aynı satıra karıştığında rozet sıradan
+          bir metin gibi okunuyordu.
+        */}
+        {statusText ? (
+          <p className={`mt-2 ${trainingStatusClasses(item.status)}`}>
+            <span className="sr-only">{labels.status}: </span>
+            {statusText}
+          </p>
+        ) : null}
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-          {statusText ? (
-            <p className={trainingStatusClasses(item.status)}>
-              <span className="sr-only">{labels.status}: </span>
-              {statusText}
-            </p>
-          ) : null}
-
-          {item.deliveryModeLabel ? (
-            <p className="text-sm text-ink-600">
-              <span className="sr-only">{labels.deliveryMode}: </span>
-              {item.deliveryModeLabel}
-            </p>
-          ) : null}
-
-          {item.venue ? (
-            <p className="text-sm text-ink-600">
-              <span className="sr-only">{labels.venue}: </span>
-              {item.venue}
-            </p>
-          ) : null}
-
-          {/*
-            KONTENJAN — sayı tek başına anlamsızdır ("24"), bu yüzden birimiyle
-            birlikte basılır ("24 kişilik kontenjan"). Ekran okuyucuya ayrıca
-            alan adı verilir.
-            Girilmemiş veya sıfır kontenjan HİÇ BASILMAZ: "0 kişilik kontenjan"
-            eğitimin kapalı olduğu izlenimi verirdi.
-          */}
-          {hasQuota ? (
-            <p className="inline-flex items-center gap-1.5 text-sm text-ink-600">
-              <span className="sr-only">{labels.quota}: </span>
-              <svg
-                aria-hidden="true"
-                focusable="false"
-                viewBox="0 0 16 16"
-                width="1em"
-                height="1em"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="6" cy="5.5" r="2.5" />
-                <path d="M1.5 13.5c0-2.2 2-3.6 4.5-3.6s4.5 1.4 4.5 3.6" />
-                <path d="M11 3.4a2.4 2.4 0 0 1 0 4.2M12.6 13.5c0-1.5-.5-2.6-1.4-3.3" />
-              </svg>
-              {labels.quotaValue(quota)}
-            </p>
-          ) : null}
-        </div>
+        {/*
+          Alt bilgi kart kataloğuyla AYNI bileşeni kullanır (ui/CardMeta):
+          etiketler artık görünür ve değerler tek hizada başlar. Buradaki
+          kontenjan ikonu kaldırıldı — etiketin kendisi ("Kontenjan") ne
+          olduğunu zaten söylüyordu, ikon üçüncü kez aynı şeyi anlatıyordu.
+        */}
+        <CardMeta
+          className="mt-3"
+          items={[
+            item.deliveryModeLabel
+              ? { key: 'mode', label: labels.deliveryMode, value: item.deliveryModeLabel }
+              : null,
+            item.venue ? { key: 'venue', label: labels.venue, value: item.venue } : null,
+            /*
+              KONTENJAN — sayı tek başına anlamsızdır ("24"), birimiyle basılır.
+              Girilmemiş veya sıfır kontenjan HİÇ BASILMAZ: "0 kişilik kontenjan"
+              eğitimin kapalı olduğu izlenimi verirdi.
+            */
+            hasQuota ? { key: 'quota', label: labels.quota, value: labels.quotaValue(quota) } : null,
+          ]}
+        />
 
         {item.topicTitles.length > 0 ? (
           <ul className="mt-3 flex flex-wrap gap-2">

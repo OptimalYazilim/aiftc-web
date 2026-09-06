@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { canAuthorContent, canDeleteContent, publishedOrAuthenticated } from '@/access'
-import { publishingFields, translationStatusField } from '@/fields/publishing'
+import { publishingFields, reviewStatusField, translationStatusField } from '@/fields/publishing'
 import { slugField } from '@/fields/slug'
 import { FOCUS_COUNTRIES, NEWS_CATEGORIES } from '@/fields/options'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
@@ -48,6 +48,7 @@ export const News: CollectionConfig = {
   },
   fields: [
     slugField(),
+    reviewStatusField,
     {
       name: 'kind',
       type: 'select',

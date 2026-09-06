@@ -143,7 +143,7 @@ export default async function HomePage({ params }: Props) {
             {quickAccess.map((item, index) => (
               <li
                 key={`${item.label}-${index}`}
-                className="rounded-card border border-line p-5 transition-shadow hover:shadow-md"
+                className="ease-editorial rounded-card border border-line p-5 transition-colors duration-500 hover:border-shell-900"
               >
                 <h3 className="text-lg font-semibold">
                   {item.available && item.href ? (
@@ -215,7 +215,7 @@ export default async function HomePage({ params }: Props) {
                   */}
                   <Link
                     href={detailHref('training-topic', locale, doc.slug ?? '')}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line-soft bg-surface px-4 text-sm font-medium text-ink-700 shadow-xs transition-all duration-200 hover:border-brand-700 hover:bg-brand-50/60 hover:text-brand-800"
+                    className="ease-editorial inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong px-4 text-sm font-medium text-ink-700 transition-colors duration-300 hover:border-shell-900 hover:text-shell-900"
                   >
                     <TopicIcon category={doc.category} className="text-brand-700" />
                     {doc.title}

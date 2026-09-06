@@ -53,18 +53,35 @@
   --color-ink-600: #4a585c;
   --color-ink-500: #65757a;
 
-  /* --- Yüzey ve çizgi ---------------------------------------------------- */
+  /* --- Yüzey ve çizgi ----------------------------------------------------
+     ZEMİN MİMARİSİ — ÜÇ KADEME, GÖLGE YOK
+     Derinlik artık yapay gölgeyle değil, üç zemin değeri arasındaki farkla
+     kurulur. Sayfanın tabanı SAF BEYAZ DEĞİLDİR; beyaz yalnızca öne çıkması
+     gereken yüzeylere (kartlar) ayrılmıştır. Böylece kart, kendi rengiyle
+     zeminden ayrışır — kenarlık ve gölge olmasa bile.
+
+       canvas       #f9f9f6  sayfanın tabanı (kemik/taş)
+       surface-alt  #f2f1ec  bir kademe derin bant: sayfa üst alanı
+       surface      #ffffff  YALNIZCA kartlar ve öne çıkan bloklar
+
+     `surface-alt` eskiden #f5f8f7 (soğuk, mavi dönük) idi. Kemik rengi bir
+     tabanın üzerinde soğuk gri bant kirli görünüyordu; ton sıcak tarafa
+     çekildi ki iki zemin aynı ailenin üyesi olsun. */
+  --color-canvas: #f9f9f6;
   --color-surface: #ffffff;
-  --color-surface-alt: #f5f8f7;
-  /* Sıcak kırık beyaz zemin: beyaz kartlar bunun üzerinde ayrışır.
-     Kart/zemin ayrımı RENK KONTRASTIYLA değil, kenarlık + gölge ile
-     kurulur; bu yüzden fark bilinçli olarak çok düşük tutulmuştur. */
-  --color-surface-warm: #faf9f7;
-  --color-line: #d6dedf;
-  /* Sıcak zeminle uyumlu, daha zarif kart kenarlığı. Dekoratiftir:
-     kartın sınırını gölge de taşır, tek başına bilgi vermez. */
-  --color-line-soft: #e7e5e1;
-  --color-line-strong: #7f8c8f;
+  --color-surface-alt: #f2f1ec;
+  /* `surface-warm` artık tabanla AYNI değerdedir. Bu bilinçlidir: bölümler
+     kendi zeminini basmayı sürdürsün ama sayfadan ayrışmasın — yerleşim tek
+     bir kesintisiz yüzey gibi okunsun. */
+  --color-surface-warm: #f9f9f6;
+  /* Çizgiler de kemik zeminin ailesine çekildi. Eski değerler soğuk gri
+     (mavi dönük) idi ve sıcak taban üzerinde ton olarak yabancı duruyordu.
+     `line` dekoratiftir; `line-strong` UI sınırlarını taşır ve 3:1 üstünde
+     KALMAK ZORUNDADIR (WCAG 1.4.11) — bu yüzden yalnızca sıcaklığı değişti,
+     değeri değil. */
+  --color-line: #d9d5cc;
+  --color-line-soft: #e5e1d8;
+  --color-line-strong: #8a8880;
 
   /* --- Durum ------------------------------------------------------------- */
   --color-danger-700: #9a1b1b;
@@ -108,10 +125,12 @@
   --spacing-gutter: 1.25rem;
   --container-page: 80rem;
 
-  /* 0.5rem → 0.75rem: kartlara modern bir kavis. Token olduğu için değişiklik
-     tüm `rounded-card` kullanımlarına aynı anda yansır; kart, panel ve giriş
-     alanları arasında yarıçap farkı oluşmaz. */
-  --radius-card: 0.75rem;
+  /* KESKİN HAT — 0.75rem (12px) → 0.375rem (6px).
+     12px'lik kavis kartı yumuşatıp 'uygulama bileşeni' diline yaklaştırıyordu;
+     6px mimari bir kenar verir, köşenin varlığı hissedilir ama yuvarlaklık
+     kartın karakteri olmaktan çıkar. Token olduğu için değişiklik tüm
+     `rounded-card` kullanımlarına aynı anda yansır. */
+  --radius-card: 0.375rem;
 }
 
 /* ==========================================================================
@@ -125,7 +144,8 @@
   }
 
   body {
-    background: var(--color-surface);
+    /* Taban artık saf beyaz değil, kemik tonu. Beyaz yalnızca kartlarda. */
+    background: var(--color-canvas);
     color: var(--color-ink-700);
     font-family: var(--font-sans);
     font-size: var(--text-body);
@@ -441,11 +461,21 @@
 
 /* Bölüm/listeleme sayfası başlığı. */
 @utility title-page {
-  font-size: clamp(2rem, 1.35rem + 2.1vw, 2.75rem);
+  /*
+    HERO ÖLÇEĞİ. Üst sınır 2.75rem (44px) idi — kurumsal ama iddiasız.
+    4.5rem (72px) editoryal bir kapak başlığı ölçüsüdür ve sayfanın ilk
+    saniyesini o belirler. Alt sınır 2.25rem'de tutuldu: 375px ekranda
+    72px'lik bir başlık tek kelimeyi bile satıra sığdıramazdı.
+
+    Satır aralığı 1.1 → 1.02: bu puntoda 1.1 bile satırları ayırıyor.
+    İzleme -0.022 → -0.035em: harfler büyüdükçe aralarındaki optik boşluk
+    büyür, negatif izleme onu geri toplar.
+  */
+  font-size: clamp(2.25rem, 1.1rem + 4.6vw, 4.5rem);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.022em;
-  color: var(--color-shell-900);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--color-shell-950);
 }
 
 /* Kayıt başlığı (haber, eğitim, sistem, oda). Sayfa başlığından bir kademe
@@ -471,18 +501,22 @@
    yayıncılıkta "burası neresi" sorusunu başlığı kalabalıklaştırmadan
    yanıtlar. */
 @utility eyebrow {
-  font-size: 0.75rem;
+  /* Başlık büyüdükçe üst etiket de büyümeli, yoksa 72px'lik bir başlığın
+     üstünde kaybolur. Harf aralığı da açıldı: küçük ve seyrek harfli bir
+     satır, büyük başlığa karşı kendi ağırlığını korur. */
+  font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1.4;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--color-brand-800);
 }
 
 /* --- Giriş paragrafı ---------------------------------------------------- */
 @utility lede {
-  font-size: 1.125rem;
-  line-height: 1.7;
+  /* Dev başlığın altında 18px'lik bir giriş cılız kalıyordu. */
+  font-size: clamp(1.125rem, 1.05rem + 0.3vw, 1.3125rem);
+  line-height: 1.6;
   color: var(--color-ink-600);
 }
 
@@ -497,11 +531,42 @@
    gölge ile ayrılır; sayfanın üstünde duran bir araç çubuğu gibi okunur.
    ========================================================================== */
 @utility filter-console {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  padding: clamp(1.25rem, 2.5vw, 1.75rem);
-  box-shadow:
-    0 1px 2px rgb(6 40 34 / 0.04),
-    0 4px 16px -6px rgb(6 40 34 / 0.08);
+  /*
+    ÇERÇEVESİZ KOMUTA ALANI — KUTU YOK.
+    Ne zemin, ne kenarlık, ne köşe yarıçapı. Filtreler sayfanın kemik zeminine
+    DOĞRUDAN oturur; alanın varlığını yalnızca üstündeki ve altındaki saç teli
+    çizgi ile kendi iç ritmi belirtir.
+
+    Bir ara sürümde bu alan koyu yeşil bir modüldü. Kutunun rengini
+    değiştirmek kutuyu kaldırmaz — ekranda hâlâ yuvarlak köşeli, dolgulu bir
+    blok duruyordu. İstenen, alanın sayfadan AYRI bir nesne olmaktan çıkması.
+
+    ERİŞİLEBİLİRLİK NOTU
+    Denetimlerin sınırı (arama alanının alt çizgisi, pasif hapların çerçevesi)
+    WCAG 1.4.11 gereği ≥3:1 olmak ZORUNDADIR ve bu çizgiler `line-strong`
+    (#8a8880 → kemik zeminde 3.4:1) ile çizilir. "İnce ve zarif" görünüm
+    çizgiyi AÇARAK değil, 1px kalınlık + sıcak nötr ton + çevresindeki boşluk
+    ile elde edilir. Çizgiyi ölçütün altına indirmek zarafet değil, kayıp
+    olurdu.
+  */
+  padding-block: clamp(1.5rem, 3vw, 2.25rem);
+  border-block: 1px solid var(--color-line);
+}
+
+/* ==========================================================================
+   EDİTORYAL YERLEŞİM
+   ==========================================================================
+   Liste öğelerini kutulara hapsetmek yerine ince çizgilerle ayırır. Dergi
+   sayfası mantığı: kutu yok, RİTİM var. Her öğe üstten 1px çizgi alır;
+   ilk öğede çizgi yoktur, dolayısıyla liste bir kenarlıkla başlamaz.
+   ========================================================================== */
+@utility editorial-row {
+  border-top: 1px solid var(--color-line);
+}
+
+/* Ağırbaşlı hareket eğrisi: hızlı başlar, yavaş biter. Kartlarda, oklarda ve
+   görsel büyümelerinde AYNI eğri kullanılır; farklı eğriler aynı ekranda
+   birbirine göre "ucuz" görünür. */
+@utility ease-editorial {
+  transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
 }

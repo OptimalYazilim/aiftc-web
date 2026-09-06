@@ -27,6 +27,12 @@ const DETAIL_COLLECTIONS: { collection: CollectionSlug; route: DetailRouteKey }[
   { collection: 'news', route: 'news-item' },
   { collection: 'gallery-albums', route: 'gallery-album' },
   { collection: 'projects', route: 'project' },
+  /*
+    Kütüphane künye sayfaları. Aşağıdaki sorgu `overrideAccess: false`
+    geçtiği için erişimi kısıtlı kayıtlar sitemap'e HİÇ girmez — arama
+    motoruna yalnızca herkese açık künyeler duyurulur.
+  */
+  { collection: 'library-resources', route: 'library-resource' },
 ]
 
 type AllLocaleDoc = {

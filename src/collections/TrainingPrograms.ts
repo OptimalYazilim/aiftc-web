@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { canAuthorContent, canDeleteContent, publishedOrAuthenticated } from '@/access'
-import { publishingFields, translationStatusField } from '@/fields/publishing'
+import { publishingFields, reviewStatusField, translationStatusField } from '@/fields/publishing'
 import { slugField } from '@/fields/slug'
 import {
   CERTIFICATE_TYPES,
@@ -67,6 +67,7 @@ export const TrainingPrograms: CollectionConfig = {
   },
   fields: [
     slugField(),
+    reviewStatusField,
     {
       name: 'status',
 dbName: 'program_status',

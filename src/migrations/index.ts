@@ -3,6 +3,8 @@ import * as migration_20260903_200613_anasayfa_menu_ve_durum_enum from './202609
 import * as migration_20260905_213907_kutuphane_media_ve_polimorfik_iliskiler from './20260905_213907_kutuphane_media_ve_polimorfik_iliskiler';
 import * as migration_20260905_235038_sanal_sinif_odalari from './20260905_235038_sanal_sinif_odalari';
 import * as migration_20260906_004002_form_gonderimleri from './20260906_004002_form_gonderimleri';
+import * as migration_20260906_114030_mevcut_sema_senkronu from './20260906_114030_mevcut_sema_senkronu';
+import * as migration_20260906_114957_kutuphane_kunye_alanlari from './20260906_114957_kutuphane_kunye_alanlari';
 
 export const migrations = [
   {
@@ -28,6 +30,16 @@ export const migrations = [
   {
     up: migration_20260906_004002_form_gonderimleri.up,
     down: migration_20260906_004002_form_gonderimleri.down,
-    name: '20260906_004002_form_gonderimleri'
+    name: '20260906_004002_form_gonderimleri',
+  },
+  {
+    up: migration_20260906_114030_mevcut_sema_senkronu.up,
+    down: migration_20260906_114030_mevcut_sema_senkronu.down,
+    name: '20260906_114030_mevcut_sema_senkronu',
+  },
+  {
+    up: migration_20260906_114957_kutuphane_kunye_alanlari.up,
+    down: migration_20260906_114957_kutuphane_kunye_alanlari.down,
+    name: '20260906_114957_kutuphane_kunye_alanlari'
   },
 ];

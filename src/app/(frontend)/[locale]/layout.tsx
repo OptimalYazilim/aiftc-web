@@ -91,7 +91,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html lang={meta.hrefLang} dir={meta.direction} className={inter.variable}>
-      <body className="flex min-h-dvh flex-col bg-surface font-sans">
+      <body className="flex min-h-dvh flex-col bg-canvas font-sans">
         <NextIntlClientProvider messages={messages}>
           {/* WCAG 2.2 — 2.4.1 Blokları Atlama. DOM'daki ilk odaklanabilir öğe. */}
           <a href="#main-content" className="skip-link">

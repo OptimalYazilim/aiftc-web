@@ -65,6 +65,11 @@ type Props = {
   className?: string
   /** Öneri şeridinde görsel gösterilmez; kart daha kompakt kalır. */
   showImage?: boolean
+  /**
+   * Editoryal ızgarada ilk haber MANŞETtir: iki sütun genişliğinde durur,
+   * fotoğrafı daha geniş orandadır ve başlığı bir kademe büyür.
+   */
+  size?: 'default' | 'feature'
 }
 
 export const NewsCard: React.FC<Props> = ({
@@ -73,14 +78,21 @@ export const NewsCard: React.FC<Props> = ({
   readMoreLabel,
   className = '',
   showImage = true,
+  size = 'default',
 }) => {
+  const feature = size === 'feature'
   const cover = showImage ? resolveMedia(item.coverImage, 'card') : null
   const date = formatDate(locale, item.publishedAt)
   const link = detailHref('news-item', locale, item.slug ?? '')
 
   return (
     <li
-      className={`group flex flex-col overflow-hidden rounded-2xl border border-line-soft bg-surface shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${className}`}
+      /*
+        Gölge ve yükselme kaldırıldı. Derinlik artık tek bir 1px çizgiyle ve
+        hover'da o çizginin koyulaşmasıyla kuruluyor; hareketi FOTOĞRAF
+        taşıyor (aşağıda `scale-[1.04]`). Kartın kendisi sabit durur.
+      */
+      className={`group ease-editorial relative flex cursor-pointer flex-col overflow-hidden rounded-card border border-line bg-surface transition-colors duration-500 hover:border-shell-900 ${className}`}
     >
       {/*
         Kapak görseli yoksa boş gri alan değil, nötr kurumsal zemin
@@ -104,11 +116,16 @@ export const NewsCard: React.FC<Props> = ({
                 verir. Sarmalayıcıdaki `overflow-hidden` olmadan büyüme kartın
                 köşe yarıçapını taşardı.
               */
-              className="aspect-[3/2] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              className={`ease-editorial w-full object-cover transition-transform duration-700 group-hover:scale-[1.04] ${feature ? `aspect-[21/9]` : `aspect-[3/2]`}`}
             />
           </div>
         ) : (
-          <MediaFallback variant="card" />
+          <MediaFallback
+            variant="card"
+            /* Manşette kapak yoksa bile oran korunur; yoksa geniş kart
+               kare bir boşlukla açılırdı. */
+            className={feature ? 'aspect-[21/9]' : ''}
+          />
         )
       ) : null}
 
@@ -136,10 +153,21 @@ export const NewsCard: React.FC<Props> = ({
           gövde metninin İÇİNDE değil kendi başına duran bir öğe olduğu için
           bu ayırt edicilik yeterlidir (WCAG 2.2 — 1.4.1).
         */}
-        <h3 className="mt-2 text-lg font-bold leading-snug tracking-tight sm:text-xl">
+        <h3
+          className={`mt-2 font-bold leading-snug tracking-tight ${
+            feature ? `text-xl sm:text-2xl lg:text-3xl` : `text-lg sm:text-xl`
+          }`}
+        >
           <Link
             href={link}
-            className="text-shell-900 decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline focus-visible:underline"
+            /*
+              YAYILAN BAĞLANTI — eğitim kartındaki ile aynı kalıp.
+              "Devamını oku" mikro metni `aria-hidden` bir paragraftır ve
+              tıklandığında hiçbir şey yapmıyordu; imleç de metin imleci
+              kalıyordu. Bağlantı kart yüzeyine yayılınca ikisi de düzeldi,
+              odak durağı yine TEK.
+            */
+            className="text-shell-900 decoration-2 underline-offset-4 transition-colors after:absolute after:inset-0 after:content-[''] hover:text-brand-800 hover:underline focus-visible:underline"
           >
             {item.title}
           </Link>
@@ -152,19 +180,19 @@ export const NewsCard: React.FC<Props> = ({
         {/*
           Bağlantı DEĞİL: başlık zaten aynı yere gidiyor (bkz. üstteki not).
           Ok, karta gelindiğinde sağa kayar; `group` kartın kökündedir.
-          `mt-auto`: kartlar `auto-rows-fr` ile eşit yükseklikteyken bu satır
-          hepsinde aynı hizaya oturur.
+          `mt-auto`: kart yüksekliği içeriğe göre değişse de bu satır her
+          zaman kartın en altına oturur.
         */}
         <p
           aria-hidden="true"
-          className="mt-auto flex items-center gap-1.5 pt-4 text-sm font-semibold text-brand-800"
+          className="ease-editorial mt-auto flex items-center gap-1.5 pt-4 text-sm font-semibold text-brand-800 transition-colors duration-500 group-hover:text-shell-950"
         >
           {readMoreLabel}
           <svg
             viewBox="0 0 16 16"
             width="1em"
             height="1em"
-            className="transition-transform duration-300 group-hover:translate-x-1"
+            className="ease-editorial transition-transform duration-500 group-hover:translate-x-1"
           >
             <path
               fill="none"

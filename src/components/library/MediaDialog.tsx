@@ -76,6 +76,16 @@ type Props = {
   downloadLabel?: string
   /** Tarayıcı kaynağı oynatamadığında gösterilecek açıklama. */
   unsupportedLabel?: string
+  /**
+   * ALTYAZI DOSYASI — WCAG 2.2 ölçütü 1.2.2 (Kayıtlı Ses için Altyazı, A).
+   * `LibraryResources.captionsUrl` alanından gelir. Yalnızca WebVTT çalışır;
+   * alanın panel açıklaması da bunu söylüyor.
+   */
+  captionsUrl?: string | null
+  /** `<track label>` — tarayıcının altyazı menüsünde görünen ad. */
+  captionsLabel?: string
+  /** Altyazının dili (BCP-47). Ziyaretçinin arayüz dili kullanılır. */
+  captionsLang?: string
 }
 
 export const MediaDialog: React.FC<Props> = ({
@@ -88,6 +98,9 @@ export const MediaDialog: React.FC<Props> = ({
   allowDownload = true,
   downloadLabel,
   unsupportedLabel,
+  captionsUrl,
+  captionsLabel,
+  captionsLang,
 }) => {
   const ref = useRef<HTMLDialogElement>(null)
 
@@ -236,6 +249,27 @@ export const MediaDialog: React.FC<Props> = ({
             }`}
           >
             <source src={video.url} type={video.mimeType} />
+            {/*
+              ALTYAZI — WCAG 2.2 ölçütü 1.2.2.
+              `default` KASITLI OLARAK YOK: altyazıyı zorla açmak, altyazıya
+              ihtiyacı olmayan ziyaretçinin görüntüsünü kapatır. Tarayıcının
+              yerli kontrolleri altyazı menüsünü kendiliğinden gösterir ve
+              kullanıcının işletim sistemi tercihi ("altyazıları her zaman
+              göster") burada geçerlidir — yerli kontrolleri seçmenin
+              gerekçelerinden biri de budur.
+
+              Dosya yalnızca alan doluyken basılır: kaynağı olmayan bir
+              `<track>`, menüde tıklandığında hiçbir şey yapmayan boş bir
+              altyazı seçeneği üretir.
+            */}
+            {captionsUrl ? (
+              <track
+                kind="captions"
+                src={captionsUrl}
+                srcLang={captionsLang ?? 'tr'}
+                label={captionsLabel ?? 'Altyazı'}
+              />
+            ) : null}
             {/*
               Tarayıcı `<video>` desteklemiyorsa ya da bu MIME türünü
               oynatamıyorsa metin değil ÇALIŞAN bir yol bırakılır.

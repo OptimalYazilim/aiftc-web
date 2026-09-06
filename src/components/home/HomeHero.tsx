@@ -315,7 +315,7 @@ export const HomeHero = async ({ locale }: { locale: Locale }) => {
  */
 const HeroButton: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
   const className =
-    'inline-flex min-h-12 items-center justify-center rounded-sm bg-white px-7 text-base font-bold text-shell-900 shadow-lg shadow-black/25 transition-all duration-200 hover:bg-brand-50 hover:shadow-xl hover:shadow-black/35'
+    'ease-editorial inline-flex min-h-12 items-center justify-center rounded-sm bg-white px-7 text-base font-bold text-shell-900 transition-colors duration-300 hover:bg-brand-50'
 
   if (!link.href) return null
 

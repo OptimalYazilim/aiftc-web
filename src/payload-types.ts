@@ -492,6 +492,10 @@ export interface TrainingProgram {
    */
   slug: string;
   /**
+   * Spec 1.6. Editorial workflow. Visibility on the site still requires publishing the record.
+   */
+  reviewStatus: 'draft' | 'in_review' | 'approved' | 'published';
+  /**
    * Drives the calendar badge and the visibility of the Apply button.
    */
   status: 'planned' | 'applications-open' | 'applications-closed' | 'ongoing' | 'completed' | 'postponed' | 'cancelled';
@@ -754,6 +758,10 @@ export interface News {
    * Auto-generated from the title if left empty. If you change a published slug, add a 301 in Redirects.
    */
   slug: string;
+  /**
+   * Spec 1.6. Editorial workflow. Visibility on the site still requires publishing the record.
+   */
+  reviewStatus: 'draft' | 'in_review' | 'approved' | 'published';
   kind: 'news' | 'announcement';
   category:
     | 'training'
@@ -1467,6 +1475,14 @@ export interface LibraryResource {
    */
   slug: string;
   /**
+   * Spec 1.6. Editorial workflow. Visibility on the site still requires publishing the record.
+   */
+  reviewStatus: 'draft' | 'in_review' | 'approved' | 'published';
+  /**
+   * Who can see this record. Anything other than Public requires a login. NOTE: this hides the record but does not protect the attached file URL.
+   */
+  accessLevel: 'public' | 'staff' | 'instructor' | 'trainee';
+  /**
    * Drives the filter bar on the library page.
    */
   resourceType:
@@ -1483,6 +1499,10 @@ export interface LibraryResource {
    * Increments automatically. Not deduplicated — a rough popularity signal.
    */
   downloads?: number | null;
+  /**
+   * Filled in automatically on creation. Change it if you are entering the record on someone else’s behalf.
+   */
+  uploadedBy?: (number | null) | User;
   /**
    * Calculated automatically. Shows missing locales.
    */
@@ -1502,9 +1522,37 @@ export interface LibraryResource {
    */
   description?: string | null;
   /**
-   * e.g. “FAO” or “General Directorate of Forestry”. Optional.
+   * The person or team who wrote the publication. Use the field below for the issuing institution. Optional.
    */
   author?: string | null;
+  /**
+   * The institution that issued the publication, e.g. “FAO”, “General Directorate of Forestry”.
+   */
+  institution?: string | null;
+  /**
+   * The language of the publication itself, independent of the site’s interface language.
+   */
+  language?: ('tr' | 'en' | 'ru')[] | null;
+  /**
+   * The country or countries the publication concerns. Pick several for regional publications.
+   */
+  countries?: ('TR' | 'AZ' | 'KZ' | 'KG' | 'TJ' | 'TM' | 'UZ' | 'OTHER')[] | null;
+  /**
+   * Feeds on-site search. Enter one term per entry; do not repeat the topics above.
+   */
+  keywords?: string[] | null;
+  /**
+   * Persistent identifier, written with its prefix, e.g. “DOI: 10.4060/cb1234en”. Leave empty if there is none.
+   */
+  identifier?: string | null;
+  /**
+   * Training programmes this publication belongs to.
+   */
+  relatedTrainings?: (number | TrainingProgram)[] | null;
+  /**
+   * If the publication is a project output, link the project here.
+   */
+  relatedProjects?: (number | Project)[] | null;
   /**
    * Drives the thematic filters; same list as the training catalogue.
    */
@@ -1530,6 +1578,10 @@ export interface LibraryResource {
    */
   videoDuration?: string | null;
   /**
+   * Recommended by WCAG 2.2 (1.2.2). Only .vtt (WebVTT) works in the browser; SRT files will not display.
+   */
+  captionsUrl?: string | null;
+  /**
    * Order follows this list. Each image needs an alt text in its Media record.
    */
   gallery?: (number | Media)[] | null;
@@ -1550,12 +1602,73 @@ export interface LibraryResource {
    */
   externalUrl?: string | null;
   /**
+   * Fill in only for records that link out. When a file is attached the format is read from it automatically.
+   */
+  fileFormat?: ('pdf' | 'docx' | 'xlsx' | 'pptx' | 'epub' | 'mp4' | 'mp3' | 'zip' | 'html' | 'other') | null;
+  /**
+   * Only for records that link out. Write it readably, e.g. “4.2 MB”.
+   */
+  fileSize?: string | null;
+  /**
+   * Version of the publication, if it has one. Usually left empty.
+   */
+  version?: string | null;
+  /**
+   * Terms of use. Leave empty if unsure — an incorrect licence statement binds the institution.
+   */
+  license?:
+    ('cc-by' | 'cc-by-sa' | 'cc-by-nc' | 'cc-by-nc-nd' | 'cc0' | 'institutional' | 'all-rights-reserved') | null;
+  /**
+   * Fill in when the rights holder differs from the issuing institution.
+   */
+  copyrightHolder?: string | null;
+  /**
    * Optional. Without it the card shows a type badge on a neutral panel.
    */
   coverImage?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  name: string;
+  /**
+   * The Author role cannot publish; records stay as drafts.
+   */
+  roles?: ('admin' | 'editor' | 'author' | 'viewer')[] | null;
+  /**
+   * Spec 1.7. Controls which library records the user can see ON THE SITE. Panel permissions are the separate Roles field.
+   */
+  role: 'admin' | 'staff' | 'instructor' | 'trainee';
+  /**
+   * Spec 1.7. Accounts other than Approved cannot log in. Public registrations arrive as Pending.
+   */
+  accountStatus: 'pending' | 'approved' | 'suspended';
+  unit?: string | null;
+  preferredAdminLanguage?: ('tr' | 'en' | 'ru') | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * Contact and training application requests. These records contain personal data.
@@ -1591,38 +1704,6 @@ export interface FormRequest {
   locale?: string | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  name: string;
-  /**
-   * The Author role cannot publish; records stay as drafts.
-   */
-  roles: ('admin' | 'editor' | 'author' | 'viewer')[];
-  unit?: string | null;
-  preferredAdminLanguage?: ('tr' | 'en' | 'ru') | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
 }
 /**
  * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
@@ -1992,6 +2073,7 @@ export interface TrainingTopicsSelect<T extends boolean = true> {
  */
 export interface TrainingProgramsSelect<T extends boolean = true> {
   slug?: T;
+  reviewStatus?: T;
   status?: T;
   featured?: T;
   translationStatus?: T;
@@ -2178,6 +2260,7 @@ export interface VirtualClassroomsSelect<T extends boolean = true> {
  */
 export interface NewsSelect<T extends boolean = true> {
   slug?: T;
+  reviewStatus?: T;
   kind?: T;
   category?: T;
   featured?: T;
@@ -2511,22 +2594,38 @@ export interface DocumentFilesSelect<T extends boolean = true> {
  */
 export interface LibraryResourcesSelect<T extends boolean = true> {
   slug?: T;
+  reviewStatus?: T;
+  accessLevel?: T;
   resourceType?: T;
   publicationYear?: T;
   featured?: T;
   downloads?: T;
+  uploadedBy?: T;
   translationStatus?: T;
   publishedAt?: T;
   title?: T;
   description?: T;
   author?: T;
+  institution?: T;
+  language?: T;
+  countries?: T;
+  keywords?: T;
+  identifier?: T;
+  relatedTrainings?: T;
+  relatedProjects?: T;
   topics?: T;
   videoFile?: T;
   allowVideoDownload?: T;
   videoDuration?: T;
+  captionsUrl?: T;
   gallery?: T;
   file?: T;
   externalUrl?: T;
+  fileFormat?: T;
+  fileSize?: T;
+  version?: T;
+  license?: T;
+  copyrightHolder?: T;
   coverImage?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2589,6 +2688,8 @@ export interface FormRequestsSelect<T extends boolean = true> {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   roles?: T;
+  role?: T;
+  accountStatus?: T;
   unit?: T;
   preferredAdminLanguage?: T;
   updatedAt?: T;

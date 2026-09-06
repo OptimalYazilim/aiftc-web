@@ -54,7 +54,7 @@ export const MediaFallback: React.FC<Props> = ({ variant = 'card', className = '
     aria-hidden="true"
     className={`overflow-hidden ${
       variant === 'card'
-        ? 'media-frame-light relative aspect-[3/2] w-full'
+        ? `media-frame-light relative w-full ${className.includes('aspect-') ? '' : 'aspect-[3/2]'}`
         : 'media-frame-dark absolute inset-0'
     } ${className}`}
   >

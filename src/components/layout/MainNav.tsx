@@ -224,7 +224,8 @@ export const MainNav: React.FC<Props> = ({ items, variant = 'desktop', onNavigat
               className={
                 isMobile
                   ? 'ml-3 flex flex-col gap-1 border-l border-line pl-3'
-                  : 'absolute left-0 top-full z-40 mt-1 flex min-w-64 flex-col gap-1 rounded-card border border-line bg-surface p-2 shadow-lg'
+                  : // Açılır menü de gölgesiz: opak zemin + belirgin çizgi ayrımı taşır.
+                    'absolute left-0 top-full z-40 mt-1 flex min-w-64 flex-col gap-1 rounded-card border border-line-strong bg-surface p-2'
               }
             >
               {item.children.map((child, childIndex) => (

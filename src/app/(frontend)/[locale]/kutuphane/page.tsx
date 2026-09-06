@@ -12,11 +12,10 @@ import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
 import { ROUTES } from '@/i18n/routes'
 import { buildMetadata } from '@/lib/metadata'
 import {
-  humanBytes,
+  resolveAttachment,
   resolveFullImage,
   resolveMedia,
   resolveVideo,
-  unwrapRelation,
   type ResolvedImage,
 } from '@/lib/media'
 import { optionLabel } from '@/lib/optionLabel'
@@ -82,41 +81,6 @@ type TopicRef = { id: string | number; title?: string | null }
 const topicOf = (value: unknown): TopicRef | null =>
   value && typeof value === 'object' && 'id' in value ? (value as TopicRef) : null
 
-type FileRef = {
-  url?: string | null
-  mimeType?: string | null
-  humanFileSize?: string | null
-  filesize?: number | null
-}
-
-/**
- * Doküman dosyasını çözer.
- *
- * ÇOK HEDEFLİ: `file` alanı artık hem `document-files` hem `media`
- * koleksiyonuna bakabiliyor (ikisi de PDF kabul ediyor). Payload çok hedefli
- * ilişkiyi `{ relationTo, value }` zarfıyla döndürür; `unwrapRelation` onu
- * açar.
- *
- * BOYUT İKİ KAYNAKTAN GELEBİLİR:
- *   document-files → `humanFileSize` alanı (koleksiyonun kendi hook'u doldurur)
- *   media          → böyle bir alan YOK, ham `filesize` bayttan hesaplanır
- * Bu yüzden önce hazır değere bakılır, yoksa hesaplanır. Kartta "PDF · 4,2 MB"
- * rozeti hangi koleksiyondan gelirse gelsin görünür.
- */
-const fileOf = (value: unknown): FileRef | null => {
-  const doc = unwrapRelation(value)
-  if (!doc || typeof doc.url !== 'string') return null
-
-  const ready = typeof doc.humanFileSize === 'string' ? doc.humanFileSize.trim() : ''
-
-  return {
-    url: doc.url,
-    mimeType: typeof doc.mimeType === 'string' ? doc.mimeType : null,
-    humanFileSize: ready || humanBytes(doc.filesize),
-    filesize: typeof doc.filesize === 'number' ? doc.filesize : null,
-  }
-}
-
 /**
  * Albüm görselleri SUNUCUDA çözülür, istemciye ham Payload nesnesi gitmez.
  *
@@ -156,6 +120,29 @@ export default async function LibraryPage({ params }: Props) {
     sort: ['-featured', '-publicationYear', 'title'],
     limit: 500,
     depth: 2,
+    /*
+      ERİŞİM DENETİMİ AÇIK — ÖLÇÜLMÜŞ BİR SIZINTININ KAPATILMASI
+      -------------------------------------------------------------------
+      Local API'de `overrideAccess` VARSAYILAN OLARAK `true`'dur; yani bu
+      satır olmadan koleksiyonun `read` kuralı (access/index.ts →
+      `libraryReadAccess`) HİÇ ÇALIŞMAZ. Sitedeki diğer bütün sayfalar
+      `overrideAccess: false` geçiyordu, erişim seviyesi ZORLANAN tek
+      koleksiyonun sayfası geçmiyordu.
+
+      Ölçüm (2026-09-06, geliştirme veritabanı):
+        kayıt #15  accessLevel=trainee  _status=published
+        → /tr/kutuphane oturum AÇMAMIŞ ziyaretçiye "2 yayın listeleniyor"
+          diyor, kaydın başlığını, özetini ve 4 fotoğrafını gösteriyordu.
+
+      `overrideAccess: false` ile ve `user` verilmediğinde Payload sorguyu
+      anonim kabul eder; `libraryReadAccess` da sorguya
+      `accessLevel = 'public'` koşulunu EKLER. Kısıtlı kayıtlar listeye hiç
+      girmez — gizlenmez, SORGUYA ALINMAZ.
+
+      SINIR: bu kural KAYDI korur, ekli dosyanın doğrudan adresini korumaz
+      (bkz. docs/access-control-guide.md).
+    */
+    overrideAccess: false,
   })
 
   const items: LibraryResourceItem[] = result.docs.map((doc) => {
@@ -165,13 +152,20 @@ export default async function LibraryPage({ params }: Props) {
 
     return {
       id: doc.id,
+      slug: doc.slug,
       title: doc.title,
       description: doc.description,
       author: doc.author,
       publicationYear: doc.publicationYear,
       resourceType: doc.resourceType,
       resourceTypeLabel: optionLabel(LIBRARY_RESOURCE_TYPES, doc.resourceType, locale),
-      file: fileOf(doc.file),
+      file: resolveAttachment(doc.file),
+      /*
+        Künyedeki biçim/boyut yalnızca YEDEK olarak taşınır; dosya varsa kart
+        onu kullanmaz (bkz. LibraryResourceCard içindeki seçim).
+      */
+      fileFormat: doc.fileFormat,
+      fileSize: doc.fileSize,
       externalUrl: doc.externalUrl,
       coverImage: doc.coverImage,
       /*
@@ -257,7 +251,7 @@ export default async function LibraryPage({ params }: Props) {
               {t('emptyCollection')}
             </p>
           ) : (
-            <LibraryCatalog items={items} types={typeOptions} topics={topicOptions} />
+            <LibraryCatalog items={items} types={typeOptions} topics={topicOptions} locale={locale} />
           )}
         </div>
       </section>

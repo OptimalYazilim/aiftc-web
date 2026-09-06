@@ -9,6 +9,8 @@ import { TOPIC_PARAM } from '@/lib/catalogParams'
 import { formatDate } from '@/lib/dates'
 import { matchesQuery } from '@/lib/searchText'
 
+import { CardMeta } from '../ui/CardMeta'
+
 import {
   ConsoleDivider,
   ConsoleSearch,
@@ -227,38 +229,36 @@ export const TrainingCatalog: React.FC<Props> = ({ locale, items, topics, status
                 statusPrefix={tt('statusLabel')}
                 detailLabel={tt('viewDetails')}
                 footer={
-                  <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-600">
-                    {item.deliveryModeLabel ? (
-                      <div className="flex gap-1">
-                        <dt className="sr-only">{tt('deliveryMode')}</dt>
-                        <dd>{item.deliveryModeLabel}</dd>
-                      </div>
-                    ) : null}
-                    {item.venue ? (
-                      <div className="flex gap-1">
-                        <dt className="sr-only">{tt('venue')}</dt>
-                        <dd>{item.venue}</dd>
-                      </div>
-                    ) : null}
-                    {deadline ? (
-                      <div className="flex gap-1">
-                        <dt>{tt('deadline')}:</dt>
-                        <dd>{deadline}</dd>
-                      </div>
-                    ) : null}
-                    {/*
-                      KONTENJAN — sayı tek başına anlamsızdır ("24"), birimiyle
-                      basılır. Girilmemiş veya sıfır kontenjan HİÇ gösterilmez:
-                      "0 kişilik kontenjan" eğitimin kapalı olduğu izlenimi
-                      verirdi.
-                    */}
-                    {Number(item.quota) > 0 ? (
-                      <div className="flex gap-1">
-                        <dt className="sr-only">{tt('quota')}</dt>
-                        <dd>{tc('quotaValue', { count: Number(item.quota) })}</dd>
-                      </div>
-                    ) : null}
-                  </dl>
+                  <CardMeta
+                    items={[
+                      item.deliveryModeLabel
+                        ? {
+                            key: 'mode',
+                            label: tt('deliveryMode'),
+                            value: item.deliveryModeLabel,
+                          }
+                        : null,
+                      item.venue
+                        ? { key: 'venue', label: tt('venue'), value: item.venue }
+                        : null,
+                      deadline
+                        ? { key: 'deadline', label: tt('deadline'), value: deadline }
+                        : null,
+                      /*
+                        KONTENJAN — sayı tek başına anlamsızdır ("24"), birimiyle
+                        basılır. Girilmemiş veya sıfır kontenjan HİÇ gösterilmez:
+                        "0 kişilik kontenjan" eğitimin kapalı olduğu izlenimi
+                        verirdi.
+                      */
+                      Number(item.quota) > 0
+                        ? {
+                            key: 'quota',
+                            label: tt('quota'),
+                            value: tc('quotaValue', { count: Number(item.quota) }),
+                          }
+                        : null,
+                    ]}
+                  />
                 }
               />
             )

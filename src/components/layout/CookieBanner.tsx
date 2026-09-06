@@ -78,7 +78,8 @@ export const CookieBanner: React.FC<Props> = ({
       ref={regionRef}
       role="region"
       aria-label={t('regionLabel')}
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-surface shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+      // Yüzen katman gölgeyle değil, kalın bir üst çizgiyle ayrılır.
+      className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-shell-900 bg-surface"
     >
       <div className="container-page flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
         <p className="m-0 max-w-3xl text-ink-700">

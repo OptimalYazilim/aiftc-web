@@ -62,12 +62,31 @@ type Props = {
   onClose: () => void
   title: string
   images: ResolvedImage[]
+  /**
+   * Pencere açıldığında gösterilecek görselin sırası.
+   * Albüm sayfasındaki ızgaradan tıklanan kare ile açılan karenin AYNI olması
+   * için gerekir; verilmezse (kütüphane kartındaki gibi tek bir 'albümü aç'
+   * düğmesi varsa) baştan başlar.
+   *
+   * YALNIZCA İLK BİNİŞTE okunur. Bu bir sınırlama değil, çağrı sözleşmesidir:
+   * pencere her yerde `{open && <GalleryLightbox … />}` biçiminde KOŞULLU
+   * basılır, yani kapandığında DOM'dan tamamen çıkar ve her açılışta yeniden
+   * biner. Bileşen açıkken bu değeri değiştirmek etkisiz kalır.
+   */
+  startIndex?: number
   labels: Labels
 }
 
-export const GalleryLightbox: React.FC<Props> = ({ open, onClose, title, images, labels }) => {
+export const GalleryLightbox: React.FC<Props> = ({
+  open,
+  onClose,
+  title,
+  images,
+  labels,
+  startIndex = 0,
+}) => {
   const ref = useRef<HTMLDialogElement>(null)
-  const [index, setIndex] = useState(0)
+  const [index, setIndex] = useState(startIndex)
   const thumbStripRef = useRef<HTMLUListElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
 

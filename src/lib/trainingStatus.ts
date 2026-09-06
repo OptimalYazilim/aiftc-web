@@ -71,10 +71,19 @@ export const trainingStatusClasses = (
   status: string | null | undefined,
   { onDark = false }: { onDark?: boolean } = {},
 ): string => {
-  // `tracking-wide` + `text-xs` + `font-semibold`: rozet tipografisi gövde
-  // metninden net ayrışır, etiket gibi okunur.
+  /*
+    Rozet tipografisi gövde metninden net ayrışır, etiket gibi okunur.
+
+    `w-fit` + `self-start` ZORUNLU — süs değil.
+    Rozet bir flex sütununun (kart) doğrudan çocuğu olduğunda `inline-flex`
+    BLOKLAŞIR (`display: flex`) ve `align-self: stretch` ile kartın tamamına
+    yayılır. Ölçüldü: 172px'lik kartta rozet 130px'e uzuyordu. Bu iki sınıf
+    onu metnin kapladığı yere hapseder.
+
+    Dolgu da daraltıldı: min-h-7 → min-h-6, px-3 py-1 → px-2.5 py-0.5.
+  */
   const base =
-    'inline-flex min-h-7 items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide'
+    'inline-flex w-fit self-start min-h-6 items-center rounded-full px-2.5 py-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide'
 
   if (onDark) return `${base} ${ON_DARK_CLASSES}`
 

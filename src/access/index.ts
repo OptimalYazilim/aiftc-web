@@ -1,5 +1,6 @@
-import type { Access, FieldAccess } from 'payload'
+import type { Access, FieldAccess, Where } from 'payload'
 
+import { ACCESS_LEVEL_TO_ROLE } from '@/fields/options'
 import type { User } from '@/payload-types'
 
 /**
@@ -69,3 +70,180 @@ export const canPublishFieldLevel: FieldAccess = ({ req: { user } }) =>
  */
 export const isAdminOrEditorFieldLevel: FieldAccess = ({ req: { user } }) =>
   hasRole('admin', 'editor')(user)
+
+// ---------------------------------------------------------------------------
+// ERISIM SEVIYELERI  (Sartname 1.7)
+// ---------------------------------------------------------------------------
+
+/** Hedef kitle rolu — `Users.role`. Panel rolu (`roles`) ile karistirmayin. */
+export type AudienceRole = 'admin' | 'staff' | 'instructor' | 'trainee'
+
+const audienceRoleOf = (user: unknown): AudienceRole | null => {
+  const value = (user as { role?: unknown } | null | undefined)?.role
+  return typeof value === 'string' ? (value as AudienceRole) : null
+}
+
+/**
+ * KUTUPHANE OKUMA ERISIMI  (Sartname 1.7)
+ * ===========================================================================
+ * Kayitlar `accessLevel` alaniyla etiketlenir; kullanici `role` alaniyla.
+ * Kural, ikisinin esitligine indirgenmistir — ayri bir eslestirme tablosu
+ * tutulsaydi biri guncellenip digeri unutuldugunda sessiz bir yetki acigi
+ * olusurdu.
+ *
+ * KARAR SIRASI (ilk eslesen kazanir)
+ * ---------------------------------------------------------------------------
+ *  1. OTURUM YOK      -> yalnizca YAYIMLANMIS ve accessLevel = 'public'
+ *  2. Panel yoneticisi (roles icinde 'admin')  -> her sey
+ *  3. Panel personeli  (editor / author / viewer) -> her sey
+ *     Gerekce: bu kisiler kutuphaneyi YONETIR; goremedikleri bir kaydi
+ *     duzeltemezler. Yayimlama yetkisi ayrica `canAuthorContent` ile sinirli.
+ *  4. Diger oturumlar (yalnizca `role` tasiyan site hesaplari)
+ *                     -> YAYIMLANMIS ve accessLevel IN ('public', rolun karsiligi)
+ *
+ * NEDEN `Where` DONUYOR, `false` DEGIL
+ * ---------------------------------------------------------------------------
+ * `false` dondurmek koleksiyonu tumden kapatirdi. `Where` filtresi Payload
+ * tarafindan SORGUYA eklenir: kullanici yetkisi olan kayitlari gorur, digerleri
+ * liste sonuclarinda HIC gorunmez (var olduklari da belli olmaz). Tekil kayit
+ * istegi de ayni filtreden gectigi icin 404 doner — 403 degil; yani yetkisiz
+ * kisi kaydin VARLIGINI da ogrenemez.
+ *
+ * BU FONKSIYON DOSYA INDIRMEYI KORUMAZ
+ * ---------------------------------------------------------------------------
+ * Kayit gizlense bile, ekli dosyanin dogrudan URL'si (`/media/...`) hala
+ * calisir; statik dosyalar Payload erisim kontrolunden GECMEZ. Gercek koruma
+ * icin dosyalarin imzali URL ile veya bir route handler arkasindan sunulmasi
+ * gerekir — ACIK MADDE, bkz. docs/access-control-guide.md
+ * ===========================================================================
+ */
+export const libraryReadAccess: Access = ({ req: { user } }) => {
+  /* `Where` olarak tiplenir: dizi icindeki nesneler farkli alanlar tasidigi
+     icin TypeScript aksi halde ortak bir tip cikaramiyor. */
+  const yayimlanmisVe = (seviye: Where): Where => ({
+    and: [{ _status: { equals: 'published' } }, seviye],
+  })
+
+  if (!user) return yayimlanmisVe({ accessLevel: { equals: 'public' } })
+
+  // Panel yetkisi olan herkes (admin dahil) tum kayitlari gorur.
+  if (hasRole('admin', 'editor', 'author', 'viewer')(user)) return true
+
+  const audience = audienceRoleOf(user)
+  if (audience === 'admin') return true
+
+  /*
+    Rolden ERISIM SEVIYESINE ters eslestirme. `ACCESS_LEVEL_TO_ROLE` seviye ->
+    rol yonunde tanimlidir; burada tersi gerekir. Tek kaynaktan turetilir ki
+    iki liste ayrisamasin.
+  */
+  const seviyeler = Object.entries(ACCESS_LEVEL_TO_ROLE)
+    .filter(([, rol]) => rol === audience)
+    .map(([seviye]) => seviye)
+
+  return yayimlanmisVe({ accessLevel: { in: ['public', ...seviyeler] } })
+}
+
+/**
+ * YAYINA ALMA YETKISI  (Sartname 1.6)
+ * ===========================================================================
+ * `reviewStatus = published` ve `_status = published` yalnizca bu kisilerde:
+ *   - panel rolu admin veya editor  (`roles`)
+ *   - hedef kitle rolu admin        (`role`)
+ *
+ * `staff` KASITLI OLARAK DISARIDADIR. Sartname 1.6 personelin icerik
+ * uretmesini ve incelemeye gondermesini ister, yayina almasini DEGIL —
+ * yayin kararinin ikinci bir goz tarafindan verilmesi is akisinin amacidir.
+ *
+ * Iki eksene birden bakar cunku kurulumda ikisi de kullanilabilir: bir kisi
+ * panelde `editor` olabilir ama hedef kitle rolu `staff` kalabilir.
+ */
+export const canPublishContent = (user: unknown): boolean => {
+  if (hasRole('admin', 'editor')(user)) return true
+  return (user as { role?: unknown } | null | undefined)?.role === 'admin'
+}
+
+/**
+ * ICERIK OLUSTURMA/GUNCELLEME  (Sartname 1.6)
+ * Personel dahil tum yetkili roller icerik uretebilir; yayina alma kisiti
+ * `reviewStatusField.validate` ve `_status` alan erisimi ile ayrica uygulanir.
+ */
+export const canManageLibrary: Access = ({ req: { user } }) => {
+  if (!user) return false
+  if (hasRole('admin', 'editor', 'author')(user)) return true
+  const audience = (user as { role?: unknown }).role
+  return audience === 'admin' || audience === 'staff'
+}
+
+// ---------------------------------------------------------------------------
+// KAYIT VE ONAY  (Sartname 1.7 — hesap durumu)
+// ---------------------------------------------------------------------------
+
+/** Hesabin onay durumu. */
+export type AccountStatus = 'pending' | 'approved' | 'suspended'
+
+/**
+ * PANEL ERISIMI — "oturum acmis olmak" YETMEZ
+ * ===========================================================================
+ * Onceden `admin: Boolean(user)` idi: oturum acan HERKES /admin adresini
+ * acabiliyordu. Katilimci kaydi disariya acildigi anda bu bir acik haline
+ * gelir — her `trainee` yonetim panelini gorurdu.
+ *
+ * Panel yalnizca PANEL ROLU (`roles`) tasiyanlara acilir. Hedef kitle rolu
+ * (`role`) panel yetkisi vermez; ikisi ayri eksendir.
+ */
+/* `Access` DEGIL: `admin` erisimi yalnizca boolean kabul eder (Where
+   dondurulemez), bu yuzden imza elle yazilir. */
+export const canAccessAdminPanel = ({ req }: { req: { user?: unknown } }): boolean =>
+  hasRole('admin', 'editor', 'author', 'viewer')(req.user)
+
+/**
+ * HESAP DURUMUNU DEGISTIREBILENLER  (Sartname 1.7)
+ * Yalnizca sistem yoneticisi ve OGM/UOEM personeli bir hesabi onaylar.
+ * Kullanici KENDI durumunu degistiremez — `isAdminOrSelf` guncelleme yetkisi
+ * verse bile bu ALAN duzeyi kural devreye girer ve yukseltmeyi engeller.
+ */
+export const canApproveAccounts: FieldAccess = ({ req: { user } }) => {
+  if (hasRole('admin')(user)) return true
+  const audience = (user as { role?: unknown } | null | undefined)?.role
+  return audience === 'admin' || audience === 'staff'
+}
+
+/**
+ * DISARIDAN KAYIT  (Sartname 1.7 — katilimci kaydi)
+ * ===========================================================================
+ * Koleksiyon `create` erisimi HERKESE aciktir; guvenlik alan duzeyinde ve
+ * `beforeChange` kancasinda saglanir (bkz. collections/Users.ts):
+ *   - `roles` (panel yetkisi) anonim istekte ZORLA bosaltilir
+ *   - `role` zorla `trainee`, `accountStatus` zorla `pending` yapilir
+ *   - `beforeLogin` onaysiz hesabin girisini engeller
+ *
+ * ACIK MADDE — SPAM
+ * Uygulama katmaninda CAPTCHA ve hiz sinirlama YOKTUR. Bir bot bu uctan
+ * sinirsiz sayida `pending` hesap acabilir. Erisim acisindan zararsizdir
+ * (hicbiri giris yapamaz) ama yonetici listesini kirletir ve veritabanini
+ * sisirir. Ters vekil / WAF katmaninda sinirlama ZORUNLUDUR.
+ * Ayrintili not: docs/access-control-guide.md
+ */
+export const canRegister: Access = () => true
+
+/**
+ * HESAP KAYDINI GUNCELLEYEBILENLER
+ * Kullanici kendi kaydini (profil, sifre) guncelleyebilir; yonetici ve
+ * OGM/UOEM personeli BASKALARININ kaydini da guncelleyebilir — onay islemi
+ * bunu gerektirir.
+ *
+ * Hangi ALANI degistirebilecegi ayrica alan duzeyinde sinirlidir:
+ * `accountStatus` yalnizca `canApproveAccounts`, `roles`/`role` yalnizca
+ * yoneticide. Yani kendi kaydini guncelleyen bir katilimci kendini
+ * onaylayamaz veya yetkisini yukseltemez — alan sessizce dusurulur.
+ */
+export const canManageAccounts: Access = ({ req: { user } }) => {
+  if (!user) return false
+  if (hasRole('admin')(user)) return true
+
+  const audience = (user as { role?: unknown }).role
+  if (audience === 'admin' || audience === 'staff') return true
+
+  return { id: { equals: (user as { id: number }).id } }
+}

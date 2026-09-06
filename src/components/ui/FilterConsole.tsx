@@ -11,8 +11,8 @@ import React from 'react'
  * görünümü tek bir yüzeyde birleştirir.
  *
  * PARÇALAR
- *   FilterConsole   kap — zeminden gölge + kenarlıkla ayrılan panel
- *   ConsoleSearch   arama alanı (büyüteç ikonlu, hap biçimli)
+ *   FilterConsole   çerçevesiz alan — üst/alt saç teli çizgi, kutu YOK
+ *   ConsoleSearch   arama alanı (alt çizgili, ikonsuz)
  *   FilterGroup     bir filtre kümesi (başlık + haplar)
  *   FilterPill      tek bir hap
  *   ResultBar       sonuç sayısı + "temizle" — konsolun DIŞINDA kullanılır
@@ -45,7 +45,7 @@ export const FilterConsole: React.FC<{
 
 /** Konsol içindeki bölümleri ayıran ince çizgi + üst boşluk. */
 export const ConsoleDivider: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="mt-6 flex flex-col gap-6 border-t border-line-soft pt-6 lg:flex-row lg:gap-12">
+  <div className="mt-7 flex flex-col gap-7 border-t border-line pt-7 lg:flex-row lg:gap-14">
     {children}
   </div>
 )
@@ -59,39 +59,33 @@ export const ConsoleSearch: React.FC<{
   className?: string
 }> = ({ id, label, placeholder, value, onChange, className = 'max-w-xl' }) => (
   <div className={className}>
-    <label htmlFor={id} className="block text-xs font-bold uppercase tracking-[0.12em] text-ink-600">
+    <label htmlFor={id} className="block text-xs font-bold uppercase tracking-[0.16em] text-ink-600">
       {label}
     </label>
-    <div className="relative mt-2">
-      {/*
-        Büyüteç dekoratiftir — alanın görünür etiketi zaten var ve
-        `type="search"` anlamı taşır. `pointer-events-none` olmasaydı ikona
-        tıklamak alana odaklanmayı engellerdi.
-      */}
-      <svg
-        aria-hidden="true"
-        focusable="false"
-        viewBox="0 0 20 20"
-        className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-ink-500"
-      >
-        <circle cx="8.5" cy="8.5" r="5.6" fill="none" stroke="currentColor" strokeWidth="1.8" />
-        <path
-          d="M12.8 12.8 17 17"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-      </svg>
-      <input
-        id={id}
-        type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="min-h-11 w-full rounded-full border border-line-strong bg-surface-alt py-2 pl-11 pr-4 text-ink-900 transition-colors placeholder:text-ink-500 focus:border-brand-700 focus:bg-surface"
-      />
-    </div>
+    {/*
+      BÜYÜTEÇ İKONU KALDIRILDI.
+      Alanın görünür bir etiketi var, `type="search"` anlamı taşıyor ve yer
+      tutucu metin ne aranacağını söylüyor. İkon üçüncü kez aynı şeyi
+      söylüyordu — dekoratif tekrar. Yerini tipografi alıyor: etiket harf
+      aralıklı ve kalın, alan geniş ve sakin.
+
+      Yuvarlak hap biçimi de bırakıldı. Alt çizgili (underline) giriş, baskı
+      formlarının dilidir ve kutu yığınını azaltır: alan bir "widget" gibi
+      değil, yazılacak bir satır gibi durur.
+    */}
+    <input
+      id={id}
+      type="search"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      /*
+        Alt çizgi olabildiğince ince: koyu zeminde 1px beyaz/35 zaten net
+        okunur (≈6:1). Açık zeminde aynı incelikte bir çizgi 1.4:1'e düşer ve
+        alanın sınırı kaybolurdu — koyu bara geçmenin somut kazancı bu.
+      */
+      className="ease-editorial mt-2 min-h-11 w-full rounded-none border-0 border-b border-line-strong bg-transparent px-0 pb-2 text-xl text-ink-900 transition-colors duration-300 placeholder:font-normal placeholder:text-ink-500 focus:border-shell-950"
+    />
   </div>
 )
 
@@ -126,19 +120,34 @@ export const FilterPill: React.FC<{
     type="button"
     aria-pressed={active}
     onClick={onClick}
-    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-all duration-200 active:scale-[0.97] ${
+    /*
+      GÖLGE VE ZIPLAMA KALDIRILDI.
+      Aktif hap artık en koyu orman tonuyla (`shell-950`) dolar; pasif hap
+      zeminsiz durur ve yalnızca 1px çizgiyle var olur. Ayrım DEĞER
+      KONTRASTIYLA kurulur — beyaz üstünde neredeyse siyah bir yeşil, yanında
+      yalnızca çizgi. Bu, gölgeli bir "buton yığını"ndan çok daha sessiz ve
+      çok daha okunur.
+
+      Hover'da hap yerinden oynamaz; yalnızca çizgisi koyulaşır ve metni
+      koyulaşır. `duration-300` + editoryal eğri: hareket fark edilir ama
+      dikkat çekmez.
+    */
+    className={`ease-editorial inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm transition-colors duration-300 ${
       active
-        ? 'border-brand-800 bg-brand-800 text-white shadow-md shadow-brand-900/25'
-        : 'border-line-strong bg-surface text-ink-700 shadow-sm hover:-translate-y-px hover:border-brand-700 hover:bg-brand-50 hover:text-brand-800 hover:shadow'
+        ? 'border-shell-950 bg-shell-950 font-semibold text-white'
+        : 'border-line-strong bg-transparent font-medium text-ink-700 hover:border-shell-950 hover:text-shell-950'
     }`}
   >
     {active ? <CheckIcon /> : null}
     {label}
     {typeof count === 'number' ? (
       <span
-        className={`inline-flex min-w-5 justify-center rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums ${
-          active ? 'bg-white/20 text-white' : 'bg-surface-alt text-ink-600'
-        }`}
+        /*
+          Sayaç artık bir 'çip' değil: zemin kutusu kaldırıldı, ayrım
+          yalnızca punto ve renk değeriyle yapılıyor. İki iç içe kutu
+          (hap + çip) editoryal dilde gereksiz katman.
+        */
+        className={`text-xs tabular-nums ${active ? 'text-white/65' : 'text-ink-500'}`}
       >
         {count}
       </span>
@@ -151,7 +160,7 @@ export const FilterGroup: React.FC<{
   children: React.ReactNode
 }> = ({ legend, children }) => (
   <fieldset className="min-w-0">
-    <legend className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-ink-600">
+    <legend className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-ink-600">
       {legend}
     </legend>
     <div className="flex flex-wrap gap-2">{children}</div>
@@ -177,17 +186,8 @@ export const ResultBar: React.FC<{
       <button
         type="button"
         onClick={onClear}
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-4 text-sm font-medium text-ink-700 transition-colors hover:border-brand-700 hover:text-brand-800"
+        className="ease-editorial inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-ink-700 underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:text-shell-900 hover:decoration-shell-900"
       >
-        <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="0.9em" height="0.9em">
-          <path
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            d="M4 4l8 8M12 4l-8 8"
-          />
-        </svg>
         {clearLabel}
       </button>
     ) : null}

@@ -90,6 +90,18 @@ export const DETAIL_ROUTES = {
     en: '/virtual-classroom/[id]',
     ru: '/virtualnyy-klass/[id]',
   },
+  /**
+   * KÜTÜPHANE KÜNYE SAYFASI  (Şartname EK-2 Madde 1.5)
+   * Liste kartı artık dosyayı doğrudan indirmez, buraya götürür: EK-2'nin
+   * saydığı künye alanlarının (kurum, ülke, dil, lisans, DOI/ISBN, sürüm)
+   * gösterilebileceği tek yer bir detay sayfasıdır. Kart yüzeyi bir künye
+   * taşıyamaz.
+   */
+  'library-resource': {
+    tr: '/kutuphane/[slug]',
+    en: '/library/[slug]',
+    ru: '/biblioteka/[slug]',
+  },
   'news-item': { tr: '/haberler/[slug]', en: '/news/[slug]', ru: '/novosti/[slug]' },
   'gallery-album': { tr: '/galeri/[slug]', en: '/gallery/[slug]', ru: '/galereya/[slug]' },
   project: { tr: '/projeler/[slug]', en: '/projects/[slug]', ru: '/proekty/[slug]' },
