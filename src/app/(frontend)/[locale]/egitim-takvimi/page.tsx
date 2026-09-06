@@ -131,9 +131,10 @@ export default async function TrainingCalendarPage({ params }: Props) {
   return (
     <>
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-12 lg:py-16">
-          <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
-          <p className="mt-4 max-w-3xl text-lg text-ink-600">{t('intro')}</p>
+        <div className="container-page page-hero">
+          <p className="eyebrow">{t('eyebrow')}</p>
+          <h1 className="title-page measure mt-3">{t('title')}</h1>
+          <p className="lede measure mt-5">{t('intro')}</p>
           <p className="mt-6">
             <Link
               href={href('training-programs', locale)}
@@ -145,7 +146,7 @@ export default async function TrainingCalendarPage({ params }: Props) {
         </div>
       </section>
 
-      <section aria-labelledby="calendar-timeline" className="container-page py-10 lg:py-14">
+      <section aria-labelledby="calendar-timeline" className="container-page section-block">
         <h2 id="calendar-timeline" className="sr-only">
           {t('timelineHeading')}
         </h2>

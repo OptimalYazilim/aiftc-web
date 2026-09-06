@@ -160,19 +160,19 @@ export default async function FreePage({ params }: Props) {
   return (
     <>
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-8 lg:py-12">
+        <div className="container-page page-hero-compact">
           <Breadcrumbs
             label={tn('breadcrumb')}
             items={[{ label: tn('home'), href: `/${locale}` }, { label: doc.title }]}
           />
-          <h1 className="mt-6 max-w-4xl text-3xl font-bold sm:text-4xl">{doc.title}</h1>
+          <h1 className="title-record measure mt-6">{doc.title}</h1>
           {doc.subtitle ? (
-            <p className="mt-4 max-w-3xl text-lg text-ink-600">{doc.subtitle}</p>
+            <p className="lede measure mt-5">{doc.subtitle}</p>
           ) : null}
         </div>
       </section>
 
-      <article className="container-page py-10 lg:py-14">
+      <article className="container-page section-block">
         {/* Okunabilir satır genişliği — haber detayıyla aynı ölçü. */}
         <div className="max-w-prose space-y-8">
           {textBlocks.map((block, index) => (

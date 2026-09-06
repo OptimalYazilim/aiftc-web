@@ -185,7 +185,7 @@ export default async function VirtualClassroomPage({ params }: Props) {
     <>
       {/* --- Üst alan ------------------------------------------------------ */}
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-8 lg:py-10">
+        <div className="container-page page-hero-compact">
           <Breadcrumbs
             label={tn('breadcrumb')}
             items={[
@@ -207,7 +207,7 @@ export default async function VirtualClassroomPage({ params }: Props) {
             {t('badge')}
           </p>
 
-          <h1 className="mt-3 max-w-4xl text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1 className="title-record measure mt-3">
             {room.title ?? t('pageTitle')}
           </h1>
 

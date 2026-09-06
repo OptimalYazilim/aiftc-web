@@ -9,6 +9,15 @@ import { TOPIC_PARAM } from '@/lib/catalogParams'
 import { formatDate } from '@/lib/dates'
 import { matchesQuery } from '@/lib/searchText'
 
+import {
+  ConsoleDivider,
+  ConsoleSearch,
+  FilterConsole,
+  FilterGroup,
+  FilterPill,
+  ResultBar,
+} from '../ui/FilterConsole'
+
 import { TrainingCard, type TrainingCardItem } from './TrainingCard'
 
 /**
@@ -70,42 +79,6 @@ type Props = {
   topics: CatalogFilterOption[]
   statuses: CatalogFilterOption[]
 }
-
-const FilterGroup: React.FC<{
-  legend: string
-  options: CatalogFilterOption[]
-  selected: string[]
-  onToggle: (value: string) => void
-}> = ({ legend, options, selected, onToggle }) => (
-  <fieldset className="min-w-0">
-    <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-600">
-      {legend}
-    </legend>
-    <div className="flex flex-wrap gap-2">
-      {options.map((option) => {
-        const isOn = selected.includes(option.value)
-        return (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={isOn}
-            onClick={() => onToggle(option.value)}
-            className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors ${
-              isOn
-                ? 'border-brand-800 bg-brand-800 text-white'
-                : 'border-line-strong bg-surface text-ink-700 hover:border-brand-700 hover:text-brand-800'
-            }`}
-          >
-            {option.label}
-            <span className={`ml-2 ${isOn ? 'text-white/80' : 'text-ink-500'}`}>
-              {option.count}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  </fieldset>
-)
 
 export const TrainingCatalog: React.FC<Props> = ({ locale, items, topics, statuses }) => {
   const t = useTranslations('catalog')
@@ -181,57 +154,60 @@ export const TrainingCatalog: React.FC<Props> = ({ locale, items, topics, status
 
   return (
     <>
-      {/* --- Arama ------------------------------------------------------- */}
-      <div className="max-w-xl">
-        <label htmlFor={searchId} className="block text-sm font-semibold text-ink-700">
-          {t('searchLabel')}
-        </label>
-        <input
+      {/*
+        --- FİLTRELEME KONSOLU ---------------------------------------------
+        Görünüm artık ORTAK bileşenden gelir (components/ui/FilterConsole).
+        Bu dosyada yalnızca HANGİ filtrelerin olduğu ve nasıl süzüldüğü
+        durur; nasıl göründüğü kütüphane, takvim ve arama sayfalarıyla
+        aynı yerden yönetilir.
+      */}
+      <FilterConsole label={t('filterHeading')}>
+        <ConsoleSearch
           id={searchId}
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          label={t('searchLabel')}
           placeholder={t('searchPlaceholder')}
-          className="mt-2 min-h-11 w-full rounded-card border border-line-strong bg-surface px-4 text-ink-900 placeholder:text-ink-500"
+          value={query}
+          onChange={setQuery}
         />
-      </div>
 
-      {/* --- Filtreler --------------------------------------------------- */}
-      <div className="mt-8 flex flex-col gap-6 border-t border-line pt-6 lg:flex-row lg:gap-10">
-        {topics.length > 0 ? (
-          <FilterGroup
-            legend={t('filterByTopic')}
-            options={topics}
-            selected={selectedTopics}
-            onToggle={(value) => setSelectedTopics((list) => toggle(list, value))}
-          />
-        ) : null}
+        {topics.length > 0 || statuses.length > 0 ? (
+          <ConsoleDivider>
+            {topics.length > 0 ? (
+              <FilterGroup legend={t('filterByTopic')}>
+                {topics.map((option) => (
+                  <FilterPill
+                    key={option.value}
+                    label={option.label}
+                    count={option.count}
+                    active={selectedTopics.includes(option.value)}
+                    onClick={() => setSelectedTopics((list) => toggle(list, option.value))}
+                  />
+                ))}
+              </FilterGroup>
+            ) : null}
 
-        {statuses.length > 0 ? (
-          <FilterGroup
-            legend={t('filterByStatus')}
-            options={statuses}
-            selected={selectedStatuses}
-            onToggle={(value) => setSelectedStatuses((list) => toggle(list, value))}
-          />
+            {statuses.length > 0 ? (
+              <FilterGroup legend={t('filterByStatus')}>
+                {statuses.map((option) => (
+                  <FilterPill
+                    key={option.value}
+                    label={option.label}
+                    count={option.count}
+                    active={selectedStatuses.includes(option.value)}
+                    onClick={() => setSelectedStatuses((list) => toggle(list, option.value))}
+                  />
+                ))}
+              </FilterGroup>
+            ) : null}
+          </ConsoleDivider>
         ) : null}
-      </div>
+      </FilterConsole>
 
-      {/* --- Sonuç sayısı ------------------------------------------------ */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-        <p aria-live="polite" className="text-ink-600">
-          {t('resultsCount', { count: filtered.length })}
-        </p>
-        {hasFilters ? (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="inline-flex min-h-11 items-center text-brand-800 underline underline-offset-4"
-          >
-            {t('clearFilters')}
-          </button>
-        ) : null}
-      </div>
+      <ResultBar
+        count={t('resultsCount', { count: filtered.length })}
+        onClear={hasFilters ? clearAll : null}
+        clearLabel={t('clearFilters')}
+      />
 
       {/* --- Kartlar ----------------------------------------------------- */}
       {filtered.length === 0 ? (

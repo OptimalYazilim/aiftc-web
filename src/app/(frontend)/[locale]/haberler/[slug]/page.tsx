@@ -191,7 +191,7 @@ export default async function NewsDetailPage({ params }: Props) {
     <>
       {/* --- Üst alan ------------------------------------------------------ */}
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-8 lg:py-10">
+        <div className="container-page page-hero-compact">
           <Breadcrumbs
             label={tn('breadcrumb')}
             items={[
@@ -215,12 +215,12 @@ export default async function NewsDetailPage({ params }: Props) {
             ) : null}
           </div>
 
-          <h1 className="mt-3 max-w-4xl text-3xl font-bold sm:text-4xl">{doc.title}</h1>
+          <h1 className="title-record measure mt-3">{doc.title}</h1>
         </div>
       </section>
 
       {/* --- Gövde --------------------------------------------------------- */}
-      <article className="container-page py-10 lg:py-14">
+      <article className="container-page section-block">
         {cover ? (
           <Image
             src={cover.url}

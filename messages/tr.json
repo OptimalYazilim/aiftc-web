@@ -95,7 +95,9 @@
     "galleryNext": "Sonraki fotoğraf",
     "galleryCounter": "{current} / {total}",
     "galleryDownloadImage": "Görseli İndir",
-    "galleryThumbnails": "Albüm önizlemeleri"
+    "galleryThumbnails": "Albüm önizlemeleri",
+    "filterHeading": "Filtreler",
+    "eyebrow": "Dijital Kütüphane"
   },
   "training": {
     "statusLabel": "Eğitim durumu",
@@ -189,9 +191,9 @@
     "reject": "Reddet"
   },
   "catalog": {
-    "metaTitle": "Eğitimler ve Eğitim Programları",
-    "title": "Eğitimler ve Eğitim Programları",
-    "intro": "Merkezin düzenlediği eğitim programlarının tamamı. Konuya ve eğitim durumuna göre süzebilir, başlıkta ve açıklamada arama yapabilirsiniz.",
+    "metaTitle": "Eğitim Programları",
+    "title": "Eğitim Programları",
+    "intro": "Merkezin düzenlediği tüm programlar. Konuya ve duruma göre süzün, başlık veya eğitim kodunda arayın.",
     "listHeading": "Eğitim listesi",
     "searchLabel": "Eğitimlerde ara",
     "searchPlaceholder": "Eğitim adı, konu veya eğitim kodu",
@@ -199,7 +201,9 @@
     "filterByStatus": "Eğitim durumu",
     "resultsCount": "{count} eğitim listeleniyor",
     "noResults": "Seçtiğiniz ölçütlere uyan eğitim bulunamadı. Filtreleri temizleyip yeniden deneyebilirsiniz.",
-    "clearFilters": "Filtreleri temizle"
+    "clearFilters": "Filtreleri temizle",
+    "eyebrow": "Eğitim Kataloğu",
+    "filterHeading": "Filtreler"
   },
   "calendar": {
     "metaTitle": "Eğitim Takvimi",
@@ -217,7 +221,9 @@
     "resultsCount": "{count} eğitim listeleniyor",
     "clearFilters": "Filtreleri temizle",
     "noResults": "Seçtiğiniz ölçütlere uyan eğitim bulunamadı. Filtreleri temizleyip yeniden deneyebilirsiniz.",
-    "quotaValue": "{count} kişilik kontenjan"
+    "quotaValue": "{count} kişilik kontenjan",
+    "filterHeading": "Filtreler",
+    "eyebrow": "Eğitim Takvimi"
   },
   "news": {
     "metaTitle": "Haberler ve Duyurular",
@@ -234,7 +240,9 @@
     "previousPage": "Önceki",
     "nextPage": "Sonraki",
     "currentPage": "Bulunduğunuz sayfa",
-    "pageNumber": "{page}. sayfa"
+    "pageNumber": "{page}. sayfa",
+    "filterHeading": "Filtreler",
+    "eyebrow": "Haberler ve Duyurular"
   },
   "contact": {
     "metaTitle": "İletişim",
@@ -280,7 +288,8 @@
     "fieldRelatedTraining": "İlgili eğitim",
     "fieldRelatedTrainingHint": "Başvurmak istediğiniz programı seçin. Listede yoksa mesajınızda belirtin.",
     "fieldCountry": "Ülke",
-    "optionNotSpecified": "Belirtilmedi"
+    "optionNotSpecified": "Belirtilmedi",
+    "eyebrow": "İletişim"
   },
   "search": {
     "metaTitle": "Arama",
@@ -300,7 +309,9 @@
       "news": "Haber",
       "simulation-systems": "Simülasyon sistemi",
       "faqs": "Sık sorulan soru"
-    }
+    },
+    "filterHeading": "Filtreler",
+    "eyebrow": "Site İçi Arama"
   },
   "simulation": {
     "metaTitle": "Simülasyon Merkezi",

@@ -5,6 +5,13 @@ import { useTranslations } from 'next-intl'
 import React, { useMemo, useState } from 'react'
 
 import type { Locale } from '@/i18n/locales'
+
+import {
+  FilterConsole,
+  FilterGroup,
+  FilterPill,
+  ResultBar,
+} from '../ui/FilterConsole'
 import { detailHref } from '@/i18n/routes'
 import { formatDayRange, formatMonthKey, monthKey } from '@/lib/dates'
 import { trainingStatusClasses, trainingStatusLabel } from '@/lib/trainingStatus'
@@ -110,36 +117,6 @@ export const groupByMonth = (items: TimelineTraining[]): YearGroup[] => {
   }))
 }
 
-/** Süzgeç düğmesi — üç eksende de aynı görünüm. */
-const FilterChip: React.FC<{
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-  count?: number
-  /** Tek seçimli eksenler köşeli, çok seçimli eksen hap biçiminde. */
-  shape?: 'square' | 'pill'
-}> = ({ active, onClick, children, count, shape = 'square' }) => (
-  <button
-    type="button"
-    aria-pressed={active}
-    onClick={onClick}
-    className={`inline-flex min-h-11 items-center border px-4 text-sm font-semibold transition-colors ${
-      shape === 'pill' ? 'rounded-full font-medium' : 'rounded-sm'
-    } ${
-      active
-        ? 'border-shell-900 bg-shell-900 text-white'
-        : 'border-line-strong bg-surface text-shell-900 hover:border-brand-700 hover:text-brand-800'
-    }`}
-  >
-    {children}
-    {typeof count === 'number' ? (
-      <span className={`ml-2 font-normal ${active ? 'text-white/80' : 'text-ink-500'}`}>
-        {count}
-      </span>
-    ) : null}
-  </button>
-)
-
 export const TrainingCalendar: React.FC<Props> = ({ locale, items, topics }) => {
   const t = useTranslations('calendar')
   const tt = useTranslations('training')
@@ -211,70 +188,67 @@ export const TrainingCalendar: React.FC<Props> = ({ locale, items, topics }) => 
 
   return (
     <>
-      {/* --- Süzgeç çubuğu ------------------------------------------------ */}
-      <div className="flex flex-col gap-6 border-b border-line pb-6">
-        <fieldset className="min-w-0">
-          <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-600">
-            {t('filterByYear')}
-          </legend>
-          <div className="flex flex-wrap gap-2">
-            <FilterChip active={year === null} onClick={() => pickYear(null)} count={items.length}>
-              {t('allYears')}
-            </FilterChip>
+      {/*
+        --- FİLTRELEME KONSOLU ---------------------------------------------
+        Görünüm ortak bileşenden (components/ui/FilterConsole). Takvimin üç
+        süzgeç ekseni de artık aynı hap biçimini kullanır; eskiden yıl/ay
+        köşeli, konu hap biçimindeydi ve tek ekranda iki ayrı düğme dili
+        vardı. Tek seçimli / çok seçimli ayrımı GÖRÜNÜMDE değil DAVRANIŞTA:
+        yıl ve ay seçimi değiştirir, konu ekler/çıkarır.
+      */}
+      <FilterConsole label={t('filterHeading')}>
+        <div className="flex flex-col gap-6">
+          <FilterGroup legend={t('filterByYear')}>
+            <FilterPill
+              label={t('allYears')}
+              count={items.length}
+              active={year === null}
+              onClick={() => pickYear(null)}
+            />
             {years.map(([value, count]) => (
-              <FilterChip
+              <FilterPill
                 key={value}
+                label={value}
+                count={count}
                 active={year === value}
                 onClick={() => pickYear(value)}
-                count={count}
-              >
-                {value}
-              </FilterChip>
+              />
             ))}
-          </div>
-        </fieldset>
+          </FilterGroup>
 
-        {months.length > 1 ? (
-          <fieldset className="min-w-0">
-            <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-600">
-              {t('filterByMonth')}
-            </legend>
-            <div className="flex flex-wrap gap-2">
-              <FilterChip active={month === null} onClick={() => setMonth(null)}>
-                {t('allMonths')}
-              </FilterChip>
+          {months.length > 1 ? (
+            <FilterGroup legend={t('filterByMonth')}>
+              <FilterPill
+                label={t('allMonths')}
+                active={month === null}
+                onClick={() => setMonth(null)}
+              />
               {months.map(([key, count]) => {
                 /*
-                  Yıl seçiliyken etiket sadeleşir ("Ekim"); seçili değilken
-                  yılı taşır ("Ekim 2026") — aksi hâlde iki farklı yılın aynı
-                  ayı ayırt edilemezdi.
+                  Yıl seçiliyken etiket sadeleşir; seçili değilken yılı taşır
+                  — aksi hâlde iki farklı yılın aynı ayı ayırt edilemezdi.
                 */
                 const label = formatMonthKey(locale, key)
                 return (
-                  <FilterChip
+                  <FilterPill
                     key={key}
+                    label={year ? label.replace(` ${year}`, '') : label}
+                    count={count}
                     active={month === key}
                     onClick={() => setMonth(key)}
-                    count={count}
-                  >
-                    {year ? label.replace(` ${year}`, '') : label}
-                  </FilterChip>
+                  />
                 )
               })}
-            </div>
-          </fieldset>
-        ) : null}
+            </FilterGroup>
+          ) : null}
 
-        {topics.length > 0 ? (
-          <fieldset className="min-w-0">
-            <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-600">
-              {t('filterByTopic')}
-            </legend>
-            <div className="flex flex-wrap gap-2">
+          {topics.length > 0 ? (
+            <FilterGroup legend={t('filterByTopic')}>
               {topics.map((topic) => (
-                <FilterChip
+                <FilterPill
                   key={topic.value}
-                  shape="pill"
+                  label={topic.label}
+                  count={topic.count}
                   active={selectedTopics.includes(topic.value)}
                   onClick={() =>
                     setSelectedTopics((list) =>
@@ -283,31 +257,18 @@ export const TrainingCalendar: React.FC<Props> = ({ locale, items, topics }) => 
                         : [...list, topic.value],
                     )
                   }
-                  count={topic.count}
-                >
-                  {topic.label}
-                </FilterChip>
+                />
               ))}
-            </div>
-          </fieldset>
-        ) : null}
-      </div>
+            </FilterGroup>
+          ) : null}
+        </div>
+      </FilterConsole>
 
-      {/* --- Sonuç sayısı -------------------------------------------------- */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p aria-live="polite" className="text-ink-600">
-          {t('resultsCount', { count: filtered.length })}
-        </p>
-        {hasFilters ? (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="inline-flex min-h-11 items-center text-brand-800 underline underline-offset-4"
-          >
-            {t('clearFilters')}
-          </button>
-        ) : null}
-      </div>
+      <ResultBar
+        count={t('resultsCount', { count: filtered.length })}
+        onClear={hasFilters ? clearAll : null}
+        clearLabel={t('clearFilters')}
+      />
 
       {groups.length === 0 ? (
         <p className="mt-8 rounded-card border border-line bg-surface-alt p-6 text-ink-700">

@@ -95,7 +95,9 @@
     "galleryNext": "Next photo",
     "galleryCounter": "{current} / {total}",
     "galleryDownloadImage": "Download image",
-    "galleryThumbnails": "Album thumbnails"
+    "galleryThumbnails": "Album thumbnails",
+    "filterHeading": "Filters",
+    "eyebrow": "Digital library"
   },
   "training": {
     "statusLabel": "Training status",
@@ -189,9 +191,9 @@
     "reject": "Reject"
   },
   "catalog": {
-    "metaTitle": "Training programmes",
+    "metaTitle": "Training Programmes",
     "title": "Training Programmes",
-    "intro": "All training programmes offered by the centre. Filter by topic and status, or search across titles and descriptions.",
+    "intro": "Every programme run by the centre. Filter by topic and status, or search by title or course code.",
     "listHeading": "Training list",
     "searchLabel": "Search training programmes",
     "searchPlaceholder": "Title, topic or training code",
@@ -199,7 +201,9 @@
     "filterByStatus": "Status",
     "resultsCount": "{count, plural, =0 {No training programmes} one {# training programme} other {# training programmes}}",
     "noResults": "No training programmes match your criteria. Try clearing the filters.",
-    "clearFilters": "Clear filters"
+    "clearFilters": "Clear filters",
+    "eyebrow": "Training catalogue",
+    "filterHeading": "Filters"
   },
   "calendar": {
     "metaTitle": "Training calendar",
@@ -217,7 +221,9 @@
     "resultsCount": "{count, plural, one {# training listed} other {# trainings listed}}",
     "clearFilters": "Clear filters",
     "noResults": "No training matched your criteria. Try clearing the filters.",
-    "quotaValue": "{count, plural, one {# place} other {# places}}"
+    "quotaValue": "{count, plural, one {# place} other {# places}}",
+    "filterHeading": "Filters",
+    "eyebrow": "Training calendar"
   },
   "news": {
     "metaTitle": "News and announcements",
@@ -234,7 +240,9 @@
     "previousPage": "Previous",
     "nextPage": "Next",
     "currentPage": "Current page",
-    "pageNumber": "Page {page}"
+    "pageNumber": "Page {page}",
+    "filterHeading": "Filters",
+    "eyebrow": "News & announcements"
   },
   "contact": {
     "metaTitle": "Contact",
@@ -280,7 +288,8 @@
     "fieldRelatedTraining": "Related training",
     "fieldRelatedTrainingHint": "Select the programme you wish to apply for. If it is not listed, describe it in your message.",
     "fieldCountry": "Country",
-    "optionNotSpecified": "Not specified"
+    "optionNotSpecified": "Not specified",
+    "eyebrow": "Contact"
   },
   "search": {
     "metaTitle": "Search",
@@ -300,7 +309,9 @@
       "news": "News",
       "simulation-systems": "Simulation system",
       "faqs": "Frequently asked question"
-    }
+    },
+    "filterHeading": "Filters",
+    "eyebrow": "Site search"
   },
   "simulation": {
     "metaTitle": "Simulation Centre",

@@ -161,9 +161,10 @@ export default async function SearchPage({ params, searchParams }: Props) {
     <>
       {/* --- Başlık ve arama formu --------------------------------------- */}
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-12 lg:py-16">
-          <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
-          <p className="mt-4 max-w-3xl text-lg text-ink-600">{t('intro')}</p>
+        <div className="container-page page-hero">
+          <p className="eyebrow">{t('eyebrow')}</p>
+          <h1 className="title-page measure mt-3">{t('title')}</h1>
+          <p className="lede measure mt-5">{t('intro')}</p>
 
           {/*
             GET formu: JavaScript kapalıyken de çalışır ve sonuç adresi
@@ -188,11 +189,11 @@ export default async function SearchPage({ params, searchParams }: Props) {
               defaultValue={query}
               placeholder={t('placeholder')}
               maxLength={200}
-              className="min-h-12 flex-1 rounded-sm bg-surface px-4 text-base text-ink-900 placeholder:text-ink-500"
+              className="min-h-12 flex-1 rounded-full border border-line-strong bg-surface px-5 text-base text-ink-900 transition-colors placeholder:text-ink-500 focus:border-brand-700"
             />
             <button
               type="submit"
-              className="inline-flex min-h-12 items-center justify-center rounded-sm bg-brand-700 px-7 font-bold text-white transition-colors hover:bg-brand-800"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-700 px-7 font-bold text-white shadow-sm transition-all hover:bg-brand-800 hover:shadow active:scale-[0.98]"
             >
               {t('submit')}
             </button>
@@ -202,7 +203,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
 
       {/* --- Sonuçlar ----------------------------------------------------- */}
       <section aria-labelledby="search-results" className="bg-surface-warm">
-        <div className="container-page py-10 lg:py-14">
+        <div className="container-page section-block">
           <h2 id="search-results" className="sr-only">
             {t('title')}
           </h2>

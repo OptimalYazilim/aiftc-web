@@ -80,8 +80,16 @@ export const TrainingCard: React.FC<Props> = ({
 
   return (
     <li
-      className={`group flex flex-col rounded-card border border-line-soft bg-surface p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-700/30 hover:shadow-lg ${
-        size === 'large' ? 'justify-center md:p-7' : ''
+      /*
+        HOVER'DA ÜÇ ŞEY BİRDEN DEĞİŞİR — hepsi aynı süreyle:
+          yükselme (-translate-y-1) · gölge derinliği · kenarlık rengi
+        Tek başına gölge yeterince okunmuyordu; kenarlığın kurumsal yeşile
+        dönmesi kartın tıklanabilir olduğunu söyler. Renk TEK TAŞIYICI değil:
+        kart içindeki "Detayları İncele →" mikro metni ve başlık bağlantısı
+        zaten görünür durumdadır (WCAG 2.2 — 1.4.1).
+      */
+      className={`group flex flex-col rounded-card border border-line bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-700/45 hover:shadow-xl ${
+        size === 'large' ? 'justify-center md:p-8' : ''
       } ${className}`}
     >
       {/* Rozet + tematik ikon aynı satırda; ikon dekoratiftir. */}

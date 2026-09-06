@@ -142,16 +142,32 @@ export default async function TrainingCatalogPage({ params }: Props) {
 
   return (
     <>
-      {/* --- Kurumsal başlık alanı ---------------------------------------- */}
+      {/*
+        --- Kurumsal başlık alanı -------------------------------------------
+        TİPOGRAFİK HİYERARŞİ — ÜÇ KADEME
+          1. Üst etiket (eyebrow)  küçük, harf aralıklı, ikincil renk
+          2. Başlık                büyük, sıkı harf aralığı, koyu kurumsal ton
+          3. Giriş metni           ölçülü satır uzunluğu (max-w-2xl)
+
+        Başlık eskiden "Eğitimler ve Eğitim Programları" idi: aynı kelime iki
+        kez geçiyor, bölümün adı ile sayfanın adı birbirini tekrarlıyordu.
+        Bölüm adı artık ÜST ETİKETTE ("Eğitim Kataloğu"), sayfa adı ise tek
+        ve net: "Eğitim Programları".
+
+        `text-balance`: iki satıra düşen başlıkta satırları dengeler, tek
+        kelimelik dul satır bırakmaz. Giriş metni `max-w-2xl` ile ~70 karakterde
+        tutulur — okunabilir satır uzunluğu için üst sınır budur.
+      */}
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-12 lg:py-16">
-          <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
-          <p className="mt-4 max-w-3xl text-lg text-ink-600">{t('intro')}</p>
+        <div className="container-page page-hero">
+          <p className="eyebrow">{t('eyebrow')}</p>
+          <h1 className="title-page measure mt-3">{t('title')}</h1>
+          <p className="lede measure mt-5">{t('intro')}</p>
         </div>
       </section>
 
       <section aria-labelledby="catalog-list" className="bg-surface-warm">
-        <div className="container-page py-10 lg:py-12">
+        <div className="container-page section-block">
         <h2 id="catalog-list" className="sr-only">
           {t('listHeading')}
         </h2>

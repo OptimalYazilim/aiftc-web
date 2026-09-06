@@ -223,7 +223,7 @@ export default async function TrainingDetailPage({ params }: Props) {
     <>
       {/* --- Üst alan ------------------------------------------------------ */}
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-8 lg:py-10">
+        <div className="container-page page-hero-compact">
           <Breadcrumbs
             label={tn('breadcrumb')}
             items={[
@@ -243,7 +243,7 @@ export default async function TrainingDetailPage({ params }: Props) {
             {doc.code ? <span className="text-sm text-ink-600">{doc.code}</span> : null}
           </div>
 
-          <h1 className="mt-3 max-w-4xl text-3xl font-bold sm:text-4xl">{doc.title}</h1>
+          <h1 className="title-record measure mt-3">{doc.title}</h1>
 
           <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-ink-700">
             {dateRange ? (
@@ -271,7 +271,7 @@ export default async function TrainingDetailPage({ params }: Props) {
       </section>
 
       {/* --- İki kolonlu asimetrik yerleşim -------------------------------- */}
-      <div className="container-page grid gap-10 py-10 lg:grid-cols-12 lg:py-14">
+      <div className="container-page section-block grid gap-10 lg:grid-cols-12">
         {/* Sol: geniş içerik alanı */}
         <div className="lg:col-span-8">
           <p className="text-lg text-ink-700">{doc.summary}</p>

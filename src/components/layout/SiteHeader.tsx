@@ -10,7 +10,6 @@ import { buildPortalLinks } from '@/lib/portalLinks'
 import { getLayoutData } from '@/lib/queries'
 import { resolveNavItems } from '@/lib/resolveLink'
 
-import { BrandMark } from './BrandMark'
 import { HeaderShell } from './HeaderShell'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { MainNav } from './MainNav'
@@ -51,8 +50,8 @@ const mediaOf = (value: unknown): MediaLike | null =>
  * çekilmez. Üçü de panelden yüklenir:
  *     Genel Ayarlar > Logolar > Ana Logo             → merkez logosu
  *     Genel Ayarlar > Logolar > Kurum / Ortak Logolar → OGM, FAO, Bakanlık
- * Yüklenmemişse blok yalnızca nötr amblem + kurum adıyla kalır; sahte bir
- * resmî logo üretilmez.
+ * Yüklenmemişse blok YALNIZCA METİN kimliğinden ibaret kalır (kısa ad + tam
+ * unvan); sahte bir resmî logo veya yer tutucu amblem üretilmez.
  *
  * Başlıkta en fazla ÜÇ ortak logosu gösterilir (`order` ile sıralanır).
  * Tamamı, görünürlük kurallarının istediği tam boyda, footer'daki proje
@@ -150,9 +149,18 @@ export const SiteHeader = async ({ locale, localeAlternates }: Props) => {
             aria-label={`${siteName} — ${t('home')}`}
           >
             {/*
-              Yüklenmiş kurum logosu varsa o; yoksa nötr amblem
-              (bkz. components/layout/BrandMark). Başlık hiçbir durumda
-              yalnızca düz metinden ibaret kalmaz.
+              YALNIZCA YÜKLENMİŞ KURUM LOGOSU BASILIR.
+              Burada eskiden bir yedek amblem vardı (`BrandMark`): panelden
+              logo yüklenmemişken kurum adının solunda daire içinde soyut bir
+              işaret çiziliyordu. Kaldırıldı — yer tutucu bir amblem, resmî
+              amblem sanılma riski taşıyor ve başlığı kalabalıklaştırıyordu.
+
+              Logo Genel Ayarlar > Logolar > Ana Logo alanına yüklendiğinde
+              yine metnin solunda görünür; o yol bozulmadı. Yüklenmemişse
+              başlık iki satırlı metin kimliğinden ibarettir.
+
+              `BrandMark` bileşeni SİLİNMEDİ: footer'daki kurum bloğunda
+              kullanılmaya devam ediyor (bkz. SiteFooter).
             */}
             {logo?.url ? (
               <Image
@@ -163,9 +171,7 @@ export const SiteHeader = async ({ locale, localeAlternates }: Props) => {
                 priority
                 className="h-12 w-auto shrink-0"
               />
-            ) : (
-              <BrandMark />
-            )}
+            ) : null}
 
             {/*
               İKİ SATIRLI KİMLİK — WHO/ILO deseni.

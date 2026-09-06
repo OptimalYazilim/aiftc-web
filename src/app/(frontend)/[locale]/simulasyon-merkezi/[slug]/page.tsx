@@ -163,7 +163,7 @@ export default async function SimulationSystemPage({ params }: Props) {
     <>
       {/* --- Üst alan ----------------------------------------------------- */}
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-8 lg:py-10">
+        <div className="container-page page-hero-compact">
           <Breadcrumbs
             label={tn('breadcrumb')}
             items={[
@@ -179,17 +179,17 @@ export default async function SimulationSystemPage({ params }: Props) {
             </p>
           ) : null}
 
-          <h1 className="mt-3 max-w-4xl text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1 className="title-record measure mt-3">
             {doc.title}
           </h1>
 
           {doc.summary ? (
-            <p className="mt-4 max-w-3xl text-lg leading-relaxed text-ink-600">{doc.summary}</p>
+            <p className="lede measure mt-5">{doc.summary}</p>
           ) : null}
         </div>
       </section>
 
-      <div className="container-page grid gap-10 py-10 lg:grid-cols-12 lg:gap-12 lg:py-14">
+      <div className="container-page section-block grid gap-10 lg:grid-cols-12 lg:gap-12">
         {/* --- Ana kolon --------------------------------------------------- */}
         <div className="lg:col-span-8">
           {cover ? (

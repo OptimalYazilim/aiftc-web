@@ -231,17 +231,18 @@ export default async function LibraryPage({ params }: Props) {
     <>
       {/* --- Üst bölüm: kurumsal başlık + açıklama ----------------------- */}
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-12 lg:py-16">
-          <h1 className="max-w-4xl text-3xl font-bold tracking-tight sm:text-4xl">
+        <div className="container-page page-hero">
+          <p className="eyebrow">{t('eyebrow')}</p>
+          <h1 className="title-page measure mt-3">
             {t('pageTitle')}
           </h1>
-          <p className="mt-4 max-w-3xl text-lg text-ink-600">{t('pageIntro')}</p>
+          <p className="lede measure mt-5">{t('pageIntro')}</p>
         </div>
       </section>
 
       {/* --- Arama, filtreler ve liste ------------------------------------ */}
       <section aria-labelledby="library-list" className="bg-surface-warm">
-        <div className="container-page py-10 lg:py-14">
+        <div className="container-page section-block">
           <h2 id="library-list" className="sr-only">
             {t('listHeading')}
           </h2>

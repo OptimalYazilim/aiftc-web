@@ -5,6 +5,15 @@ import React, { useDeferredValue, useId, useMemo, useState } from 'react'
 
 import { matchesQuery } from '@/lib/searchText'
 
+import {
+  ConsoleDivider,
+  ConsoleSearch,
+  FilterConsole,
+  FilterGroup,
+  FilterPill,
+  ResultBar,
+} from '../ui/FilterConsole'
+
 import { LibraryResourceCard, type LibraryResourceItem } from './LibraryResourceCard'
 
 /**
@@ -53,83 +62,6 @@ type Props = {
   types: LibraryFilterOption[]
   topics: LibraryFilterOption[]
 }
-
-/** Tür şeridi: tek seçimli, "Tümü" dahil. */
-const TypeBar: React.FC<{
-  legend: string
-  allLabel: string
-  allCount: number
-  options: LibraryFilterOption[]
-  selected: string | null
-  onSelect: (value: string | null) => void
-}> = ({ legend, allLabel, allCount, options, selected, onSelect }) => (
-  <fieldset className="min-w-0">
-    <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-600">
-      {legend}
-    </legend>
-    <div className="flex flex-wrap gap-2">
-      {[{ value: '', label: allLabel, count: allCount }, ...options].map((option) => {
-        const value = option.value || null
-        const isOn = selected === value
-        return (
-          <button
-            key={option.value || 'all'}
-            type="button"
-            aria-pressed={isOn}
-            onClick={() => onSelect(value)}
-            className={`inline-flex min-h-11 items-center rounded-sm border px-4 text-sm font-semibold transition-colors ${
-              isOn
-                ? 'border-shell-900 bg-shell-900 text-white'
-                : 'border-line-strong bg-surface text-shell-900 hover:border-brand-700 hover:text-brand-800'
-            }`}
-          >
-            {option.label}
-            <span className={`ml-2 font-normal ${isOn ? 'text-white/80' : 'text-ink-500'}`}>
-              {option.count}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  </fieldset>
-)
-
-/** Tematik alanlar: çok seçimli hap butonlar. */
-const TopicPills: React.FC<{
-  legend: string
-  options: LibraryFilterOption[]
-  selected: string[]
-  onToggle: (value: string) => void
-}> = ({ legend, options, selected, onToggle }) => (
-  <fieldset className="min-w-0">
-    <legend className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-600">
-      {legend}
-    </legend>
-    <div className="flex flex-wrap gap-2">
-      {options.map((option) => {
-        const isOn = selected.includes(option.value)
-        return (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={isOn}
-            onClick={() => onToggle(option.value)}
-            className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors ${
-              isOn
-                ? 'border-brand-800 bg-brand-800 text-white'
-                : 'border-line-strong bg-surface text-ink-700 hover:border-brand-700 hover:text-brand-800'
-            }`}
-          >
-            {option.label}
-            <span className={`ml-2 ${isOn ? 'text-white/80' : 'text-ink-500'}`}>
-              {option.count}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  </fieldset>
-)
 
 export const LibraryCatalog: React.FC<Props> = ({ items, types, topics }) => {
   const t = useTranslations('library')
@@ -183,61 +115,69 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics }) => {
 
   return (
     <>
-      {/* --- Anlık arama -------------------------------------------------- */}
-      <div className="max-w-xl">
-        <label htmlFor={searchId} className="block text-sm font-semibold text-ink-700">
-          {t('searchLabel')}
-        </label>
-        <input
+      {/*
+        --- FİLTRELEME KONSOLU ---------------------------------------------
+        Görünüm ortak bileşenden gelir (components/ui/FilterConsole); eğitim
+        kataloğu, takvim ve arama sayfalarıyla AYNI yüzeydir. Bu dosyada
+        yalnızca kütüphaneye özgü filtre mantığı kalır.
+
+        TÜR filtresi TEK SEÇİMLİDİR (bir kaynak aynı anda hem video hem
+        rapor olamaz); tematik alanlar ÇOK SEÇİMLİ. Fark hapların
+        görünümünde değil, tıklama davranışındadır: türde seçim değişir,
+        konuda eklenir/çıkarılır.
+      */}
+      <FilterConsole label={t('filterHeading')}>
+        <ConsoleSearch
           id={searchId}
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          label={t('searchLabel')}
           placeholder={t('searchPlaceholder')}
-          className="mt-2 min-h-12 w-full rounded-sm border border-line-strong bg-surface px-4 text-ink-900 placeholder:text-ink-500"
-        />
-      </div>
-
-      {/* --- Filtre çubuğu ------------------------------------------------ */}
-      <div className="mt-8 flex flex-col gap-6 border-t border-line pt-6">
-        <TypeBar
-          legend={t('filterByType')}
-          allLabel={t('allTypes')}
-          allCount={items.length}
-          options={types}
-          selected={selectedType}
-          onSelect={setSelectedType}
+          value={query}
+          onChange={setQuery}
         />
 
-        {topics.length > 0 ? (
-          <TopicPills
-            legend={t('filterByTopic')}
-            options={topics}
-            selected={selectedTopics}
-            onToggle={(value) =>
-              setSelectedTopics((list) =>
-                list.includes(value) ? list.filter((item) => item !== value) : [...list, value],
+        <ConsoleDivider>
+          <FilterGroup legend={t('filterByType')}>
+            {[{ value: '', label: t('allTypes'), count: items.length }, ...types].map((option) => {
+              const value = option.value || null
+              return (
+                <FilterPill
+                  key={option.value || 'all'}
+                  label={option.label}
+                  count={option.count}
+                  active={selectedType === value}
+                  onClick={() => setSelectedType(value)}
+                />
               )
-            }
-          />
-        ) : null}
-      </div>
+            })}
+          </FilterGroup>
 
-      {/* --- Sonuç sayısı -------------------------------------------------- */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-        <p aria-live="polite" className="text-ink-600">
-          {t('resultsCount', { count: filtered.length })}
-        </p>
-        {hasFilters ? (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="inline-flex min-h-11 items-center text-brand-800 underline underline-offset-4"
-          >
-            {t('clearFilters')}
-          </button>
-        ) : null}
-      </div>
+          {topics.length > 0 ? (
+            <FilterGroup legend={t('filterByTopic')}>
+              {topics.map((option) => (
+                <FilterPill
+                  key={option.value}
+                  label={option.label}
+                  count={option.count}
+                  active={selectedTopics.includes(option.value)}
+                  onClick={() =>
+                    setSelectedTopics((list) =>
+                      list.includes(option.value)
+                        ? list.filter((item) => item !== option.value)
+                        : [...list, option.value],
+                    )
+                  }
+                />
+              ))}
+            </FilterGroup>
+          ) : null}
+        </ConsoleDivider>
+      </FilterConsole>
+
+      <ResultBar
+        count={t('resultsCount', { count: filtered.length })}
+        onClear={hasFilters ? clearAll : null}
+        clearLabel={t('clearFilters')}
+      />
 
       {/* --- Liste --------------------------------------------------------- */}
       {filtered.length === 0 ? (

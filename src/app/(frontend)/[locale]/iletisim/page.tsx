@@ -161,17 +161,18 @@ export default async function ContactPage({ params, searchParams }: Props) {
   return (
     <>
       <section className="border-b border-line bg-surface-alt">
-        <div className="container-page py-8 lg:py-12">
+        <div className="container-page page-hero">
           <Breadcrumbs
             label={tn('breadcrumb')}
             items={[{ label: tn('home'), href: `/${locale}` }, { label: t('title') }]}
           />
-          <h1 className="mt-6 text-3xl font-bold sm:text-4xl">{t('title')}</h1>
-          <p className="mt-4 max-w-3xl text-lg text-ink-600">{t('intro')}</p>
+          <p className="eyebrow mt-6">{t('eyebrow')}</p>
+          <h1 className="title-page measure mt-3">{t('title')}</h1>
+          <p className="lede measure mt-5">{t('intro')}</p>
         </div>
       </section>
 
-      <div className="container-page grid gap-12 py-10 lg:grid-cols-12 lg:py-14">
+      <div className="container-page section-block grid gap-12 lg:grid-cols-12">
         {/* --- Sol: kurumsal iletişim bilgileri --------------------------- */}
         <section aria-labelledby="contact-details" className="lg:col-span-5">
           <h2 id="contact-details" className="text-2xl font-semibold">

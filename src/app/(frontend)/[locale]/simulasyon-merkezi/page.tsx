@@ -177,11 +177,11 @@ export default async function SimulationCentrePage({ params }: Props) {
           <div aria-hidden="true" className="hero-editorial absolute inset-0 -z-20" />
         )}
 
-        <div className="container-page py-14 lg:py-20">
+        <div className="container-page page-hero">
           <p className="mb-5 inline-flex items-center bg-brand-800 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.14em] sm:text-sm">
             {t('eyebrow')}
           </p>
-          <h1 className="max-w-4xl text-balance text-[2.25rem] font-bold leading-[1.1] tracking-tight text-white sm:text-5xl">
+          <h1 className="title-page measure text-white">
             {(page.title as string) || t('title')}
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/90">{t('intro')}</p>
@@ -209,7 +209,7 @@ export default async function SimulationCentrePage({ params }: Props) {
       </section>
 
       {/* --- 1) Merkezin amacı -------------------------------------------- */}
-      <section aria-labelledby="sim-purpose" className="container-page py-12 lg:py-16">
+      <section aria-labelledby="sim-purpose" className="container-page page-hero">
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
           {hasRichTextContent(page.purpose) ? (
             <div>
@@ -242,7 +242,7 @@ export default async function SimulationCentrePage({ params }: Props) {
 
       {/* --- 2) Sistemler + 3) çapraz referans ---------------------------- */}
       <section aria-labelledby="sim-systems" className="bg-surface-alt">
-        <div className="container-page py-12 lg:py-16">
+        <div className="container-page page-hero">
           <h2 id="sim-systems" className="text-2xl font-bold tracking-tight sm:text-3xl">
             {t('systemsHeading')}
           </h2>

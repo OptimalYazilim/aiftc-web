@@ -95,7 +95,9 @@
     "galleryNext": "Следующее фото",
     "galleryCounter": "{current} / {total}",
     "galleryDownloadImage": "Скачать изображение",
-    "galleryThumbnails": "Миниатюры альбома"
+    "galleryThumbnails": "Миниатюры альбома",
+    "filterHeading": "Фильтры",
+    "eyebrow": "Цифровая библиотека"
   },
   "training": {
     "statusLabel": "Статус обучения",
@@ -191,7 +193,7 @@
   "catalog": {
     "metaTitle": "Программы обучения",
     "title": "Программы обучения",
-    "intro": "Все программы обучения центра. Отфильтруйте по теме и статусу или найдите программу по названию и описанию.",
+    "intro": "Все программы центра. Отфильтруйте по теме и статусу или найдите по названию либо коду курса.",
     "listHeading": "Список программ",
     "searchLabel": "Поиск по программам",
     "searchPlaceholder": "Название, тема или код обучения",
@@ -199,7 +201,9 @@
     "filterByStatus": "Статус обучения",
     "resultsCount": "{count, plural, =0 {Программы не найдены} one {# программа} few {# программы} other {# программ}}",
     "noResults": "Программы, соответствующие выбранным условиям, не найдены. Попробуйте сбросить фильтры.",
-    "clearFilters": "Сбросить фильтры"
+    "clearFilters": "Сбросить фильтры",
+    "eyebrow": "Каталог обучения",
+    "filterHeading": "Фильтры"
   },
   "calendar": {
     "metaTitle": "Календарь обучения",
@@ -217,7 +221,9 @@
     "resultsCount": "{count, plural, one {Показано # обучение} few {Показано # обучения} many {Показано # обучений} other {Показано # обучений}}",
     "clearFilters": "Сбросить фильтры",
     "noResults": "По выбранным условиям обучение не найдено. Попробуйте сбросить фильтры.",
-    "quotaValue": "{count, plural, one {# место} few {# места} many {# мест} other {# мест}}"
+    "quotaValue": "{count, plural, one {# место} few {# места} many {# мест} other {# мест}}",
+    "filterHeading": "Фильтры",
+    "eyebrow": "Календарь обучения"
   },
   "news": {
     "metaTitle": "Новости и объявления",
@@ -234,7 +240,9 @@
     "previousPage": "Назад",
     "nextPage": "Вперёд",
     "currentPage": "Текущая страница",
-    "pageNumber": "Страница {page}"
+    "pageNumber": "Страница {page}",
+    "filterHeading": "Фильтры",
+    "eyebrow": "Новости и объявления"
   },
   "contact": {
     "metaTitle": "Контакты",
@@ -280,7 +288,8 @@
     "fieldRelatedTraining": "Связанное обучение",
     "fieldRelatedTrainingHint": "Выберите программу, на которую хотите подать заявку. Если её нет в списке, укажите в сообщении.",
     "fieldCountry": "Страна",
-    "optionNotSpecified": "Не указано"
+    "optionNotSpecified": "Не указано",
+    "eyebrow": "Контакты"
   },
   "search": {
     "metaTitle": "Поиск",
@@ -300,7 +309,9 @@
       "news": "Новость",
       "simulation-systems": "Система симуляции",
       "faqs": "Частый вопрос"
-    }
+    },
+    "filterHeading": "Фильтры",
+    "eyebrow": "Поиск по сайту"
   },
   "simulation": {
     "metaTitle": "Центр симуляции",
