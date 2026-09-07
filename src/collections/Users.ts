@@ -31,6 +31,15 @@ import { AUDIENCE_ROLES } from '@/fields/options'
  * acma, sifre sifirlama e-postasi) kurulmalidir — bkz.
  * docs/access-control-guide.md, "Bilinen sinirlar".
  */
+/**
+ * PAROLA ALT SINIRI — tek kaynak.
+ * Sunucu kuralı (`hooks.beforeValidate`) ve kayıt formundaki kolaylık
+ * kontrolü aynı sayıyı kullanır; ikisi ayrışırsa kullanıcı formda geçen bir
+ * parolayla sunucudan hata alır. Form bu değeri `auth.passwordMinLength`
+ * çeviri anahtarı üzerinden gösterir.
+ */
+export const MIN_PAROLA = 10
+
 export const Users: CollectionConfig = {
   slug: 'users',
   labels: {
@@ -237,6 +246,39 @@ export const Users: CollectionConfig = {
     */
     beforeValidate: [
       ({ data, req, operation }) => {
+        /*
+          ======================================================================
+          PAROLA ALT SINIRI  (Şartname 12.1)
+          ======================================================================
+          Payload'ın VARSAYILANINDA asgari parola uzunluğu YOKTUR. Ölçüldü
+          (2026-09-07, kayıt ucu dışarıya açıkken):
+
+              POST /api/users  { password: '123' }   ->  201 Created
+
+          Üç karakterlik bir parola kabul ediliyordu. Kayıt ekranı yayına
+          alınırken bu, tek başına `maxLoginAttempts` ile savunulamayacak bir
+          zayıflıktır: kilit denemeyi yavaşlatır, tahmin edilebilir parolayı
+          güçlendirmez.
+
+          KURAL SUNUCUDADIR, formda DEĞİL. Formdaki uzunluk kontrolü bir
+          KOLAYLIKTIR; API'ye doğrudan istek atan bir istemci onu hiç
+          görmez. İkisi birlikte bulunur, biri diğerinin yerine geçmez.
+
+          `password` sanal bir alandır (veritabanında hash tutulur), bu yüzden
+          alan düzeyi `validate` ile değil burada denetlenir. Yalnızca DEĞER
+          GELDİĞİNDE bakılır: parolasız bir güncelleme (örneğin yöneticinin
+          hesabı onaylaması) bu kuraldan etkilenmez.
+        */
+        const parola = (data as { password?: unknown } | null | undefined)?.password
+        if (typeof parola === 'string' && parola.length > 0 && parola.length < MIN_PAROLA) {
+          throw new APIError(
+            `Parola en az ${MIN_PAROLA} karakter olmalıdır.`,
+            400,
+            { code: 'password_too_short', minLength: MIN_PAROLA },
+            true,
+          )
+        }
+
         if (operation !== 'create' || !data) return data
 
         if (!req.user) {
@@ -267,6 +309,22 @@ export const Users: CollectionConfig = {
       MESAJ AYRIMI BİLİNÇLİ: "onay bekliyor" ile "askıya alındı" farklı
       şeylerdir ve kullanıcının hangisi olduğunu bilmesi gerekir — birine
       beklemek, diğerine kurumla iletişime geçmek düşer.
+
+      MAKİNE OKUNABİLİR KOD — NEDEN GEREKLİ
+      ----------------------------------------------------------------------
+      Hata yalnızca Türkçe bir cümle olarak fırlatılıyordu. Giriş sayfası üç
+      dilde çalıştığı için istemcinin hangi durumla karşılaştığını ANLAMASI
+      gerekir; tek yol metni ayrıştırmaktı ve bu iki yönden kırılgandır:
+      cümle düzeltilince eşleşme sessizce bozulur, ve Rusça arayüzde
+      kullanıcıya Türkçe bir cümle basılırdı.
+
+      `APIError`in üçüncü argümanı yanıt gövdesine `data` olarak geçer.
+      İstemci `errors[0].data.code` okur ve kendi sözlüğünden çevirir
+      (bkz. components/auth/LoginForm.tsx).
+
+      Dördüncü argüman `true` = "public": mesaj üretimde de gövdede kalır.
+      Bu bilinçlidir — kullanıcının hesabının neden açılmadığını öğrenmesi
+      bir bilgi sızıntısı değil, gerekliliktir.
     */
     beforeLogin: [
       ({ user }) => {
@@ -278,12 +336,16 @@ export const Users: CollectionConfig = {
           throw new APIError(
             'Hesabınız askıya alınmıştır. Lütfen eğitim koordinatörünüzle iletişime geçin.',
             403,
+            { code: 'account_suspended' },
+            true,
           )
         }
 
         throw new APIError(
           'Hesabınız yönetici onayı beklemektedir. Onaylandığında giriş yapabilirsiniz.',
           403,
+          { code: 'account_pending' },
+          true,
         )
       },
     ],

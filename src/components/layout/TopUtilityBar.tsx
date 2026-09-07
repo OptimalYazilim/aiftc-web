@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 
 import type { Locale } from '@/i18n/locales'
-import { href } from '@/i18n/routes'
+import { authHref, href } from '@/i18n/routes'
 import type { PortalLink } from '@/lib/portalLinks'
 
 import { PortalLinks } from './PortalLinks'
@@ -78,6 +78,42 @@ export const TopUtilityBar = async ({
         {/* --- Sağ: dil + arama ------------------------------------------- */}
         <div className="ml-auto flex items-center gap-1">
           {languageSwitcher}
+
+          <span aria-hidden="true" className="h-4 w-px bg-white/20" />
+
+          {/*
+            ZİYARETÇİ GİRİŞİ — menüye DEĞİL, hizmet şeridine konur.
+            Ana menü `globals/Navigation` üzerinden editör tarafından
+            yönetilir ve oradaki "Sistem bölümü" alanı bir Postgres enum'udur;
+            yeni bir değer eklemek on dört ayrı `ALTER TYPE` satırlık bir
+            migration gerektirir. Kimlik ekranları bir İÇERİK bölümü değildir,
+            editörün sıralamasına da girmemelidir — bu yüzden portal ve arama
+            bağlantılarının yanında, sabit olarak durur.
+
+            Soldaki "Personel Girişi" bundan FARKLIDIR: o, EK-2 yönetim
+            portalına (ayrı sistem) gider. Bu ise sitenin kendi hesabıdır.
+          */}
+          <Link
+            href={authHref('login', locale)}
+            className="inline-flex min-h-9 items-center gap-2 rounded px-2 py-1 font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              viewBox="0 0 16 16"
+              width="1em"
+              height="1em"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6.5 13.5h-3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3" />
+              <path d="M10.5 11 14 8l-3.5-3M14 8H6" />
+            </svg>
+            {t('signIn')}
+          </Link>
 
           <span aria-hidden="true" className="h-4 w-px bg-white/20" />
 

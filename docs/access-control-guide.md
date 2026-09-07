@@ -117,7 +117,9 @@ bırakılmıştır. Açık kalanlar kuruma teslimde ayrıca raporlanmalıdır.
 | 5.1 Belge dosyalarının adresleri | ✅ Kapatıldı (2026-09-07) |
 | 5.1.1 `media` bilerek açık | ⚠️ Kalan sınır — kurum kararı bekliyor |
 | 5.1.2 S3 kovası | ⚠️ Kurulum şartı |
-| 5.2 Sitede ziyaretçi girişi yok | ❌ Açık |
+| 5.2 Ziyaretçi kayıt / giriş ekranı | ✅ Kuruldu (2026-09-07) — e-posta adaptörü hâlâ açık |
+| 5.2.1 Parola alt sınırı | ✅ Eklendi (2026-09-07) |
+| 5.2.2 Devralınan veritabanında kilitli hesap | ⚠️ Kurulum kontrolü |
 | 5.3 `DocumentFiles.accessLevel` | ✅ Artık zorlanıyor (2026-09-07) |
 | 5.4 Hız sınırlama | ❌ Açık — ters vekil / WAF katmanında |
 
@@ -171,20 +173,67 @@ adresi doğrudan çalışır ve Payload devre dışı kalır.
 **Kurulumda zorunlu:** kova `private` olmalı, nesnelere yalnızca uygulamanın
 kimlik bilgileriyle erişilmelidir.
 
-### 5.2 Sitede ziyaretçi girişi yok
+### 5.2 Ziyaretçi kayıt / giriş ekranı — **KURULDU (2026-09-07)**, e-posta hâlâ yok
 
-Katılımcılar artık dışarıdan kayıt olabilir (bkz. Bölüm 8) ve onaylandıktan
-sonra giriş yapabilirler. `staff`/`instructor` rolleri ise yalnızca panelden
-atanır.
+Ekranlar yayında:
 
-ANCAK sitede henüz bir kayıt/giriş EKRANI yoktur — akış şu an yalnızca API
-üzerinden çalışır. Ön yüz formları ayrıca yapılmalıdır.
+| Sayfa | TR · EN · RU |
+|---|---|
+| Giriş | `/giris` · `/login` · `/vhod` |
+| Kayıt | `/kayit` · `/register` · `/registratsiya` |
 
-Ayrıca e-posta adaptörü tanımlı değildir — şifre sıfırlama e-postaları
-kullanıcıya **ulaşmaz**, yalnızca sunucu günlüğüne yazılır.
+Bağlantı üst hizmet şeridindedir (menüde değil — gerekçe: `TopUtilityBar.tsx`).
+Sayfalar `robots: noindex` taşır ve sitemap'e girmez.
 
-Bu kurulmadan `trainee`/`instructor` seviyeleri pratikte kullanılamaz;
-`public` ve `staff` çalışır durumdadır.
+Formlar **istemci bileşenidir ve doğrudan `fetch` kullanır**; Server Action
+DEĞİL. Zorunluluktur: oturum çerezi tarayıcıya `Set-Cookie` ile gelir ve
+Payload'ın CSRF koruması isteğin `Origin` başlığını arar — ikisini de yalnızca
+tarayıcının kendi isteği sağlar (bkz. **Bölüm 10.4**).
+
+Ölçülmüş akış (gerçek tarayıcı, 2026-09-07):
+
+```
+POST /api/users        -> 201   hesap trainee + pending doğar
+POST /api/users/login  -> 403   errors[0].data.code = 'account_pending'
+        (yönetici onayından sonra)
+POST /api/users/login  -> 200   çerez kurulur, /api/users/me kullanıcıyı döner
+```
+
+`beforeLogin` artık makine okunabilir bir kod taşır (`account_pending` /
+`account_suspended`); form bu kodu kendi dilindeki açıklamaya çevirir. Metin
+ayrıştırılmaz — cümle düzeltildiğinde eşleşme sessizce bozulurdu.
+
+**AÇIK KALAN — e-posta adaptörü yok.** Onay bildirimi ve parola sıfırlama
+e-postaları kullanıcıya **ulaşmaz**, yalnızca sunucu günlüğüne yazılır. Kayıt
+başarı ekranı bunu açıkça söyler; "e-postanızı kontrol edin" demek yanlış
+olurdu. Parola sıfırlama akışı bu adaptör kurulmadan kullanılamaz.
+
+### 5.2.1 Parola alt sınırı — **EKLENDİ (2026-09-07)**
+
+Payload'ın varsayılanında asgari parola uzunluğu yoktur. Ölçüldü: kayıt ucu
+dışarıya açıkken `{ password: '123' }` isteği **201** dönüyordu.
+
+Artık sunucu tarafında en az **10 karakter** zorunludur
+(`Users.ts → MIN_PAROLA`, `hooks.beforeValidate`). Formdaki kontrol bir
+kolaylıktır; API'ye doğrudan istek atan istemci onu görmez, kural sunucudadır.
+
+### 5.2.2 KURULUM UYARISI — mevcut hesaplar kilitlenebilir
+
+`accountStatus` sonradan eklenen bir alandır. Alan eklenirken mevcut satırlar
+`approved` ile GERİ DOLDURULMAZSA, `beforeLogin` herkesi dışarıda bırakır —
+yöneticinin kendisi dahil. O noktada bekleyen kayıtları onaylayabilecek kimse
+kalmaz.
+
+Bu tam olarak yaşandı ve düzeltildi: migration
+`20260906_114030_mevcut_sema_senkronu` sütunu `NOT NULL` ve **varsayılansız**
+ekliyordu — dolu bir tabloda bu ifade zaten hata verir. Şimdi
+`DEFAULT 'approved'` ile eklenip varsayılan düşürülüyor.
+
+> **Devralınan bir veritabanına geçerken kontrol edin:**
+> ```sql
+> SELECT email, account_status FROM users WHERE account_status <> 'approved';
+> ```
+> Panel rolü taşıyan bir hesap bu listede çıkıyorsa kilitlidir.
 
 ### 5.3 `DocumentFiles.accessLevel` zorlanmıyor — **ARTIK ZORLANIYOR (2026-09-07)**
 

@@ -61,6 +61,37 @@ export const ROUTES = {
   search: { tr: '/arama', en: '/search', ru: '/poisk' },
 } as const satisfies Record<string, Record<Locale, string>>
 
+/**
+ * KİMLİK SAYFALARI  (Şartname 1.7 · Kılavuz 5.2)
+ * ============================================================================
+ * `ROUTES` İÇİNE KONMADI — BİLİNÇLİ.
+ *
+ * `sitemap.ts` `ROUTE_KEYS`in tamamını dolaşır ve her anahtarı üç dilde
+ * yayımlar. Giriş ve kayıt ekranlarının arama motoruna duyurulmasının hiçbir
+ * faydası yoktur: içerik taşımazlar, dizine girdiklerinde kurumsal aramalarda
+ * "giriş" sonucu içerik sonuçlarının önüne geçer. Bu yüzden ayrı bir haritada
+ * dururlar ve sitemap'e girmezler.
+ *
+ * `buildPathnames()` yine de bu haritayı okur — next-intl'in EN/RU adresleri
+ * kanonik TR yola yeniden yazabilmesi için gereklidir. Harita dışarıda
+ * bırakılsaydı `/en/login` 404 dönerdi.
+ *
+ * `globals/Navigation.ts` içindeki "Sistem bölümü" seçeneklerine de
+ * EKLENMEDİ: o alan bir Postgres enum'udur ve yeni bir değer eklemek on dört
+ * ayrı `ALTER TYPE` satırlık bir migration gerektirir. Editörün bu sayfaları
+ * menüye koyması bir gereklilik değildir; bağlantılar üst şeritte sabittir.
+ */
+export const AUTH_ROUTES = {
+  login: { tr: '/giris', en: '/login', ru: '/vhod' },
+  register: { tr: '/kayit', en: '/register', ru: '/registratsiya' },
+} as const satisfies Record<string, Record<Locale, string>>
+
+export type AuthRouteKey = keyof typeof AUTH_ROUTES
+
+/** Kimlik sayfasının o dildeki tam yolu: `/en/login` */
+export const authHref = (key: AuthRouteKey, locale: Locale): string =>
+  `/${locale}${AUTH_ROUTES[key][locale]}`
+
 /** Detay sayfaları. `[slug]` yerine kaydın o dildeki slug'ı konur. */
 export const DETAIL_ROUTES = {
   'training-topic': {
@@ -144,6 +175,13 @@ export const buildPathnames = (): Record<string, Record<Locale, string>> => {
     entries.push([route.tr, { ...route }])
   }
   for (const route of Object.values(DETAIL_ROUTES)) {
+    entries.push([route.tr, { ...route }])
+  }
+  /*
+    Kimlik sayfaları next-intl'e VERİLİR (yoksa /en/login 404 döner) ama
+    `ROUTE_KEYS` içinde olmadıkları için sitemap'e GİRMEZLER.
+  */
+  for (const route of Object.values(AUTH_ROUTES)) {
     entries.push([route.tr, { ...route }])
   }
 
