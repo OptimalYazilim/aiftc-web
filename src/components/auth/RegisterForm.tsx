@@ -7,6 +7,8 @@ import React, { useState } from 'react'
 import type { Locale } from '@/i18n/locales'
 import { authHref } from '@/i18n/routes'
 
+import { MIN_PAROLA } from '@/lib/passwordPolicy'
+
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 
 /**
@@ -44,9 +46,6 @@ import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
  * birlikte durur, biri ötekinin yerine geçmez.
  * ============================================================================
  */
-
-/** Sunucu kuralıyla aynı sayı — Users.ts → MIN_PAROLA. */
-const MIN_PAROLA = 10
 
 type Alanlar = {
   name: string

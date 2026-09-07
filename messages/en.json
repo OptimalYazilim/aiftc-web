@@ -500,6 +500,27 @@
     "contactLink": "Contact page",
     "noEmailNotice": "Note: outgoing e-mail is not yet enabled. Approval notices and password-reset messages are not delivered at present; please contact the centre to check your status.",
     "fieldRequired": "(required)",
-    "errorRateLimited": "Too many attempts from this device. Please wait a while and try again."
+    "errorRateLimited": "Too many attempts from this device. Please wait a while and try again.",
+    "forgotMetaTitle": "Forgot password",
+    "forgotTitle": "Forgotten your password?",
+    "forgotIntro": "Enter your account’s e-mail address. If an account exists, we will send you a link to set a new password.",
+    "forgotSubmit": "Send reset link",
+    "forgotSending": "Sending…",
+    "forgotSentTitle": "Link sent",
+    "forgotSent": "If an account exists for that address, a password reset link has been sent by e-mail. The link is valid for one hour.",
+    "forgotPrivacyNote": "For security, we do not say whether the address is registered. This prevents valid e-mail addresses from being discovered by trial.",
+    "toForgot": "Forgotten your password?",
+    "resetMetaTitle": "Reset password",
+    "resetTitle": "Set a new password",
+    "resetIntro": "Choose a new password for your account.",
+    "resetSubmit": "Update password",
+    "resetSending": "Updating…",
+    "resetDoneTitle": "Your password has been updated",
+    "resetDone": "You can now sign in with your new password.",
+    "resetMissingTokenTitle": "Invalid link",
+    "resetMissingToken": "You need to reach this page through the link in your e-mail. The verification key is missing from the address.",
+    "resetInvalidTokenTitle": "The link has expired",
+    "resetInvalidToken": "This reset link is no longer valid. Links expire after one hour; you can request a new one.",
+    "resetRequestNew": "Request a new link"
   }
 }

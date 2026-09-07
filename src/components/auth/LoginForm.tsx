@@ -233,14 +233,30 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
         {durum === 'gonderiliyor' ? t('loginSending') : t('loginSubmit')}
       </button>
 
-      <p className="border-t border-line-soft pt-5 text-sm text-ink-600">
-        <Link
-          href={authHref('register', locale)}
-          className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
-        >
-          {t('toRegister')}
-        </Link>
-      </p>
+      {/*
+        İKİ İKİNCİL YOL, TEK ŞERİTTE.
+        "Parolamı unuttum" giriş denemesinden SONRA aranır; bu yüzden
+        düğmenin altındadır, üstünde değil. Kayıt bağlantısı da aynı yerde
+        durur — ikisi de "buradan çıkamıyorum" anındaki çıkış kapılarıdır.
+      */}
+      <div className="space-y-2 border-t border-line-soft pt-5 text-sm text-ink-600">
+        <p>
+          <Link
+            href={authHref('forgotPassword', locale)}
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+          >
+            {t('toForgot')}
+          </Link>
+        </p>
+        <p>
+          <Link
+            href={authHref('register', locale)}
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+          >
+            {t('toRegister')}
+          </Link>
+        </p>
+      </div>
     </form>
   )
 }

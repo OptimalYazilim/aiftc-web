@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { routing } from '@/i18n/routing'
+import { parolaGecerliMi, parolaHataGovdesi } from '@/lib/passwordPolicy'
 import { hizSinirinaBak, limitYaniti, type LimitSinifi } from '@/lib/rateLimit'
 
 const intlMiddleware = createMiddleware(routing)
@@ -18,10 +19,12 @@ const intlMiddleware = createMiddleware(routing)
  */
 const KORUNAN_UCLAR: { yol: string; sinif: LimitSinifi }[] = [
   { yol: '/api/users/login', sinif: 'login' },
+  { yol: '/api/users/forgot-password', sinif: 'passwordReset' },
+  { yol: '/api/users/reset-password', sinif: 'passwordReset' },
   { yol: '/api/users', sinif: 'register' },
 ]
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   /*
@@ -42,11 +45,45 @@ export function middleware(request: NextRequest) {
       const sonuc = hizSinirinaBak(request, eslesen.sinif)
       if (sonuc.asildi) return limitYaniti(sonuc.sonraDeneSaniye)
     }
+
+    /*
+      ==========================================================================
+      2) PAROLA POLİTİKASI — SIFIRLAMA YOLU
+      ==========================================================================
+      `Users.hooks.beforeValidate` içindeki kural BU YOLDA ÇALIŞMAZ. Payload'ın
+      `resetPassword` işlemi parolayı ÖNCE hash'ler, kancayı sonra çağırır;
+      kancaya giden veride `password` yoktur, `salt`/`hash` vardır. Ölçüldü:
+      kural yalnızca kancadayken `{ password: '123' }` isteği 200 dönüyordu —
+      yani politika sıfırlama üzerinden tümüyle atlanabiliyordu.
+
+      Bu yüzden denetim istek Payload'a ULAŞMADAN önce burada yapılır.
+      Gerekçenin tamamı ve tek sayı: lib/passwordPolicy.ts
+
+      GÖVDE `clone()` ÜZERİNDEN OKUNUR. Orijinal isteğin gövdesi bir akıştır ve
+      bir kez tüketilir; burada tüketilseydi Payload'a boş gövde giderdi.
+    */
+    if (pathname === '/api/users/reset-password') {
+      try {
+        const govde = (await request.clone().json()) as { password?: unknown }
+        if (!parolaGecerliMi(govde?.password)) {
+          return NextResponse.json(parolaHataGovdesi(), {
+            status: 400,
+            headers: { 'Cache-Control': 'no-store' },
+          })
+        }
+      } catch {
+        /*
+          Gövde okunamadı (JSON değil ya da boş). Burada karar VERİLMEZ:
+          isteği reddetmek, Payload'ın kendi doğrulamasının üreteceği daha
+          doğru hatayı gizlerdi. İstek olduğu gibi geçer.
+        */
+      }
+    }
   }
 
   /*
     ============================================================================
-    2) API yolları next-intl'e VERİLMEZ
+    3) API yolları next-intl'e VERİLMEZ
     ============================================================================
     `matcher` artık `/api/users*` yollarını da kapsıyor (sınır için gerekli).
     Ama next-intl bu yolları dil önekiyle yeniden yazmaya çalışırsa Payload'ın
@@ -73,5 +110,7 @@ export const config = {
     '/((?!api|admin|_next|_vercel|media|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)',
     '/api/users',
     '/api/users/login',
+    '/api/users/forgot-password',
+    '/api/users/reset-password',
   ],
 }

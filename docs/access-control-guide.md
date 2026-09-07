@@ -122,7 +122,9 @@ bırakılmıştır. Açık kalanlar kuruma teslimde ayrıca raporlanmalıdır.
 | 5.2.2 Devralınan veritabanında kilitli hesap | ⚠️ Kurulum kontrolü |
 | 5.3 `DocumentFiles.accessLevel` | ✅ Artık zorlanıyor (2026-09-07) |
 | 5.4 Hız sınırlama (kimlik uçları) | ✅ Kuruldu (2026-09-07) — ters vekil katmanı yine gerekli |
-| 5.5 E-posta adaptörü | ✅ Kuruldu (2026-09-07) — site tarafı sıfırlama sayfası açık |
+| 5.5 E-posta adaptörü | ✅ Kuruldu (2026-09-07) |
+| 5.5.1 Site tarafı sıfırlama akışı | ✅ Kuruldu (2026-09-07) |
+| 5.5.2 Parola politikası sıfırlamada atlanıyordu | ✅ Kapatıldı (2026-09-07) |
 
 ### 5.1 Belge dosyalarının adresleri — **KAPATILDI (2026-09-07)**
 
@@ -324,12 +326,69 @@ gövdede sıfırlama bağlantısı: /admin/reset/<token>
 `SMTP_USER` boşsa `auth` hiç gönderilmez — kimlik doğrulaması istemeyen iç ağ
 röleleri için gereklidir.
 
-**AÇIK KALAN — sıfırlama sayfası panelin içindedir.** Bağlantı
-`/admin/reset/<token>` adresine gider. Anonim erişilebilir olduğu ölçüldü
-(200), yani katılımcı parolasını sıfırlayabilir; ancak ardından panelin giriş
-ekranına düşer ve oraya giremez (`canAccessAdminPanel`). Parola değişmiştir ve
-kullanıcı `/giris` üzerinden devam edebilir, fakat akış pürüzlüdür. Site
-tarafında bir sıfırlama sayfası ayrıca yapılmalıdır.
+### 5.5.1 Site tarafı sıfırlama akışı — **KURULDU (2026-09-07)**
+
+Bağlantı artık `/admin/reset/<token>` değil, sitenin kendi sayfasıdır.
+
+| Sayfa | TR · EN · RU |
+|---|---|
+| Şifremi unuttum | `/sifremi-unuttum` · `/forgot-password` · `/vosstanovlenie-parolya` |
+| Yeni parola belirle | `/sifre-sifirla` · `/reset-password` · `/sbros-parolya` |
+
+E-posta şablonu `lib/forgotPasswordEmail.ts` içinde ezilir ve **dile
+duyarlıdır**. Dil sırası: `X-AIFTC-Locale` başlığı (kendi formumuz açıkça
+gönderir) → `Referer` yolundaki dil öneki → varsayılan.
+`user.preferredAdminLanguage` kullanılmaz: o alan PANEL dilidir ve dışarıdan
+kayıt olan herkeste `tr` olarak durur; Rusça gezinen bir katılımcıya Türkçe
+e-posta gönderirdi.
+
+Ölçüldü (yerel SMTP alıcısı):
+
+```
+X-AIFTC-Locale: tr → http://…/tr/sifre-sifirla?token=…   konu: "Parolanızı sıfırlayın — AIFTC"
+X-AIFTC-Locale: ru → http://…/ru/sbros-parolya?token=…   konu: "Сброс пароля — AIFTC"
+/admin/reset içeriyor mu: hayır
+```
+
+Uçtan uca akış (7/7):
+
+```
+forgot-password           → 200   jeton üretildi
+reset-password  '123'     → 400   kısa parola REDDEDİLDİ
+reset-password  geçerli   → 200
+yeni parolayla giriş      → 200
+eski parola               → 401
+jeton ikinci kez          → 403
+```
+
+### 5.5.2 PAROLA POLİTİKASI SIFIRLAMA YOLUNDAN ATLANABİLİYORDU
+
+Kural önce yalnızca `Users.hooks.beforeValidate` içindeydi. Ölçüldü:
+
+```
+POST /api/users/reset-password { token, password: '123' }  →  200
+```
+
+Sebep Payload'ın kaynağında görünür (`auth/operations/resetPassword.js`):
+işlem parolayı **önce hash'ler**, kancayı sonra çağırır —
+
+```js
+user.salt = salt
+user.hash = hash
+…
+hook({ data: user, operation: 'update', … })
+```
+
+Kancaya giden `data` içinde `password` **yoktur**; `salt` ve `hash` vardır.
+Düz metni göremeyen bir kural onu doğrulayamaz.
+
+**Düzeltme:** sıfırlama yolu artık istek Payload'a ulaşmadan `middleware.ts`
+içinde denetlenir. Sayı ve mesaj tek yerde: `lib/passwordPolicy.ts`. İki
+sunucu noktası, tek kural.
+
+> **Kural:** Payload'ın bir işlemine kanca yazarken, o kancanın gerçekten
+> beklediğiniz veriyi alıp almadığını **ölçün**. `beforeValidate` her yolda
+> aynı `data`yı almaz.
 
 ---
 

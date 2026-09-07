@@ -77,7 +77,7 @@ const sayi = (deger: string | undefined, varsayilan: number): number => {
   return Number.isFinite(n) && n > 0 ? n : varsayilan
 }
 
-export type LimitSinifi = 'register' | 'login'
+export type LimitSinifi = 'register' | 'login' | 'passwordReset'
 
 /**
  * Sınıf başına kural. Kayıt daha dardır: meşru bir kullanıcı hesabını bir kez
@@ -91,6 +91,20 @@ const KURALLAR: Record<LimitSinifi, { pencereMs: number; azami: number }> = {
   login: {
     pencereMs: sayi(process.env.RATE_LIMIT_LOGIN_WINDOW_MIN, 10) * 60_000,
     azami: sayi(process.env.RATE_LIMIT_LOGIN_MAX, 20),
+  },
+  /*
+    PAROLA SIFIRLAMA — iki uç tek kovada.
+    `forgot-password` her çağrıda BİR E-POSTA GÖNDERİR: sınırsız bırakılırsa
+    hem posta kotası tüketilir hem de bir kişinin gelen kutusu bombalanabilir.
+    `reset-password` ise jeton dener; sınır orada tahmin saldırısını yavaşlatır.
+
+    İkisi aynı kovayı paylaşır çünkü meşru kullanım ikisini de birkaç kez
+    aşamaz: bağlantı iste (1), yeni parolayı gönder (1), belki bir-iki
+    yanlış deneme. On, rahat bir tavandır.
+  */
+  passwordReset: {
+    pencereMs: sayi(process.env.RATE_LIMIT_RESET_WINDOW_MIN, 60) * 60_000,
+    azami: sayi(process.env.RATE_LIMIT_RESET_MAX, 10),
   },
 }
 

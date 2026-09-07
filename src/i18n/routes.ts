@@ -84,6 +84,19 @@ export const ROUTES = {
 export const AUTH_ROUTES = {
   login: { tr: '/giris', en: '/login', ru: '/vhod' },
   register: { tr: '/kayit', en: '/register', ru: '/registratsiya' },
+  forgotPassword: {
+    tr: '/sifremi-unuttum',
+    en: '/forgot-password',
+    ru: '/vosstanovlenie-parolya',
+  },
+  /**
+   * Sıfırlama sayfası jetonu SORGU DİZESİNDE taşır (`?token=…`), yol
+   * parçasında değil. Sebep: jeton yola konsaydı her dil için ayrı bir
+   * `[token]` dinamik segmenti gerekir ve adres, tarayıcı geçmişinde
+   * "sayfa adı" gibi görünürdü. Sorgu dizesi ayrıca `robots: noindex` ile
+   * birlikte arama motorlarına hiç sızmaz.
+   */
+  resetPassword: { tr: '/sifre-sifirla', en: '/reset-password', ru: '/sbros-parolya' },
 } as const satisfies Record<string, Record<Locale, string>>
 
 export type AuthRouteKey = keyof typeof AUTH_ROUTES

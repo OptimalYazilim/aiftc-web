@@ -10,6 +10,8 @@ import {
   isAdminOrSelf,
 } from '@/access'
 import { AUDIENCE_ROLES } from '@/fields/options'
+import { forgotPasswordHTML, forgotPasswordSubject } from '@/lib/forgotPasswordEmail'
+import { MIN_PAROLA, PAROLA_KISA_KODU, parolaGecerliMi } from '@/lib/passwordPolicy'
 
 /**
  * Yonetim paneli kullanicilari (Sartname 11.2 + 12.1 rol tabanli yetkilendirme).
@@ -31,15 +33,6 @@ import { AUDIENCE_ROLES } from '@/fields/options'
  * acma, sifre sifirlama e-postasi) kurulmalidir — bkz.
  * docs/access-control-guide.md, "Bilinen sinirlar".
  */
-/**
- * PAROLA ALT SINIRI — tek kaynak.
- * Sunucu kuralı (`hooks.beforeValidate`) ve kayıt formundaki kolaylık
- * kontrolü aynı sayıyı kullanır; ikisi ayrışırsa kullanıcı formda geçen bir
- * parolayla sunucudan hata alır. Form bu değeri `auth.passwordMinLength`
- * çeviri anahtarı üzerinden gösterir.
- */
-export const MIN_PAROLA = 10
-
 export const Users: CollectionConfig = {
   slug: 'users',
   labels: {
@@ -60,6 +53,26 @@ export const Users: CollectionConfig = {
     cookies: {
       sameSite: 'Lax',
       secure: process.env.NODE_ENV === 'production',
+    },
+    /*
+      ======================================================================
+      PAROLA SIFIRLAMA E-POSTASI — VARSAYILAN EZILIR
+      ======================================================================
+      Payload varsayilan olarak `/admin/reset/<token>` adresine baglanti
+      verir. O sayfa anonim erisilebilir (olculdu: 200), yani katilimci
+      parolasini sifirlayabiliyordu — ama islem bitince PANELIN giris
+      ekranina dusuyor ve oraya giremiyordu (`canAccessAdminPanel`).
+      Baglanti artik sitenin kendi sayfasina gider.
+
+      Sure 1 saattir (Payload varsayilani) ve BILEREK degistirilmemistir:
+      sifirlama baglantisi ne kadar uzun yasarsa, ele gecen bir posta
+      kutusundan kullanilabilme penceresi o kadar genisler.
+
+      Metin ve dil secimi: lib/forgotPasswordEmail.ts
+    */
+    forgotPassword: {
+      generateEmailSubject: forgotPasswordSubject,
+      generateEmailHTML: forgotPasswordHTML,
     },
   },
   access: {
@@ -270,11 +283,11 @@ export const Users: CollectionConfig = {
           hesabı onaylaması) bu kuraldan etkilenmez.
         */
         const parola = (data as { password?: unknown } | null | undefined)?.password
-        if (typeof parola === 'string' && parola.length > 0 && parola.length < MIN_PAROLA) {
+        if (!parolaGecerliMi(parola)) {
           throw new APIError(
             `Parola en az ${MIN_PAROLA} karakter olmalıdır.`,
             400,
-            { code: 'password_too_short', minLength: MIN_PAROLA },
+            { code: PAROLA_KISA_KODU, minLength: MIN_PAROLA },
             true,
           )
         }
