@@ -522,5 +522,12 @@
     "resetInvalidTokenTitle": "Bağlantının süresi dolmuş",
     "resetInvalidToken": "Bu sıfırlama bağlantısı artık geçerli değil. Bağlantılar bir saat sonra geçersiz olur; yeni bir tane isteyebilirsiniz.",
     "resetRequestNew": "Yeni bağlantı iste"
+  },
+  "subscription": {
+    "expiredTitle": "Abonelik süreniz doldu",
+    "expiredBody": "Kurumsal aboneliğinizin geçerlilik süresi sona erdi. Erişime kapalı kütüphane kayıtlarını ve korumalı belgeleri şu an açamıyorsunuz; herkese açık içerikler açık kalır.",
+    "noneTitle": "Hesabınıza tanımlı bir abonelik bulunmuyor",
+    "noneBody": "Erişime kapalı kütüphane kayıtları ve korumalı belgeler için kurumsal abonelik gerekir; herkese açık içerikler her durumda açıktır.",
+    "contactLink": "Kurumla iletişime geçin"
   }
 }

@@ -126,7 +126,8 @@ bırakılmıştır. Açık kalanlar kuruma teslimde ayrıca raporlanmalıdır.
 | 5.5.1 Site tarafı sıfırlama akışı | ✅ Kuruldu (2026-09-07) |
 | 5.5.2 Parola politikası sıfırlamada atlanıyordu | ✅ Kapatıldı (2026-09-07) |
 | 5.6 Abonelik erişim kapısı | ✅ Kuruldu (2026-09-07) |
-| 5.6.1 Süresi geçmiş aboneliği kimse bildirmiyor | ⚠️ Kalan sınır — kurum kararı bekliyor |
+| 5.6.1 Süresi geçmiş aboneliği kimse bildirmiyor | ✅ Şerit kuruldu (2026-09-07) — hatırlatma e-postası hâlâ yok |
+| 5.6.2 Site sorguları oturumu HİÇ kullanmıyor | ⚠️ Ölçüldü — kurum kararı bekliyor |
 
 ### 5.1 Belge dosyalarının adresleri — **KAPATILDI (2026-09-07)**
 
@@ -478,18 +479,79 @@ kuralı da "başarılı" gösterirdi; bu yüzden matris iki yönü de sınar.
    o belgeye zaten erişemez (harita `participants → trainee`). Yanlış negatif.
    Düzeltme: her rol **kendi** seviyesindeki içerikle sınandı.
 
-### 5.6.1 KALAN SINIR — süresi geçmiş aboneliği kimse bildirmiyor
+### 5.6.1 Sessiz yetki düşümü — **ŞERİT KURULDU (2026-09-07)**
 
-Kapı **anlık** çalışır: her istekte tarihe bakılır, doğru sonucu verir. Ama:
+Kapı **anlık** çalışır ve doğru sonucu verir, ama kullanıcıya bir **açıklama**
+vermez: korumalı belgeye tıklayınca çıplak 403, API'den 404. Hiçbiri
+"aboneliğiniz bitti" demez; bu "site bozulmuş" diye okunur.
 
-- Aboneliği biten kullanıcıya **e-posta gitmez**; içerik bir gün sessizce
-  kaybolur. Bir hatırlatma işi (ör. bitişe 30/7/1 gün kala) kurulmadı.
-- Site tarafında **"aboneliğiniz sona erdi"** diyen bir ekran yoktur; kayıt
-  listede görünmez, o kadar. Kullanıcı sebebini anlamaz.
-- Panelde **süresi geçmiş abonelikleri listeleyen** hazır bir görünüm yoktur;
-  `subscriptionEndsAt` sıralanabilir ama filtre elle kurulur.
+`src/components/account/SubscriptionBanner.tsx` — istemci bileşeni,
+`/api/users/me` okur, yerleşimde başlığın hemen altında durur.
 
-Üçü de ürün kararıdır, güvenlik açığı değildir — kapı her hâlükârda kapalıdır.
+**Durumu kendi hesaplamaz.** `src/lib/subscription.ts` içindeki
+`abonelikDurumu()`, sunucudaki erişim kuralının okuduğu **aynı** fonksiyondur.
+Kural bu turda `access/index.ts`ten oraya taşındı ve erişim modülü onu yeniden
+dışa aktarıyor. Şerit kendi kopyasını taşısaydı, kopya bir gün asıl kuraldan
+ayrışır ve şerit yalan söylerdi — yani şeridin önlemek için var olduğu
+sessiz sapmayı kendisi üretirdi.
+
+**İki ayrı metin.** `suresi-doldu` ile `abonelik-yok` erişim açısından aynıdır
+ama söylenecek cümle farklıdır: hiç aboneliği olmamış birine "süreniz doldu"
+demek yanlış bilgidir ve kurumu olmayan bir kaydı aramaya iter.
+
+**Kırmızı yoktur, kapatılamaz.** Bu bir arıza değil hesap durumudur; kırmızı
+şerit tam da önlemeye çalıştığımız "bozuldu" algısını üretir. Kapatılabilseydi
+kullanıcı ertesi gün aynı boşluğa yeniden düşerdi; abonelik yenilendiği an
+şerit kendiliğinden kaybolur.
+
+**Ölçüm (2026-09-07, gerçek tarayıcı oturumu, `/tr/kutuphane`):**
+
+| Hesap | Şerit | `data-abonelik-durumu` |
+|---|---|---|
+| Süresi geçmiş katılımcı | **görünüyor** — "Abonelik süreniz doldu" | `suresi-doldu` |
+| Aboneliği hiç olmayan katılımcı | **görünüyor** — "…abonelik bulunmuyor" | `abonelik-yok` |
+| Geçerli abonelikli katılımcı | **yok** | — |
+| Personel (aboneliksiz) | **yok** | — |
+| Anonim | **yok** | — |
+
+`role="status"`, başlığın altında (üstten 125 px), odağı çalmaz.
+
+**HÂLÂ AÇIK:** aboneliği bitene **e-posta gitmez** (bitişe 30/7/1 gün kala bir
+hatırlatma işi kurulmadı) ve panelde **süresi geçmişleri listeleyen** hazır bir
+görünüm yoktur. İkisi de ürün kararıdır; kapı her hâlükârda kapalıdır.
+
+### 5.6.2 KALAN SINIR — site sorguları oturumu HİÇ kullanmıyor
+
+Şerit ölçülürken çıktı ve **abonelik kapısından daha geniş** bir konudur.
+
+Sitedeki her RSC sorgusu `overrideAccess: false` geçer (doğru) ama **`user`
+geçmez**. Payload `user` verilmeyen bir sorguyu **anonim** sayar. Sonuç: site
+sayfaları, ziyaretçi oturum açmış olsa bile her zaman anonim gözle bakar.
+
+**Ölçüm (2026-09-07, aboneliği GEÇERLİ bir katılımcının tarayıcı oturumu):**
+
+```
+aynı oturum, /api/library-resources  → 3 kayıt (1 public + 2 trainee)
+aynı oturum, /tr/kutuphane           → "1 yayın"
+```
+
+Bunun anlamı:
+
+- `accessLevel` **site yüzünde hiç kimseye bir şey açmıyor**. Seviyeli kayıtlar
+  yalnızca API ve dosya uçlarından erişilebilir durumda.
+- Abonelik kapısının **site listesinde gözle görülür bir etkisi yok** — kaybolan
+  bir şey yok, çünkü hiç görünmemişti. Kapı yine de gerçek koruma sağlıyor:
+  korumalı **belge indirmeleri** ve API istekleri engelleniyor (bkz. 5.6
+  matrisi). Şeridin metni buna göre yazıldı.
+
+**Güvenlik açığı DEĞİLDİR** — hata kapalı tarafa düşüyor: fazla gösterilmiyor,
+eksik gösteriliyor.
+
+**Düzeltmenin bedeli kurum kararıdır.** Listeyi kişiye özel yapmak, o rotayı
+`payload.auth({ headers })` ile **dinamik** hâle getirmeyi gerektirir; bugünkü
+statik/ISR önbelleği o sayfa için kalkar (her istek sunucuda çalışır). Kütüphane
+seviyeli içeriği site üzerinden sunacaksa bu yapılmalıdır; yalnızca EK-2 portalı
+üzerinden sunacaksa bugünkü hâl zaten doğrudur.
 
 #### KURULUM UYARISI — devralınan veritabanı
 

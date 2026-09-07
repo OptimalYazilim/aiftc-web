@@ -1,6 +1,7 @@
 import type { Access, FieldAccess, Where } from 'payload'
 
 import { ACCESS_LEVEL_TO_ROLE, DOCUMENT_ACCESS_LEVEL_TO_ROLES } from '@/fields/options'
+import { aboneligiEksik } from '@/lib/subscription'
 import type { User } from '@/payload-types'
 
 /**
@@ -84,101 +85,27 @@ const audienceRoleOf = (user: unknown): AudienceRole | null => {
 }
 
 // ---------------------------------------------------------------------------
-// ABONELIK KAPISI  (Commerce — B2B)
+// ABONELIK KAPISI  (Commerce — B2B · Kilavuz 5.6)
 // ---------------------------------------------------------------------------
 
-/**
- * BIR GUNUN MILISANIYESI.
- *
- * `subscriptionEndsAt` GUN olarak secilir (`pickerAppearance: 'dayOnly'`) ve
- * gunun BASINDA saklanir. Karsilastirma ham degerle yapilsaydi "31.12.2026'ya
- * kadar gecerli" yazan bir abonelik 31 Aralik saat 00:00'da biterdi — yani
- * editorun panelde okudugu ve musteriye soylenen tarihten BIR GUN ONCE.
- * Bu yuzden bitis GUNUNUN SONUNA kadar gecerli sayilir.
- *
- * Odemesi alinmis bir aboneligi bir gun erken kesmek, bir gun fazla acik
- * birakmaktan agir bir hatadir; belirsizlik musteri lehine cozulur.
- */
-const GUN_MS = 24 * 60 * 60 * 1000
+/*
+  KURAL BURADA DEGIL, `lib/subscription.ts` ICINDE.
 
-/**
- * ABONELIK KAPISINDAN MUAF HEDEF KITLE ROLLERI
- * ===========================================================================
- * Kurumun KENDI tarafi. Bir OGM/UOEM personelinin, egitmenin veya yoneticinin
- * kuruma abone olmasi anlamsizdir; abonelik DISARIDAN gelen katilimciyi
- * ilgilendirir. Muafiyet listesi burada ACIK durur, cunku "muaf olmayan" bir
- * rolun sessizce eklenmesi tum o kullanicilari kilitler — hatanin GORULEBILIR
- * olmasi icin liste tersinden (kim muaf) yazilir.
- */
-const ABONELIKTEN_MUAF: AudienceRole[] = ['admin', 'staff', 'instructor']
+  Sebep: ayni soruyu SITE TARAFI da soruyor — aboneligi biten kullaniciya
+  neyin neden kayboldugunu anlatan uyari seridi (SubscriptionBanner) ayni
+  cevabi vermek zorunda. Kural bu dosyada kalsaydi serit ya bu modulu
+  (sunucu erisim kurallariyla dolu) istemci paketine cekerdi, ya da KENDI
+  KOPYASINI yazardi. Kopya bir gun asil kuraldan ayrisir ve serit yalan
+  soyler — oysa seridin var olma sebebi tam olarak o sessiz sapmayi
+  onlemektir.
 
-/**
- * ABONELIK GECERLI MI?
- * ===========================================================================
- * Iki kosul da saglanmalidir: bir PAKET atanmis olacak VE bitis tarihi
- * gecmemis olacak.
- *
- * TARIHSIZ ABONELIK GECERSIZDIR — bilincli secim.
- * `subscriptionEndsAt` bos ise "suresiz" degil "eksik kayit" sayilir. Tersi
- * varsayilsaydi, tarihi girmeyi UNUTMAK sinirsiz ve kalici bir bedava erisim
- * verirdi; unutmanin cezasi, sessizce acilan bir kapi olmamalidir. Panelde
- * alan aciklamasi bunu soyler.
- *
- * `subscriptionPlan` hem sayi (depth 0) hem nesne (populate edilmis) gelebilir;
- * ikisi de kabul edilir. Payload'in oturum kullanicisi normalde ham kimlik
- * tasir, ama bu fonksiyon cagrildigi derinlige bagimli OLMAMALIDIR.
- */
-export const aboneligiGecerliMi = (user: unknown, simdi: Date = new Date()): boolean => {
-  const hesap = user as
-    | { subscriptionPlan?: unknown; subscriptionEndsAt?: unknown }
-    | null
-    | undefined
-  if (!hesap) return false
-
-  const plan = hesap.subscriptionPlan
-  const planVar =
-    typeof plan === 'object' && plan !== null ? true : typeof plan === 'number' || typeof plan === 'string' ? Boolean(plan) : false
-  if (!planVar) return false
-
-  const bitis = hesap.subscriptionEndsAt
-  if (!bitis) return false
-
-  const zaman = new Date(bitis as string | number | Date).getTime()
-  if (!Number.isFinite(zaman)) return false
-
-  return simdi.getTime() < zaman + GUN_MS
-}
-
-/**
- * ABONELIK KAPISI KAPALI MI?  (Kilavuz 5.6)
- * ===========================================================================
- * `true` donerse cagiran kural kullaniciyi HERKESE ACIK icerige dusurur.
- *
- * NEDEN "KAPALIYA DUSURMEK", "REDDETMEK" DEGIL
- * ---------------------------------------------------------------------------
- * `false` dondurmek koleksiyonu tumden kapatirdi: aboneligi biten bir
- * katilimci, herkese acik duyuru ekini bile indiremezdi. Sartname "public"
- * icerigin herkese acik kalmasini ister. Kapi, kullaniciyi ANONIM ZIYARETCI
- * seviyesine indirir — daha asagi degil.
- *
- * PANEL ROLLERI BU FONKSIYONA HIC GELMEZ
- * ---------------------------------------------------------------------------
- * Cagiran kurallar once `hasRole(...)` ile panel yetkisini kontrol eder ve
- * `true` doner. Bu bilerek boyledir: kutuphaneyi YONETEN kisi, kurumun
- * abonelik listesinde olmadigi icin yonettigi kaydi goremez duruma dusemez.
- *
- * MEVCUT VERI UZERINDEKI ETKISI — DIKKAT
- * ---------------------------------------------------------------------------
- * Bu kural devreye girdiginde, paketi OLMAYAN her `trainee` hesabi seviyeli
- * icerigi ANINDA kaybeder. Onceden onaylanmis katilimcilar varsa once onlara
- * paket ve bitis tarihi atanmalidir; yoksa erisimleri sessizce daralir.
- * Kontrol sorgusu docs/access-control-guide.md icinde.
- */
-export const aboneligiEksik = (user: unknown): boolean => {
-  const audience = audienceRoleOf(user)
-  if (audience && ABONELIKTEN_MUAF.includes(audience)) return false
-  return !aboneligiGecerliMi(user)
-}
+  Gerekceler (gun sonu kurali, tarihsiz aboneligin gecersizligi, muafiyet
+  listesinin neden tersinden yazildigi) o dosyadadir. Buradan yalnizca
+  YENIDEN DISA AKTARILIR ki mevcut cagrilar ve belgelerdeki isaretler
+  (`access/index.ts -> aboneligiEksik`) kirilmasin.
+*/
+export { abonelikDurumu, aboneligiEksik, aboneligiGecerliMi } from '@/lib/subscription'
+export type { AbonelikDurumu } from '@/lib/subscription'
 
 /**
  * KUTUPHANE OKUMA ERISIMI  (Sartname 1.7)

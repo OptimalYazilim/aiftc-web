@@ -5,11 +5,12 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
 import React from 'react'
 
+import { SubscriptionBanner } from '@/components/account/SubscriptionBanner'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { buildAlternates, getLocaleMeta, isLocale, LOCALE_CODES } from '@/i18n/locales'
-import { pageHref } from '@/i18n/routes'
+import { href, pageHref } from '@/i18n/routes'
 import { getSiteSettings } from '@/lib/queries'
 
 import '../globals.css'
@@ -99,6 +100,14 @@ export default async function LocaleLayout({ children, params }: Props) {
           </a>
 
           <SiteHeader locale={locale} />
+
+          {/*
+            Aboneliği bitmiş katılımcıya içeriğin NEDEN azaldığını söyler
+            (Kılavuz 5.6.1). Başlıktan sonra, içerikten önce durur: kullanıcı
+            eksik listeyi görmeden önce sebebini okur. Etkilenmeyen herkes
+            için hiçbir şey basmaz.
+          */}
+          <SubscriptionBanner contactHref={href('contact', locale)} />
 
           {/* tabIndex={-1}: atlama bağlantısı odağı buraya taşıyabilsin diye. */}
           <main id="main-content" tabIndex={-1} className="flex-1 outline-none">

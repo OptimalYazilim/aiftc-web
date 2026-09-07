@@ -522,5 +522,12 @@
     "resetInvalidTokenTitle": "The link has expired",
     "resetInvalidToken": "This reset link is no longer valid. Links expire after one hour; you can request a new one.",
     "resetRequestNew": "Request a new link"
+  },
+  "subscription": {
+    "expiredTitle": "Your subscription has expired",
+    "expiredBody": "Your institutional subscription is no longer valid. Restricted library records and protected documents cannot be opened at the moment; public content remains open to you.",
+    "noneTitle": "No subscription is assigned to your account",
+    "noneBody": "Restricted library records and protected documents require an institutional subscription; public content remains open in every case.",
+    "contactLink": "Contact the centre"
   }
 }
