@@ -499,6 +499,7 @@
     "statusSuspended": "Hesabınıza erişim geçici olarak durdurulmuştur. Lütfen eğitim koordinatörünüzle iletişime geçin.",
     "contactLink": "İletişim sayfası",
     "noEmailNotice": "Not: Sistemde e-posta gönderimi henüz etkin değildir. Onay bildirimi ve parola sıfırlama e-postaları şu an ulaşmamaktadır; onay durumunuzu öğrenmek için kurumla iletişime geçin.",
-    "fieldRequired": "(zorunlu)"
+    "fieldRequired": "(zorunlu)",
+    "errorRateLimited": "Bu bilgisayardan çok fazla deneme yapıldı. Lütfen bir süre bekleyip tekrar deneyin."
   }
 }

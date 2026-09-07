@@ -499,6 +499,7 @@
     "statusSuspended": "Access to your account has been suspended. Please contact your training coordinator.",
     "contactLink": "Contact page",
     "noEmailNotice": "Note: outgoing e-mail is not yet enabled. Approval notices and password-reset messages are not delivered at present; please contact the centre to check your status.",
-    "fieldRequired": "(required)"
+    "fieldRequired": "(required)",
+    "errorRateLimited": "Too many attempts from this device. Please wait a while and try again."
   }
 }

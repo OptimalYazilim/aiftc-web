@@ -67,7 +67,7 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
   /** Alan bazlı olmayan sonuç: kimlik hatası, hesap durumu, ağ hatası. */
   const [sonuc, setSonuc] = useState<
     | null
-    | { tur: 'gecersiz' | 'kilitli' | 'ag' | 'genel' }
+    | { tur: 'gecersiz' | 'limit' | 'ag' | 'genel' }
     | { tur: 'durum'; kod: 'account_pending' | 'account_suspended' }
   >(null)
 
@@ -128,10 +128,24 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
 
       if (kod === 'account_pending' || kod === 'account_suspended') {
         setSonuc({ tur: 'durum', kod })
+      } else if (cevap.status === 429) {
+        /*
+          IP BAZLI HIZ SINIRI — middleware'den gelir (lib/rateLimit.ts).
+          Payload'ın HESAP bazlı kilidiyle KARIŞTIRILMAMALI: o, beş yanlış
+          parolanın ardından 401 ve kendi mesajıyla döner. İkisi farklı
+          şeylerdir ve kullanıcıya farklı söylenir — biri "bu bilgisayardan
+          çok denendi", öteki "bu hesap kilitlendi".
+        */
+        setSonuc({ tur: 'limit' })
       } else if (cevap.status === 401) {
+        /*
+          Payload hesap kilidini de 401 ile döndürür; mesajında "locked"
+          geçer. Ayrımı mesajdan yapmak kırılgan olurdu (üç dilde çevrilir),
+          bu yüzden ikisi de "e-posta veya parola hatalı" olarak sunulur.
+          Bu ayrıca BİLİNÇLİ bir gizlemedir: hangi hesabın kilitli olduğunu
+          söylemek, geçerli e-posta adreslerini sızdırır.
+        */
         setSonuc({ tur: 'gecersiz' })
-      } else if (cevap.status === 429 || cevap.status === 423) {
-        setSonuc({ tur: 'kilitli' })
       } else {
         setSonuc({ tur: 'genel' })
       }
@@ -176,8 +190,8 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
         <AuthNotice ton="hata" baslik={t('errorSummary')} rol="alert">
           {sonuc.tur === 'gecersiz'
             ? t('errorInvalidCredentials')
-            : sonuc.tur === 'kilitli'
-              ? t('errorLocked')
+            : sonuc.tur === 'limit'
+              ? t('errorRateLimited')
               : sonuc.tur === 'ag'
                 ? t('errorNetwork')
                 : t('errorGeneric')}

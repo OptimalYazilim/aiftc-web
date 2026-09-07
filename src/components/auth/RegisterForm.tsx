@@ -82,7 +82,7 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
   })
   const [hatalar, setHatalar] = useState<Hatalar>({})
   const [durum, setDurum] = useState<'bos' | 'gonderiliyor' | 'basarili'>('bos')
-  const [sonuc, setSonuc] = useState<'ag' | 'genel' | null>(null)
+  const [sonuc, setSonuc] = useState<'ag' | 'genel' | 'limit' | null>(null)
 
   const alanDegistir = (ad: keyof Alanlar) => (deger: string) => {
     setAlanlar((onceki) => ({ ...onceki, [ad]: deger }))
@@ -140,7 +140,10 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
 
       const govde = await cevap.json().catch(() => null)
 
-      if (alanHatasi(govde, 'email')) {
+      if (cevap.status === 429) {
+        /* Hız sınırı — middleware'den gelir (bkz. lib/rateLimit.ts). */
+        setSonuc('limit')
+      } else if (alanHatasi(govde, 'email')) {
         setHatalar({ email: t('errorEmailTaken') })
       } else if (hataKodu(govde) === 'password_too_short') {
         setHatalar({ password: t('errorPasswordShort', { min: MIN_PAROLA }) })
@@ -185,7 +188,11 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
     <form onSubmit={gonder} noValidate className="space-y-6">
       {sonuc ? (
         <AuthNotice ton="hata" baslik={t('errorSummary')} rol="alert">
-          {sonuc === 'ag' ? t('errorNetwork') : t('errorGeneric')}
+          {sonuc === 'ag'
+            ? t('errorNetwork')
+            : sonuc === 'limit'
+              ? t('errorRateLimited')
+              : t('errorGeneric')}
         </AuthNotice>
       ) : null}
 

@@ -117,11 +117,12 @@ bırakılmıştır. Açık kalanlar kuruma teslimde ayrıca raporlanmalıdır.
 | 5.1 Belge dosyalarının adresleri | ✅ Kapatıldı (2026-09-07) |
 | 5.1.1 `media` bilerek açık | ⚠️ Kalan sınır — kurum kararı bekliyor |
 | 5.1.2 S3 kovası | ⚠️ Kurulum şartı |
-| 5.2 Ziyaretçi kayıt / giriş ekranı | ✅ Kuruldu (2026-09-07) — e-posta adaptörü hâlâ açık |
+| 5.2 Ziyaretçi kayıt / giriş ekranı | ✅ Kuruldu (2026-09-07) |
 | 5.2.1 Parola alt sınırı | ✅ Eklendi (2026-09-07) |
 | 5.2.2 Devralınan veritabanında kilitli hesap | ⚠️ Kurulum kontrolü |
 | 5.3 `DocumentFiles.accessLevel` | ✅ Artık zorlanıyor (2026-09-07) |
-| 5.4 Hız sınırlama | ❌ Açık — ters vekil / WAF katmanında |
+| 5.4 Hız sınırlama (kimlik uçları) | ✅ Kuruldu (2026-09-07) — ters vekil katmanı yine gerekli |
+| 5.5 E-posta adaptörü | ✅ Kuruldu (2026-09-07) — site tarafı sıfırlama sayfası açık |
 
 ### 5.1 Belge dosyalarının adresleri — **KAPATILDI (2026-09-07)**
 
@@ -173,7 +174,7 @@ adresi doğrudan çalışır ve Payload devre dışı kalır.
 **Kurulumda zorunlu:** kova `private` olmalı, nesnelere yalnızca uygulamanın
 kimlik bilgileriyle erişilmelidir.
 
-### 5.2 Ziyaretçi kayıt / giriş ekranı — **KURULDU (2026-09-07)**, e-posta hâlâ yok
+### 5.2 Ziyaretçi kayıt / giriş ekranı — **KURULDU (2026-09-07)**
 
 Ekranlar yayında:
 
@@ -203,10 +204,9 @@ POST /api/users/login  -> 200   çerez kurulur, /api/users/me kullanıcıyı dö
 `account_suspended`); form bu kodu kendi dilindeki açıklamaya çevirir. Metin
 ayrıştırılmaz — cümle düzeltildiğinde eşleşme sessizce bozulurdu.
 
-**AÇIK KALAN — e-posta adaptörü yok.** Onay bildirimi ve parola sıfırlama
-e-postaları kullanıcıya **ulaşmaz**, yalnızca sunucu günlüğüne yazılır. Kayıt
-başarı ekranı bunu açıkça söyler; "e-postanızı kontrol edin" demek yanlış
-olurdu. Parola sıfırlama akışı bu adaptör kurulmadan kullanılamaz.
+E-posta adaptörü **kuruldu** (bkz. 5.5). Kayıt başarı ekranındaki "e-posta
+gönderimi etkin değildir" notu, SMTP tanımlı olmayan kurulumlar için hâlâ
+doğrudur ve yerinde bırakılmıştır.
 
 ### 5.2.1 Parola alt sınırı — **EKLENDİ (2026-09-07)**
 
@@ -257,11 +257,79 @@ kütüphanede karşılığı yoktur. Bunun yerine eşleşme açık yazıldı:
 `DOCUMENT_ACCESS_LEVEL_TO_ROLES` (bkz. **Bölüm 10.2**). Tek kaynak, açık
 harita, veri göçü yok.
 
-### 5.4 Hız sınırlama uygulama katmanında yok
+### 5.4 Hız sınırlama — **KURULDU (2026-09-07)**
 
-Oturum açma denemeleri `maxLoginAttempts: 5` + 15 dakika kilit ile sınırlıdır
-(`Users` koleksiyonu). Bunun ötesinde uygulama katmanında hız sınırlama
-**yoktur**; ters vekil / WAF katmanında tanımlanmalıdır.
+> **Payload 3'te yerleşik hız sınırlama YOKTUR.** Payload 2'nin `rateLimit`
+> config alanı 3'te tamamen kaldırılmıştır; doğrulandı (3.88.0):
+> `grep -rn "rateLimit" node_modules/payload/dist/config/` → hiç sonuç.
+> Config'e böyle bir nesne yazmak onu sessizce yok saydırır ve korunuyormuş
+> yanılsaması üretir. Bu yüzden gerçek bir sınırlayıcı yazıldı.
+
+`src/middleware.ts` + `src/lib/rateLimit.ts` — IP bazlı, **yalnızca POST**:
+
+| Uç | Varsayılan | Ortam değişkeni |
+|---|---|---|
+| `/api/users` (kayıt) | 5 / 60 dk | `RATE_LIMIT_REGISTER_MAX`, `..._WINDOW_MIN` |
+| `/api/users/login` (giriş) | 20 / 10 dk | `RATE_LIMIT_LOGIN_MAX`, `..._WINDOW_MIN` |
+
+**Payload'ın hesap kilidinin yerine geçmez, boşluğunu kapatır.**
+`maxLoginAttempts: 5` HESAP bazlıdır: tek IP'den bin ayrı hesaba birer deneme
+yapan bir saldırgan onu hiç tetiklemez. Bu katman IP bazlıdır.
+
+Ölçüldü (2026-09-07, sınır 4'e düşürülerek):
+
+```
+giriş  1..4 → 401     5,6 → 429      (başka IP'nin ilk denemesi → 401)
+kayıt  1..3 → 201     4,5 → 429
+GET /api/users        → hiç sınırlanmaz
+429 gövdesi: { errors:[{ message, data:{ code:'rate_limited', retryAfter }}]}
+başlıklar:   Retry-After: 558 · Cache-Control: no-store
+```
+
+Yanıt Payload'ın hata biçimindedir; kimlik formları zaten bu şekli okur.
+
+**ÜÇ SINIRI — abartılmamalı:**
+
+1. **Sayaç bellektedir.** Süreç yeniden başlayınca sıfırlanır; birden çok
+   örnek çalıştırılırsa her biri kendi sayacını tutar. Bu kurulumda uygulama
+   tek konteynerde çalışır (`docker-compose.yml`), yani pratikte etkilidir.
+   Yatay ölçeklemede Redis gibi paylaşılan bir sayaç gerekir.
+2. **IP `x-forwarded-for`den okunur** ve bu başlık **uydurulabilir**. Yalnızca
+   güvenilen bir ters vekil arkasında anlamlıdır; vekil başlığı **kendisi**
+   yazmalıdır: `proxy_set_header X-Forwarded-For $remote_addr;`
+3. **Ters vekil / WAF sınırlamasının yerine geçmez.** Uygulamaya hiç
+   ulaşmadan durdurulan istek her zaman daha ucuzdur.
+
+### 5.5 E-posta adaptörü — **KURULDU (2026-09-07)**
+
+`@payloadcms/email-nodemailer`, `payload.config.ts` içinde bağlıdır ve SMTP
+ayarlarını ortamdan okur.
+
+**Koşullu bağlanır:** adaptör yalnızca `SMTP_HOST` doluyken kurulur. Boşsa
+Payload'ın konsol davranışına düşülür — SMTP'si olmayan bir geliştirme
+makinesinde uygulama yine çalışır. **Üretimde boş bırakılmamalıdır**, aksi
+hâlde parola sıfırlama ve onay bildirimi kullanıcıya ulaşmaz.
+
+Ölçüldü (yerel test SMTP alıcısı, 2026-09-07): parola sıfırlama isteği
+gerçek bir mesaj üretti —
+
+```
+MAIL FROM: <no-reply@aiftc.test>   RCPT TO: <…>
+From: AIFTC Test <no-reply@aiftc.test>
+Subject: Parolanızı Sıfırlayın
+gövdede sıfırlama bağlantısı: /admin/reset/<token>
+```
+
+`SMTP_SECURE`: 465 (doğrudan TLS) için `true`, 587 (STARTTLS) için `false`.
+`SMTP_USER` boşsa `auth` hiç gönderilmez — kimlik doğrulaması istemeyen iç ağ
+röleleri için gereklidir.
+
+**AÇIK KALAN — sıfırlama sayfası panelin içindedir.** Bağlantı
+`/admin/reset/<token>` adresine gider. Anonim erişilebilir olduğu ölçüldü
+(200), yani katılımcı parolasını sıfırlayabilir; ancak ardından panelin giriş
+ekranına düşer ve oraya giremez (`canAccessAdminPanel`). Parola değişmiştir ve
+kullanıcı `/giris` üzerinden devam edebilir, fakat akış pürüzlüdür. Site
+tarafında bir sıfırlama sayfası ayrıca yapılmalıdır.
 
 ---
 

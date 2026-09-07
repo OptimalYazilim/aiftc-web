@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { redirectsPlugin } from '@payloadcms/plugin-redirects'
 import { searchPlugin } from '@payloadcms/plugin-search'
@@ -36,8 +37,68 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? serverURL)
 
 const useS3 = process.env.MEDIA_STORAGE_ADAPTER === 's3'
 
+/**
+ * E-POSTA ADAPTORU  (Sartname 12.1 / Kilavuz 5.2)
+ * ============================================================================
+ * Adaptor TANIMLI DEGILKEN Payload su uyariyi verir ve e-postayi konsola
+ * yazar: "No email adapter provided." Pratik sonucu: parola sifirlama
+ * baglantisi ve hesap onay bildirimi KULLANICIYA ULASMAZ. Kayit ekrani
+ * yayina girdigi icin bu artik teorik bir eksik degil.
+ *
+ * ---------------------------------------------------------------------------
+ * KOSULLU BAGLANIR — SMTP_HOST YOKSA HIC KURULMAZ
+ * ---------------------------------------------------------------------------
+ * Adaptor kosulsuz tanimlansaydi, SMTP ayari olmayan bir gelistirme
+ * makinesinde her e-posta denemesi ECONNREFUSED ile patlar ve onu tetikleyen
+ * islem (ornegin parola sifirlama istegi) 500 donerdi. `SMTP_HOST` bos
+ * birakildiginda Payload'in kendi konsol davranisina DUSULUR: gelistirme
+ * akisi bozulmaz, uretimde ise degisken tanimlidir.
+ *
+ * Bu, "sessizce calismiyor" durumundan farklidir: hangi modda oldugu
+ * asagidaki `emailAdapter` degerinden ve sunucu gunlugunden okunur.
+ *
+ * ---------------------------------------------------------------------------
+ * `transportOptions` KULLANILIR, HAZIR `transport` DEGIL
+ * ---------------------------------------------------------------------------
+ * Boylece nodemailer baglantiyi kendi kurar ve kimlik bilgileri yalnizca
+ * ortam degiskenlerinde durur. `auth` YALNIZCA kullanici adi verildiginde
+ * eklenir: kimlik dogrulamasi istemeyen ic aglardaki bir rolede bos bir
+ * `auth` nesnesi baglantiyi reddettirebiliyor.
+ *
+ * `SMTP_SECURE` 465 (dogrudan TLS) icin `true`, 587 (STARTTLS) icin `false`
+ * olmalidir — 587'de `true` yazmak el sikismayi kilitler.
+ */
+const smtpHost = process.env.SMTP_HOST?.trim()
+
+const emailAdapter = smtpHost
+  ? nodemailerAdapter({
+      defaultFromName: process.env.SMTP_FROM_NAME || 'AIFTC',
+      defaultFromAddress: process.env.SMTP_FROM_ADDRESS || 'no-reply@localhost',
+      transportOptions: {
+        host: smtpHost,
+        port: Number(process.env.SMTP_PORT ?? 587),
+        secure: process.env.SMTP_SECURE === 'true',
+        ...(process.env.SMTP_USER
+          ? {
+              auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASSWORD ?? '',
+              },
+            }
+          : {}),
+      },
+    })
+  : undefined
+
 export default buildConfig({
   serverURL,
+
+  /*
+    `undefined` gecmek adaptoru hic tanimlamamakla aynidir; Payload konsol
+    davranisina duser. Kosul yukarida, degiskenin tanimlandigi yerde
+    aciklanmistir.
+  */
+  email: emailAdapter,
 
   // ==========================================================================
   // ADMIN PANELI  (Sartname 11.2 "kullanici dostu yonetim paneli")
@@ -188,19 +249,21 @@ export default buildConfig({
   csrf: allowedOrigins,
   cookiePrefix: 'aiftc',
   /**
-   * HIZ SINIRLAMA — AÇIK MADDE (Şartname 12.1)
+   * HIZ SINIRLAMA — BURADA DEĞİL, MIDDLEWARE'DE  (Şartname 12.1)
    *
    * Burada bir `rateLimit` bloğu vardı. Payload 2'de Express tabanlı sunucu
    * bu ayarı uygulardı; Payload 3 Next.js route handler'ları üzerinde
-   * çalıştığı için ayar CONFIG TİPİNDEN KALDIRILDI. Nesne bırakıldığında
-   * Payload onu sessizce yok sayıyordu: yani hız sınırlama ZATEN ETKİN
-   * DEĞİLDİ, yalnızca etkinmiş gibi görünüyordu. Yanıltıcı olduğu için
-   * kaldırıldı.
+   * çalıştığı için ayar CONFIG TİPİNDEN KALDIRILDI. Doğrulandı (3.88.0):
    *
-   * YAPILMASI GEREKEN: sınırlama artık uygulamanın önündeki katmanda
-   * tanımlanmalıdır — ters vekil (nginx `limit_req`), CDN/WAF kuralı veya
-   * Next.js middleware. Özellikle `/api/users/login` ve form gönderimi
-   * uçları korunmalıdır.
+   *     grep -rn "rateLimit" node_modules/payload/dist/config/  →  hiç sonuç
+   *
+   * Nesne bırakıldığında Payload onu sessizce yok sayıyordu: yani sınırlama
+   * ZATEN ETKİN DEĞİLDİ, yalnızca etkinmiş gibi görünüyordu.
+   *
+   * ARTIK GERÇEK BİR SINIRLAYICI VAR: `src/middleware.ts` + `src/lib/
+   * rateLimit.ts`. Kimlik uçlarını (kayıt ve giriş, yalnızca POST) IP bazlı
+   * korur. Sınırları ve neden ters vekil/WAF katmanının yerine geçmediği o
+   * dosyada ve docs/access-control-guide.md 5.4'te yazılıdır.
    */
   graphQL: {
     // EK-1 kapsaminda GraphQL'e ihtiyac yok; saldiri yuzeyini kucultur.
