@@ -418,6 +418,51 @@ export const DOCUMENT_ACCESS_LEVEL_TO_ROLES: Record<string, string[]> = {
 }
 
 /**
+ * PARA BIRIMLERI  (Commerce — teklif ve abonelik)
+ * ============================================================================
+ * Liste KISA tutuldu ve bu bilinctidir: merkez Turkiye'de kurulu, hedef
+ * kitlesi Orta Asya ve komsu ulkelerdir. Uc birim gercek kullanimi karsilar;
+ * dordunculer eklendiginde kur donusumu de gerekir ve o AYRI bir istir
+ * (bkz. Quotes.ts icindeki "KUR DONUSUMU YOKTUR" notu).
+ *
+ * ISO 4217 kodlari kullanilir — sembol DEGIL. `₺` ve `$` gibi semboller
+ * belirsizdir (dolar hangi dolar?) ve siralanamaz.
+ */
+export const CURRENCIES: Option[] = [
+  { value: 'TRY', label: { tr: 'TRY — Türk lirası', en: 'TRY — Turkish lira', ru: 'TRY — турецкая лира' } },
+  { value: 'EUR', label: { tr: 'EUR — Avro', en: 'EUR — Euro', ru: 'EUR — евро' } },
+  { value: 'USD', label: { tr: 'USD — ABD doları', en: 'USD — US dollar', ru: 'USD — доллар США' } },
+]
+
+/**
+ * ABONELIK FATURALAMA DONEMI
+ * `custom` YOKTUR: serbest bir donem, yenileme tarihini hesaplanamaz kilar.
+ * Ozel sureli anlasmalar TEKLIF (`quotes`) uzerinden yurutulur.
+ */
+export const BILLING_PERIODS: Option[] = [
+  { value: 'monthly', label: { tr: 'Aylık', en: 'Monthly', ru: 'Ежемесячно' } },
+  { value: 'yearly', label: { tr: 'Yıllık', en: 'Yearly', ru: 'Ежегодно' } },
+]
+
+/**
+ * TEKLIF DURUMU
+ * ============================================================================
+ * Dort durum; `expired` (suresi dolmus) BILEREK YOKTUR.
+ *
+ * Sebep: sure dolmasi bir OLAY degil, `validUntil` alanindan TURETILEN bir
+ * gozlemdir. Ayri bir durum olarak saklansaydi onu guncelleyecek bir
+ * zamanlayici gerekirdi; zamanlayici kurulmadigi gun her kayit "gecerli"
+ * gorunmeye devam ederdi — yani veri, gerceklikten sessizce ayrisirdi.
+ * Suresi dolmus teklif, `validUntil < bugun` sorgusuyla bulunur.
+ */
+export const QUOTE_STATUSES: Option[] = [
+  { value: 'draft', label: { tr: 'Taslak', en: 'Draft', ru: 'Черновик' } },
+  { value: 'pending', label: { tr: 'Onay bekliyor', en: 'Pending approval', ru: 'На согласовании' } },
+  { value: 'approved', label: { tr: 'Kabul edildi', en: 'Approved', ru: 'Принято' } },
+  { value: 'rejected', label: { tr: 'Reddedildi', en: 'Rejected', ru: 'Отклонено' } },
+]
+
+/**
  * ICERIK YONETIM IS AKISI  (Sartname 1.6)
  *
  * Bu alan Payload'in `_status` (draft/published) alaninin YERINE GECMEZ;

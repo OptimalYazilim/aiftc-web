@@ -194,6 +194,47 @@ export const documentFileReadAccess: Access = ({ req: { user } }) => {
 }
 
 /**
+ * TICARI KAYITLARI YONETENLER  (Commerce — teklif ve abonelik)
+ * ===========================================================================
+ * Teklif kayitlari HEM ticari HEM kisisel veri tasir: musteri adi, iletisim
+ * kisisi, fiyatlar. Icerik uretme yetkisiyle (`author`) KARISTIRILMAZ — bir
+ * haber yazari, kurumun fiyat teklifini gormek zorunda degildir.
+ *
+ * Yetki iki eksende de aranir: panel rolu `admin`/`editor` ya da hedef kitle
+ * rolu `admin`/`staff`. Ikinci eksen gereklidir cunku teklifi hazirlayan kisi
+ * genellikle OGM/UOEM personelidir ve panelde bir icerik rolu tasimayabilir.
+ */
+export const canManageCommerce: Access = ({ req: { user } }) => {
+  if (hasRole('admin', 'editor')(user)) return true
+  const audience = audienceRoleOf(user)
+  return audience === 'admin' || audience === 'staff'
+}
+
+/**
+ * TEKLIF OKUMA ERISIMI
+ * ===========================================================================
+ * Personel tumunu gorur. Bunun disindaki oturumlar YALNIZCA KENDILERINE
+ * duzenlenmis teklifi gorur — `customerUser` alani uzerinden.
+ *
+ * `false` degil FILTRE doner: yetkisiz kisi baskasinin teklifini istediginde
+ * "yetkiniz yok" degil 404 alir. Bir teklifin VAR OLDUGUNU ogrenmek bile
+ * ticari bilgidir (kim kimden fiyat almis?) — kutuphane kuralindaki ayni
+ * gerekce (bkz. `libraryReadAccess`).
+ *
+ * Oturumsuz istek HICBIR teklifi gormez: `false` doner, filtre degil. Anonim
+ * bir ziyaretci icin "kendi teklifi" diye bir sey yoktur.
+ */
+export const quoteReadAccess: Access = ({ req: { user } }) => {
+  if (!user) return false
+
+  if (hasRole('admin', 'editor')(user)) return true
+  const audience = audienceRoleOf(user)
+  if (audience === 'admin' || audience === 'staff') return true
+
+  return { customerUser: { equals: (user as { id: number }).id } }
+}
+
+/**
  * YAYINA ALMA YETKISI  (Sartname 1.6)
  * ===========================================================================
  * `reviewStatus = published` ve `_status = published` yalnizca bu kisilerde:

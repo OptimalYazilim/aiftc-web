@@ -10,7 +10,9 @@ import { Media } from './Media'
 import { News } from './News'
 import { Pages } from './Pages'
 import { Projects } from './Projects'
+import { Quotes } from './Quotes'
 import { SimulationSystems } from './SimulationSystems'
+import { SubscriptionPlans } from './SubscriptionPlans'
 import { TrainingPrograms } from './TrainingPrograms'
 import { TrainingTopics } from './TrainingTopics'
 import { Users } from './Users'
@@ -18,7 +20,7 @@ import { VirtualClassrooms } from './VirtualClassrooms'
 
 /**
  * Admin panelindeki gruplama sirasi, editorlerin gunluk is akisina gore:
- *   Egitim -> Icerik -> Medya -> Kurumsal -> Sistem
+ *   Egitim -> Icerik -> Medya -> Kurumsal -> Ticari -> Sistem
  */
 export const collections: CollectionConfig[] = [
   // Eğitim
@@ -42,6 +44,10 @@ export const collections: CollectionConfig[] = [
   // Kurumsal
   Projects,
 
+  // Ticari (B2B)
+  SubscriptionPlans,
+  Quotes,
+
   // Sistem
   FormRequests,
   Users,
@@ -58,7 +64,9 @@ export {
   News,
   Pages,
   Projects,
+  Quotes,
   SimulationSystems,
+  SubscriptionPlans,
   TrainingPrograms,
   TrainingTopics,
   Users,

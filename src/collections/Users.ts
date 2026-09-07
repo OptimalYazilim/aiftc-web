@@ -222,6 +222,72 @@ export const Users: CollectionConfig = {
       label: { tr: 'Birim', en: 'Unit', ru: 'Подразделение' },
       admin: { position: 'sidebar' },
     },
+
+    /*
+      ======================================================================
+      B2B ABONELIK  (Commerce)
+      ======================================================================
+      Hangi kurumsal paketin bu hesaba TANIMLI oldugunu ve ne zamana kadar
+      gecerli oldugunu tutar. Paketin KENDISI `subscription-plans`
+      koleksiyonundadir; burada duran yalnizca atamadir.
+
+      ALAN DUZEYI ERISIM ZORUNLUDUR — DUSUNULEREK KONDU.
+      `access.create` bu koleksiyonda HERKESE aciktir (disaridan kayit).
+      Bu iki alan korunmasaydi, kayit formuna `subscriptionPlan` ve uzak bir
+      `subscriptionEndsAt` ekleyen herkes kendine ucretsiz kurumsal abonelik
+      yazabilirdi. `canApproveAccounts` (yonetici + OGM/UOEM personeli) ayni
+      kurali `accountStatus` icin de uyguluyor; para soz konusu oldugunda
+      ayni siki kapi gecerlidir.
+
+      Ayrica `hooks.beforeValidate` anonim kayitta ikisini de ZORLA temizler:
+      Payload yetkisiz alani sessizce dusurur, ama para iceren bir alanda
+      tek savunma hattina guvenilmez.
+
+      SURE BITINCE NE OLUR — DURUST SINIR.
+      `subscriptionEndsAt` gecmiste kaldiginda hicbir sey OTOMATIK olmaz:
+      bu alanlar bugun bir ERISIM KURALI degildir, bir KAYITTIR. Kutuphane
+      erisimi hala `role` + `accessLevel` uzerinden yurur. Abonelige bagli
+      bir kapi kurulacaksa o kural ayrica yazilmali ve suresi gecmis
+      aboneligi reddetmelidir — sessizce calisiyor sanilmamalidir.
+    */
+    {
+      name: 'subscriptionPlan',
+      type: 'relationship',
+      relationTo: 'subscription-plans',
+      index: true,
+      access: {
+        create: canApproveAccounts,
+        update: canApproveAccounts,
+      },
+      label: { tr: 'Abonelik Paketi', en: 'Subscription plan', ru: 'Тарифный план' },
+      admin: {
+        position: 'sidebar',
+        description: {
+          tr: 'Bu hesaba tanımlı kurumsal paket. Yalnızca yönetici ve OGM/UOEM personeli değiştirebilir.',
+          en: 'The plan granted to this account. Only administrators and staff can change it.',
+          ru: 'План, назначенный этой учётной записи.',
+        },
+      },
+    },
+    {
+      name: 'subscriptionEndsAt',
+      type: 'date',
+      index: true,
+      access: {
+        create: canApproveAccounts,
+        update: canApproveAccounts,
+      },
+      label: { tr: 'Abonelik Bitiş Tarihi', en: 'Subscription ends', ru: 'Окончание подписки' },
+      admin: {
+        position: 'sidebar',
+        date: { pickerAppearance: 'dayOnly', displayFormat: 'dd.MM.yyyy' },
+        description: {
+          tr: 'Bu tarihten sonra abonelik geçersiz sayılır. DİKKAT: tarih geçtiğinde sistem otomatik bir kısıtlama uygulamaz — bu alan bir kayıttır, erişim kuralı değildir.',
+          en: 'After this date the subscription is void. NOTE: nothing is restricted automatically — this is a record, not an access rule.',
+          ru: 'После этой даты подписка недействительна. Автоматических ограничений нет.',
+        },
+      },
+    },
     {
       name: 'preferredAdminLanguage',
       type: 'select',
@@ -300,6 +366,15 @@ export const Users: CollectionConfig = {
             roles: [],
             role: 'trainee',
             accountStatus: 'pending',
+            /*
+              B2B alanlari da ZORLA temizlenir. Alan duzeyi erisim
+              (`canApproveAccounts`) bunlari zaten dusururdu; burada ikinci
+              kez yazilmasi bilinclidir. Para iceren bir alanda tek savunma
+              hattina guvenilmez: kayit formuna `subscriptionPlan` ekleyen
+              biri kendine ucretsiz kurumsal abonelik yazmis olurdu.
+            */
+            subscriptionPlan: null,
+            subscriptionEndsAt: null,
           }
         }
 

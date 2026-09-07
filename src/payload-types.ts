@@ -80,6 +80,8 @@ export interface Config {
     'document-files': DocumentFile;
     'library-resources': LibraryResource;
     projects: Project;
+    'subscription-plans': SubscriptionPlan;
+    quotes: Quote;
     'form-requests': FormRequest;
     users: User;
     'search-index': SearchIndex;
@@ -107,6 +109,8 @@ export interface Config {
     'document-files': DocumentFilesSelect<false> | DocumentFilesSelect<true>;
     'library-resources': LibraryResourcesSelect<false> | LibraryResourcesSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    'subscription-plans': SubscriptionPlansSelect<false> | SubscriptionPlansSelect<true>;
+    quotes: QuotesSelect<false> | QuotesSelect<true>;
     'form-requests': FormRequestsSelect<false> | FormRequestsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'search-index': SearchIndexSelect<false> | SearchIndexSelect<true>;
@@ -1666,6 +1670,14 @@ export interface User {
    */
   accountStatus: 'pending' | 'approved' | 'suspended';
   unit?: string | null;
+  /**
+   * The plan granted to this account. Only administrators and staff can change it.
+   */
+  subscriptionPlan?: (number | null) | SubscriptionPlan;
+  /**
+   * After this date the subscription is void. NOTE: nothing is restricted automatically — this is a record, not an access rule.
+   */
+  subscriptionEndsAt?: string | null;
   preferredAdminLanguage?: ('tr' | 'en' | 'ru') | null;
   updatedAt: string;
   createdAt: string;
@@ -1685,6 +1697,132 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * Institutional subscription packages and list prices. A granted subscription is set on the user record.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription-plans".
+ */
+export interface SubscriptionPlan {
+  id: number;
+  /**
+   * Auto-generated from the title if left empty. If you change a published slug, add a 301 in Redirects.
+   */
+  slug: string;
+  /**
+   * Plans are listed in this order — the order the institution wants, not alphabetical.
+   */
+  order?: number | null;
+  /**
+   * Calculated automatically. Shows missing locales.
+   */
+  translationStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  name: string;
+  /**
+   * One or two sentences on who the plan is for.
+   */
+  description?: string | null;
+  features?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Both prices below are in this currency.
+   */
+  currency: 'TRY' | 'EUR' | 'USD';
+  /**
+   * In major units, e.g. 1500.00. EMPTY = not sold monthly. 0 = free — these are not the same.
+   */
+  monthlyPrice?: number | null;
+  /**
+   * Not derived from the monthly price — the annual discount differs per plan. EMPTY = not sold yearly.
+   */
+  yearlyPrice?: number | null;
+  /**
+   * Which period the price display opens on. Not a sales restriction.
+   */
+  defaultBillingPeriod?: ('monthly' | 'yearly') | null;
+  /**
+   * Highlighted in the list. Marking several plans defeats the purpose.
+   */
+  featured?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Price quotes prepared for institutions. The total is computed from line items and cannot be edited.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes".
+ */
+export interface Quote {
+  id: number;
+  /**
+   * The institution’s own numbering scheme, e.g. “Q-2026-014”. Must be unique.
+   */
+  quoteNumber: string;
+  /**
+   * “Expired” is not a status — it is read from the validity date.
+   */
+  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  /**
+   * After this date the quote is not binding. Required — an open-ended quote binds the institution.
+   */
+  validUntil: string;
+  /**
+   * The institution the quote is for. It does not need an account in the system.
+   */
+  customerName: string;
+  /**
+   * If set, this user can see their own quote. If empty, only staff can see it.
+   */
+  customerUser?: (number | null) | User;
+  contactPerson?: string | null;
+  contactEmail?: string | null;
+  /**
+   * The WHOLE quote is in this currency; per-line currencies are not supported.
+   */
+  currency: 'TRY' | 'EUR' | 'USD';
+  /**
+   * At least one line is required. Line and grand totals are computed automatically.
+   */
+  items?:
+    | {
+        /**
+         * e.g. “Integrated Fire Management training — 12 participants”.
+         */
+        description: string;
+        quantity: number;
+        /**
+         * In major units, e.g. 1500.00, in the quote’s currency.
+         */
+        unitPrice: number;
+        /**
+         * Unit price × quantity. Computed; not editable.
+         */
+        lineTotal?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Sum of the line items, computed automatically. EXCLUDES TAX — no tax rate is stored in this schema.
+   */
+  total?: number | null;
+  internalNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Contact and training application requests. These records contain personal data.
@@ -1976,6 +2114,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'projects';
         value: number | Project;
+      } | null)
+    | ({
+        relationTo: 'subscription-plans';
+        value: number | SubscriptionPlan;
+      } | null)
+    | ({
+        relationTo: 'quotes';
+        value: number | Quote;
       } | null)
     | ({
         relationTo: 'form-requests';
@@ -2683,6 +2829,58 @@ export interface ProjectsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription-plans_select".
+ */
+export interface SubscriptionPlansSelect<T extends boolean = true> {
+  slug?: T;
+  order?: T;
+  translationStatus?: T;
+  name?: T;
+  description?: T;
+  features?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  currency?: T;
+  monthlyPrice?: T;
+  yearlyPrice?: T;
+  defaultBillingPeriod?: T;
+  featured?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes_select".
+ */
+export interface QuotesSelect<T extends boolean = true> {
+  quoteNumber?: T;
+  status?: T;
+  validUntil?: T;
+  customerName?: T;
+  customerUser?: T;
+  contactPerson?: T;
+  contactEmail?: T;
+  currency?: T;
+  items?:
+    | T
+    | {
+        description?: T;
+        quantity?: T;
+        unitPrice?: T;
+        lineTotal?: T;
+        id?: T;
+      };
+  total?: T;
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-requests_select".
  */
 export interface FormRequestsSelect<T extends boolean = true> {
@@ -2711,6 +2909,8 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   accountStatus?: T;
   unit?: T;
+  subscriptionPlan?: T;
+  subscriptionEndsAt?: T;
   preferredAdminLanguage?: T;
   updatedAt?: T;
   createdAt?: T;

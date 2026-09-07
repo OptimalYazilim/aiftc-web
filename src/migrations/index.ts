@@ -6,6 +6,7 @@ import * as migration_20260906_004002_form_gonderimleri from './20260906_004002_
 import * as migration_20260906_114030_mevcut_sema_senkronu from './20260906_114030_mevcut_sema_senkronu';
 import * as migration_20260906_114957_kutuphane_kunye_alanlari from './20260906_114957_kutuphane_kunye_alanlari';
 import * as migration_20260907_164936_sayfa_blok_basliklari from './20260907_164936_sayfa_blok_basliklari';
+import * as migration_20260907_192905_commerce_abonelik_ve_teklifler from './20260907_192905_commerce_abonelik_ve_teklifler';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20260907_164936_sayfa_blok_basliklari.up,
     down: migration_20260907_164936_sayfa_blok_basliklari.down,
-    name: '20260907_164936_sayfa_blok_basliklari'
+    name: '20260907_164936_sayfa_blok_basliklari',
+  },
+  {
+    up: migration_20260907_192905_commerce_abonelik_ve_teklifler.up,
+    down: migration_20260907_192905_commerce_abonelik_ve_teklifler.down,
+    name: '20260907_192905_commerce_abonelik_ve_teklifler'
   },
 ];
