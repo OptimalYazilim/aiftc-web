@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import type { Page } from '@/payload-types'
 
+import { PageBlocks } from '@/components/pages/PageBlocks'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
-import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
-import { pageHref } from '@/i18n/routes'
+import { ROUTES, pageHref } from '@/i18n/routes'
+import { resolveMedia } from '@/lib/media'
 import { buildMetadata } from '@/lib/metadata'
 import { payloadClient } from '@/lib/queries'
 
@@ -23,14 +25,15 @@ import { payloadClient } from '@/lib/queries'
  * eşleştirir. Yalnızca hiçbir statik rotanın karşılamadığı yollar buraya gelir.
  *
  * ---------------------------------------------------------------------------
- * KAPSAM SINIRI — OKUYUN
- * Pages koleksiyonunun `layout` alanı birden çok blok tipi tanımlar
- * (richText, media, stats, people, partners, timeline...). Bu sayfa şu an
- * YALNIZCA `richText` bloğunu render eder; hukuki metinlerin ihtiyacı budur.
- * Diğer blok tipleri sessizce ATLANIR — sayfa çökmez, o bölüm boş kalır.
+ * BLOKLARIN TAMAMI RENDER EDİLİR
+ * Sayfa gövdesi `components/pages/PageBlocks` bileşenine devredilmiştir ve o
+ * bileşen koleksiyondaki DOKUZ blok tipinin tamamını basar (metin, görsel,
+ * sayılar, kişiler, paydaşlar, tarihçe, yönlendirme, SSS, iletişim).
  *
- * Kurumsal tanıtım sayfaları (istatistik, ekip, ortak logoları) yayına
- * alınmadan önce bu bileşene ilgili blok render'ları eklenmelidir.
+ * Burada bir zamanlar "KAPSAM SINIRI" başlıklı bir not vardı: sayfa yalnızca
+ * `richText` bloğunu basıyor, diğer sekizi sessizce atlıyordu. Editör panelde
+ * bir "Yönetim Kadrosu" bloğu kurup kaydettiğinde önizlemede hiçbir şey
+ * göremiyordu. O sınır kaldırıldı.
  * ---------------------------------------------------------------------------
  *
  * Slug çözümlemesi eğitim ve haber detaylarıyla AYNI üç adımlı mantığı izler:
@@ -38,6 +41,23 @@ import { payloadClient } from '@/lib/queries'
  * ============================================================================
  */
 export const revalidate = 300
+
+/**
+ * STATİK BÖLÜM ADLARI — BU ROTADAN SERVİS EDİLEMEZ.
+ * ---------------------------------------------------------------------------
+ * Next.js statik segmenti her zaman `[slug]`ten önce eşleştirir. Slug'ı
+ * `kurulus` (ya da `haberler`, `galeri` …) olan bir Pages kaydı bu rotaya HİÇ
+ * ulaşmaz; onu ilgili bölüm sayfası kendisi çeker (bkz. `kurulus/page.tsx`).
+ *
+ * Bu yüzden o slug'lar `generateStaticParams`ten elenir. Elenmezse Next boşuna
+ * bir HTML üretir; üretilen sayfa hiçbir zaman servis edilmez ama build
+ * süresini uzatır ve "bu sayfa neden iki kez var?" sorusunu doğurur.
+ *
+ * Liste `ROUTES`tan TÜRETİLİR — elle tutulan ikinci bir kopya, yeni bir bölüm
+ * eklendiğinde sessizce eskirdi.
+ */
+const isReservedSlug = (slug: string, locale: Locale): boolean =>
+  Object.values(ROUTES).some((route) => route[locale].replace(/^\//, '') === slug && slug !== '')
 
 type Props = { params: Promise<{ locale: Locale; slug: string }> }
 
@@ -61,8 +81,12 @@ export async function generateStaticParams() {
     for (const doc of result.docs as unknown as AllLocaleSlugs[]) {
       for (const locale of LOCALE_CODES) {
         const slug = doc.slug?.[locale]
+        if (!slug) continue
         // `home` slug'ı ana sayfadır; bu rotada üretilmez.
-        if (slug && slug !== 'home') params.push({ locale, slug })
+        if (slug === 'home') continue
+        // Statik bir bölümün adını taşıyan kayıt bu rotadan servis EDİLEMEZ.
+        if (isReservedSlug(slug, locale)) continue
+        params.push({ locale, slug })
       }
     }
 
@@ -80,7 +104,19 @@ const findBySlug = async (locale: Locale, slug: string): Promise<Page | null> =>
     locale,
     where: { slug: { equals: slug }, _status: { equals: 'published' } },
     limit: 1,
+    /*
+      depth 2: `parent` sayfanın başlık/slug'ı, blok içindeki görseller,
+      SSS ilişkileri ve ortak logoları tek sorguda gelsin. Derinlik 1'de
+      blok içi ilişkiler ham id olarak döner ve bloklar boş görünür.
+    */
     depth: 2,
+    /*
+      Erişim denetimi AÇIK. Local API'de `overrideAccess` varsayılanı
+      `true`'dur; sayfanın kendi `where` koşulu zaten yalnızca yayımlanmış
+      kayıtları alıyor ama kuralın koleksiyondan gelmesi esastır — bkz.
+      docs/access-control-guide.md, Bölüm 9.1.
+    */
+    overrideAccess: false,
   })
 
   return (result.docs[0] as Page | undefined) ?? null
@@ -127,9 +163,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   })
 }
 
-/** `layout` bloklarından yalnızca metin olanlar. Bkz. kapsam sınırı notu. */
-type RichTextLayoutBlock = { blockType?: string | null; content?: unknown; id?: string | null }
-
 export default async function FreePage({ params }: Props) {
   const { locale, slug } = await params
   if (!isLocale(locale)) notFound()
@@ -153,9 +186,18 @@ export default async function FreePage({ params }: Props) {
 
   const tn = await getTranslations('nav')
 
-  const textBlocks = ((doc.layout ?? []) as RichTextLayoutBlock[]).filter(
-    (block) => block.blockType === 'richText' && hasRichTextContent(block.content),
-  )
+  /*
+    ÜST SAYFA KIRINTIDA GÖSTERİLİR.
+    Kuruluş alt sayfaları (`pageType: 'institution'`) bir `parent` taşır;
+    ziyaretçinin "Kuruluş > Tarihçe" hiyerarşisini görmesi gerekir. İlişki
+    `depth: 2` ile çözülür, çözülmemişse (ham id) sessizce atlanır.
+  */
+  const parent =
+    doc.parent && typeof doc.parent === 'object'
+      ? (doc.parent as { title?: string | null; slug?: string | null })
+      : null
+
+  const cover = resolveMedia(doc.heroImage, 'hero')
 
   return (
     <>
@@ -163,7 +205,13 @@ export default async function FreePage({ params }: Props) {
         <div className="container-page page-hero-compact">
           <Breadcrumbs
             label={tn('breadcrumb')}
-            items={[{ label: tn('home'), href: `/${locale}` }, { label: doc.title }]}
+            items={[
+              { label: tn('home'), href: `/${locale}` },
+              ...(parent?.title && parent.slug
+                ? [{ label: parent.title, href: pageHref(locale, parent.slug) }]
+                : []),
+              { label: doc.title },
+            ]}
           />
           <h1 className="title-record measure mt-6">{doc.title}</h1>
           {doc.subtitle ? (
@@ -172,14 +220,23 @@ export default async function FreePage({ params }: Props) {
         </div>
       </section>
 
-      <article className="container-page section-block">
-        {/* Okunabilir satır genişliği — haber detayıyla aynı ölçü. */}
-        <div className="max-w-prose space-y-8">
-          {textBlocks.map((block, index) => (
-            <RichTextBlock key={block.id ?? index} data={block.content} />
-          ))}
-        </div>
-      </article>
+      <div className="section-block">
+        {cover ? (
+          <div className="container-page mb-12">
+            <Image
+              src={cover.url}
+              alt={cover.alt || ''}
+              width={cover.width}
+              height={cover.height}
+              priority
+              sizes="(min-width: 1280px) 1024px, 100vw"
+              className="w-full border border-line-soft object-cover"
+            />
+          </div>
+        ) : null}
+
+        <PageBlocks blocks={doc.layout} locale={locale} />
+      </div>
     </>
   )
 }

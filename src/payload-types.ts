@@ -1162,6 +1162,10 @@ export interface Page {
             blockType: 'mediaBlock';
           }
         | {
+            /**
+             * Optional. e.g. “Management”, “History”. Left empty, no heading is shown.
+             */
+            heading?: string | null;
             items?:
               | {
                   value: string;
@@ -1174,6 +1178,10 @@ export interface Page {
             blockType: 'statsBlock';
           }
         | {
+            /**
+             * Optional. e.g. “Management”, “History”. Left empty, no heading is shown.
+             */
+            heading?: string | null;
             people?:
               | {
                   name: string;
@@ -1188,6 +1196,10 @@ export interface Page {
             blockType: 'peopleBlock';
           }
         | {
+            /**
+             * Optional. e.g. “Management”, “History”. Left empty, no heading is shown.
+             */
+            heading?: string | null;
             partners?:
               | {
                   name: string;
@@ -1201,6 +1213,10 @@ export interface Page {
             blockType: 'partnersBlock';
           }
         | {
+            /**
+             * Optional. e.g. “Management”, “History”. Left empty, no heading is shown.
+             */
+            heading?: string | null;
             entries?:
               | {
                   year: string;
@@ -2374,6 +2390,7 @@ export interface PagesSelect<T extends boolean = true> {
         statsBlock?:
           | T
           | {
+              heading?: T;
               items?:
                 | T
                 | {
@@ -2387,6 +2404,7 @@ export interface PagesSelect<T extends boolean = true> {
         peopleBlock?:
           | T
           | {
+              heading?: T;
               people?:
                 | T
                 | {
@@ -2402,6 +2420,7 @@ export interface PagesSelect<T extends boolean = true> {
         partnersBlock?:
           | T
           | {
+              heading?: T;
               partners?:
                 | T
                 | {
@@ -2416,6 +2435,7 @@ export interface PagesSelect<T extends boolean = true> {
         timelineBlock?:
           | T
           | {
+              heading?: T;
               entries?:
                 | T
                 | {

@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
 
 import { canAuthorContent, canDeleteContent, publishedOrAuthenticated } from '@/access'
 import { publishingFields, translationStatusField } from '@/fields/publishing'
@@ -14,7 +14,41 @@ import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
  * metni ve cerez politikasi bu koleksiyonda tutulur.
  *
  * Blok tabanli (layout builder) yapi: editor kod yazmadan sayfa kurar.
+ * Bloklarin on yuz karsiligi: components/pages/PageBlocks.tsx
  */
+
+/**
+ * BLOK BASLIGI — istege bagli, GORUNUR bir baslik.
+ * ============================================================================
+ * `statsBlock`, `peopleBlock`, `partnersBlock` ve `timelineBlock` bloklarinda
+ * baslik alani YOKTU. Bloklar on yuze baglandiginda ortaya cikan sorun sudur:
+ * sayfanin ortasinda, neyin listesi oldugu soylenmeyen bir kisi izgarasi ya da
+ * bir yil dizisi belirir. "Yonetim Kadrosu" ya da "Tarihce" yazan bir baslik,
+ * icerigin kendisi kadar gereklidir.
+ *
+ * Payload'in yerlesik `blockName` alani KULLANILMADI: o alan panelde bloklari
+ * birbirinden ayirmak icindir, ziyaretciye basilmasi amaclanmamistir. Gorunur
+ * metni gorunmez bir yonetim etiketine bindirmek, ileride birinin blogu
+ * "eski surum" diye yeniden adlandirmasiyla sayfaya sizardi.
+ *
+ * ZORUNLU DEGILDIR: art arda gelen iki kisi blogunda ikinci basligin
+ * tekrarlanmasi gerekmez. Bos birakildiginda hicbir baslik basilmaz.
+ *
+ * Ayrica YERELLESTIRILMEZ — cunku kapsayici `layout` alani zaten
+ * `localized: true`'dur; her dil kendi blok dizisini tasir.
+ */
+const blockHeading: Field = {
+  name: 'heading',
+  type: 'text',
+  label: { tr: 'Bölüm Başlığı', en: 'Section heading', ru: 'Заголовок раздела' },
+  admin: {
+    description: {
+      tr: 'İsteğe bağlı. Örn. “Yönetim Kadrosu”, “Tarihçe”, “Sayılarla Merkez”. Boş bırakılırsa başlık gösterilmez.',
+      en: 'Optional. e.g. “Management”, “History”. Left empty, no heading is shown.',
+      ru: 'Необязательно. Если оставить пустым, заголовок не отображается.',
+    },
+  },
+}
 export const Pages: CollectionConfig = {
   slug: 'pages',
   labels: {
@@ -120,6 +154,7 @@ export const Pages: CollectionConfig = {
           slug: 'statsBlock',
           labels: { singular: { tr: 'Sayılarla', en: 'Statistics', ru: 'Статистика' }, plural: { tr: 'Sayılarla', en: 'Statistics', ru: 'Статистика' } },
           fields: [
+            blockHeading,
             {
               name: 'items',
               type: 'array',
@@ -135,6 +170,7 @@ export const Pages: CollectionConfig = {
           slug: 'peopleBlock',
           labels: { singular: { tr: 'Kişiler (Yönetim / Eğitmenler)', en: 'People', ru: 'Люди' }, plural: { tr: 'Kişi Blokları', en: 'People blocks', ru: 'Блоки людей' } },
           fields: [
+            blockHeading,
             {
               name: 'people',
               type: 'array',
@@ -151,6 +187,7 @@ export const Pages: CollectionConfig = {
           slug: 'partnersBlock',
           labels: { singular: { tr: 'Paydaşlar / İş Birlikleri', en: 'Partners', ru: 'Партнёры' }, plural: { tr: 'Paydaş Blokları', en: 'Partner blocks', ru: 'Блоки партнёров' } },
           fields: [
+            blockHeading,
             {
               name: 'partners',
               type: 'array',
@@ -166,6 +203,7 @@ export const Pages: CollectionConfig = {
           slug: 'timelineBlock',
           labels: { singular: { tr: 'Tarihçe / Zaman Çizelgesi', en: 'Timeline', ru: 'Хронология' }, plural: { tr: 'Zaman Çizelgeleri', en: 'Timelines', ru: 'Хронологии' } },
           fields: [
+            blockHeading,
             {
               name: 'entries',
               type: 'array',

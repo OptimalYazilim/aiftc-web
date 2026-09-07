@@ -451,6 +451,7 @@
     "pendingHeading": "Sections in preparation",
     "pendingBody": "The history, mission and vision, organisational structure, and management and trainer sections have not been published yet. These texts will be prepared by the institution and entered into the “About subsection” records in the admin panel.",
     "pendingBadge": "Content not entered",
-    "viewProject": "Go to the project page"
+    "viewProject": "Go to the project page",
+    "subPagesHeading": "About sections"
   }
 }

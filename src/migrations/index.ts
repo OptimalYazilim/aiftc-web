@@ -5,6 +5,7 @@ import * as migration_20260905_235038_sanal_sinif_odalari from './20260905_23503
 import * as migration_20260906_004002_form_gonderimleri from './20260906_004002_form_gonderimleri';
 import * as migration_20260906_114030_mevcut_sema_senkronu from './20260906_114030_mevcut_sema_senkronu';
 import * as migration_20260906_114957_kutuphane_kunye_alanlari from './20260906_114957_kutuphane_kunye_alanlari';
+import * as migration_20260907_164936_sayfa_blok_basliklari from './20260907_164936_sayfa_blok_basliklari';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20260906_114957_kutuphane_kunye_alanlari.up,
     down: migration_20260906_114957_kutuphane_kunye_alanlari.down,
-    name: '20260906_114957_kutuphane_kunye_alanlari'
+    name: '20260906_114957_kutuphane_kunye_alanlari',
+  },
+  {
+    up: migration_20260907_164936_sayfa_blok_basliklari.up,
+    down: migration_20260907_164936_sayfa_blok_basliklari.down,
+    name: '20260907_164936_sayfa_blok_basliklari'
   },
 ];
