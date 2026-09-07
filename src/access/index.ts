@@ -1,6 +1,6 @@
 import type { Access, FieldAccess, Where } from 'payload'
 
-import { ACCESS_LEVEL_TO_ROLE } from '@/fields/options'
+import { ACCESS_LEVEL_TO_ROLE, DOCUMENT_ACCESS_LEVEL_TO_ROLES } from '@/fields/options'
 import type { User } from '@/payload-types'
 
 /**
@@ -142,6 +142,55 @@ export const libraryReadAccess: Access = ({ req: { user } }) => {
     .map(([seviye]) => seviye)
 
   return yayimlanmisVe({ accessLevel: { in: ['public', ...seviyeler] } })
+}
+
+/**
+ * BELGE DOSYASI OKUMA ERISIMI  (Sartname 1.7 / 12.1 · Kilavuz 5.1)
+ * ===========================================================================
+ * `document-files` koleksiyonunun `read` kurali. ONEMLI OLAN SU: bu kural
+ * yalnizca panel listelerini degil, DOSYANIN KENDISINI de korur. Payload'in
+ * `/api/document-files/file/<ad>` ucu bu kuraldan gecer; yetkisi olmayan
+ * istek dosyayi HIC ALAMAZ.
+ *
+ * ONCEKI DURUM — OLCULDU (2026-09-07)
+ * ---------------------------------------------------------------------------
+ * Kural `read: () => true` idi. Yani her belge, seviyesi ne olursa olsun,
+ * adresini bilen herkese aciktir. Kilavuzun 5.1 maddesi bunu "bilinen sinir"
+ * olarak sayiyordu; artik sinir degil, kapatilmis bir aciktir.
+ *
+ * ARSIVLENMIS BELGELER GORUNUR KALIR
+ * ---------------------------------------------------------------------------
+ * `isArchived` listelerden gizler ama MEVCUT BAGLANTILARI kirmaz — koleksiyon
+ * alaninin kendi aciklamasi bunu soyluyor. Bu yuzden erisim kuralina
+ * KARISTIRILMAZ: arsivlemek bir gorunurluk tercihi, erisim seviyesi bir yetki
+ * kararidir. Ikisini birlestirmek, arsivlenen bir formun daha once paylasilmis
+ * baglantisini sessizce 403'e cevirirdi.
+ *
+ * DEGERI OLMAYAN KAYIT
+ * ---------------------------------------------------------------------------
+ * `accessLevel` zorunlu ve varsayilani `public`'tir; yine de bos bir deger
+ * veritabaninda bulunursa sorgu onu ESLESTIRMEZ ve dosya kapali kalir.
+ * Yine guvenli taraf.
+ */
+export const documentFileReadAccess: Access = ({ req: { user } }) => {
+  if (!user) return { accessLevel: { equals: 'public' } }
+
+  // Panel yetkisi olan herkes (admin dahil) tum belgeleri gorur.
+  if (hasRole('admin', 'editor', 'author', 'viewer')(user)) return true
+
+  const audience = audienceRoleOf(user)
+  if (audience === 'admin') return true
+
+  /*
+    Rolden SEVIYEYE ters eslestirme; harita seviye -> roller yonunde
+    tanimlidir (fields/options.ts). Tek kaynaktan turetilir ki iki liste
+    ayrisamasin.
+  */
+  const seviyeler = Object.entries(DOCUMENT_ACCESS_LEVEL_TO_ROLES)
+    .filter(([, roller]) => (audience ? roller.includes(audience) : false))
+    .map(([seviye]) => seviye)
+
+  return { accessLevel: { in: ['public', ...seviyeler] } }
 }
 
 /**

@@ -725,7 +725,7 @@ export interface DocumentFile {
   language?: ('tr' | 'en' | 'ru')[] | null;
   version?: string | null;
   /**
-   * Non-public levels redirect the download to the EK-2 portal.
+   * ENFORCED: the download URL itself is protected by this level. Anything other than Public cannot be downloaded without the matching role, even with the direct link.
    */
   accessLevel: 'public' | 'staff' | 'participants' | 'trainers' | 'internal';
   /**

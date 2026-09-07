@@ -98,8 +98,17 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Yerel disk depolamada (MEDIA_STORAGE_ADAPTER=local) Payload buraya yazar.
 # S3/MinIO kullanılıyorsa bu dizinler boş kalır — yine de var olmalıdırlar,
 # yoksa yükleme "ENOENT" ile düşer.
-RUN mkdir -p public/media public/documents \
- && chown -R nextjs:nodejs public
+#
+# İKİ AYRI DİZİN, İKİ AYRI GEREKÇE — KARIŞTIRILMAMALI:
+#   public/media      → Next bunları doğrudan diskten servis eder. Logolar ve
+#                       kapak görselleri anonim ziyaretçiye açık OLMALIDIR.
+#   private/documents → `public/` DIŞINDA. Belgeler yalnızca Payload'ın erişim
+#                       denetiminden geçen uç noktadan sunulur. Bu dizin
+#                       `public/` altına taşınırsa erişim kuralı ATLANIR ve
+#                       her belge adresini bilene açılır (ölçüldü 2026-09-07;
+#                       bkz. collections/DocumentFiles.ts).
+RUN mkdir -p public/media private/documents \
+ && chown -R nextjs:nodejs public private
 
 USER nextjs
 EXPOSE 3000

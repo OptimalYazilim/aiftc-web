@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { canAuthorContent, canDeleteContent } from '@/access'
+import { canAuthorContent, canDeleteContent, documentFileReadAccess } from '@/access'
 import { ACCESS_LEVELS, INSTRUCTION_LANGUAGES, LICENSE_TYPES } from '@/fields/options'
 
 /**
@@ -38,13 +38,41 @@ export const DocumentFiles: CollectionConfig = {
     },
   },
   access: {
-    read: () => true,
+    /*
+      DOSYAYI DA KORUR — yalnizca panel listesini degil.
+      Payload'in `/api/document-files/file/<ad>` ucu bu kuraldan gecer;
+      yetkisi olmayan istek dosyayi hic alamaz. Gerekce ve seviye->rol
+      eslestirmesi: access/index.ts -> `documentFileReadAccess`.
+    */
+    read: documentFileReadAccess,
     create: canAuthorContent,
     update: canAuthorContent,
     delete: canDeleteContent,
   },
   upload: {
-    staticDir: 'public/documents',
+    /*
+      DOSYALAR `public/` ICINDE DURAMAZ — OLCULMUS BIR ACIK.
+      ------------------------------------------------------------------
+      Bu deger once `public/documents` idi. Next.js `public/` altindaki her
+      seyi HICBIR KOD CALISTIRMADAN, dogrudan diskten servis eder. Yani
+      Payload'in erisim kurali ne yazarsa yazsin, dosyanin ikinci ve
+      TAMAMEN KORUMASIZ bir adresi vardi.
+
+      Olcum (2026-09-07, anonim istek):
+          GET /api/document-files/file/videoplayback%20(1).mp4  -> 206
+          GET /documents/videoplayback%20(1).mp4                -> 206
+      Ikisi de dosyayi verdi. Ilkini erisim kurali kapatir; IKINCISINI
+      HICBIR KURAL KAPATAMAZ, cunku istek Payload'a hic ugramaz.
+
+      `private/documents` depo kokunde, `public/` DISINDA ve `.gitignore`
+      icindedir. Artik dosyaya tek yoldan ulasilir: Payload'in erisim
+      denetiminden gecen uc noktadan.
+
+      NOT: `media` koleksiyonu bilincli olarak `public/media` altinda kalir
+      — logolar, kapak gorselleri ve galeri kareleri anonim ziyaretciye
+      acik olmak ZORUNDADIR (bkz. Media.ts ve docs/access-control-guide).
+    */
+    staticDir: 'private/documents',
     /*
       Sartname 12.1: guvenli dosya yukleme - beyaz liste.
 
@@ -137,10 +165,17 @@ export const DocumentFiles: CollectionConfig = {
       options: ACCESS_LEVELS,
       admin: {
         position: 'sidebar',
+        /*
+          ACIKLAMA DEGISTI — ESKISI ARTIK DOGRU DEGIL.
+          Onceki metin "indirme EK-2 portalina yonlendirilir" diyordu; oyle
+          bir yonlendirme hicbir zaman kurulmadi ve alan pratikte bir ETIKET
+          olarak duruyordu. Artik alan ZORLANIYOR: dosyanin kendisi bu
+          seviyeye gore korunuyor (access/index.ts -> documentFileReadAccess).
+        */
         description: {
-          tr: '“Herkese açık” dışındaki seviyeler için indirme, EK-2 portalına yönlendirilir.',
-          en: 'Non-public levels redirect the download to the EK-2 portal.',
-          ru: 'Непубличные уровни перенаправляют на портал EK-2.',
+          tr: 'ZORLANIR: dosyanın indirme adresi bu seviyeye göre korunur. “Herkese açık” dışındaki bir belgeyi, adresini bilse bile yetkisiz kimse indiremez. Seviye→rol eşleşmesi: personel → OGM/UOEM personeli, katılımcı → eğitim katılımcıları, eğitmen → eğitmenler, kurum içi → yalnızca yönetici.',
+          en: 'ENFORCED: the download URL itself is protected by this level. Anything other than Public cannot be downloaded without the matching role, even with the direct link.',
+          ru: 'ПРИМЕНЯЕТСЯ: сам адрес файла защищён этим уровнем.',
         },
       },
     },

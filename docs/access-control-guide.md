@@ -10,7 +10,7 @@ karşılığını anlatır. İki okuyucusu vardır:
 - **Panel editörü** → "Bu kaydı kime açtım?" (Bölüm 1–3)
 - **Sistem yöneticisi / geliştirici** → "Kural nerede zorlanıyor?" (Bölüm 4–6)
 
-> **Kod yazacaksanız önce Bölüm 9'u okuyun.** Orada, doğru yazılmış bir
+> **Kod yazacaksanız önce Bölüm 9 ve 10'u okuyun.** Orada, doğru yazılmış bir
 > erişim kuralının hiç çalışmadığı üç gerçek durum anlatılıyor. Kuralın var
 > olması, uygulandığı anlamına gelmiyor.
 
@@ -106,22 +106,70 @@ Bir belgenin adının bile bilgi taşıdığı durumlar vardır.
 
 ---
 
-## 5. Bilinen sınırlar — AÇIK MADDELER
+## 5. Bilinen sınırlar
 
-Bunlar bilinen ve kabul edilmiş eksiklerdir; kuruma teslimde ayrıca
-raporlanmalıdır.
+Bu bölüm hem **kapatılmış** hem **hâlâ açık** maddeleri tutar; kapatılanlar
+tarih damgasıyla işaretlidir ve gerekçeleri geçmişi göstermek için
+bırakılmıştır. Açık kalanlar kuruma teslimde ayrıca raporlanmalıdır.
 
-### 5.1 Dosya adresleri korunmuyor
+| Madde | Durum |
+|---|---|
+| 5.1 Belge dosyalarının adresleri | ✅ Kapatıldı (2026-09-07) |
+| 5.1.1 `media` bilerek açık | ⚠️ Kalan sınır — kurum kararı bekliyor |
+| 5.1.2 S3 kovası | ⚠️ Kurulum şartı |
+| 5.2 Sitede ziyaretçi girişi yok | ❌ Açık |
+| 5.3 `DocumentFiles.accessLevel` | ✅ Artık zorlanıyor (2026-09-07) |
+| 5.4 Hız sınırlama | ❌ Açık — ters vekil / WAF katmanında |
 
-Erişim kuralı **katalog kaydını** gizler. Ekli dosyanın doğrudan adresi
-(`/media/rapor.pdf`) **hâlâ çalışır** — statik dosyalar Payload'ın erişim
-kontrolünden geçmez.
+### 5.1 Belge dosyalarının adresleri — **KAPATILDI (2026-09-07)**
 
-Yani: yetkisiz bir kullanıcı kaydı bulamaz, ama adresi **başka bir yoldan**
-öğrenmişse (paylaşılan bir bağlantı, arşivlenmiş bir sayfa) dosyayı indirebilir.
+> Bu madde bir zamanlar açık bir eksikti. Artık kapatılmıştır; ölçüm ve
+> kalan sınırlar aşağıdadır. Ayrıntılı gerekçe: **Bölüm 10**.
 
-**Gerçek koruma için gereken:** dosyaların imzalı (süreli) URL ile veya erişimi
-denetleyen bir route handler arkasından sunulması. Kurulmadı.
+`document-files` koleksiyonundaki her dosya artık kendi `accessLevel`
+alanına göre korunur. Yetkisiz istek dosyayı **alamaz**:
+
+```
+GET /api/document-files/file/<ad>        anonim, accessLevel=staff   → 403
+GET /documents/<ad>                      (eski statik yol)           → 404
+```
+
+İki ayrı değişiklik gerekti; **tek başına hiçbiri yetmezdi**:
+
+1. `access.read` gerçek bir kurala bağlandı (`documentFileReadAccess`).
+   Öncesinde `() => true` idi.
+2. `upload.staticDir` `public/documents` → `private/documents` taşındı.
+   Next.js `public/` altındaki her şeyi **hiçbir kod çalıştırmadan** servis
+   eder; dosya orada durdukça erişim kuralının hiçbir hükmü yoktu.
+
+### 5.1.1 KALAN SINIR — `media` koleksiyonu bilerek açıktır
+
+`media` (logolar, kapak görselleri, galeri kareleri) **korunmaz ve
+korunmamalıdır**: bu dosyalar anonim ziyaretçinin sayfayı görebilmesi için
+gereklidir.
+
+Bunun ölçülebilir bir sonucu vardır: erişimi kısıtlı bir kütüphane kaydının
+**fotoğrafları** `media` içinde durur ve doğrudan adresle indirilebilir.
+Kayıt listede görünmez, künyesi 404 döner, ama kareye adresini bilen
+ulaşabilir.
+
+**Kapatmak için gereken karar kurumundur.** İki yol var:
+
+| Yol | Bedeli |
+|---|---|
+| Kısıtlı görselleri `document-files`e yüklemek | Editör disiplini gerektirir; bugün de yapılabilir |
+| `media`ya `accessLevel` eklemek | Her kapak görselinin seviyesi girilmeli; boş kalan alanlar siteyi kırar |
+
+Kurum bir karar verene kadar **kısıtlı görsel `media`ya yüklenmemelidir**.
+
+### 5.1.2 KALAN SINIR — S3 kovası
+
+`MEDIA_STORAGE_ADAPTER=s3` iken dosyalar yine Payload'ın ucundan sunulur ve
+erişim kuralı geçerlidir. Ancak **kovanın kendisi herkese açıksa** S3/MinIO
+adresi doğrudan çalışır ve Payload devre dışı kalır.
+
+**Kurulumda zorunlu:** kova `private` olmalı, nesnelere yalnızca uygulamanın
+kimlik bilgileriyle erişilmelidir.
 
 ### 5.2 Sitede ziyaretçi girişi yok
 
@@ -138,23 +186,27 @@ kullanıcıya **ulaşmaz**, yalnızca sunucu günlüğüne yazılır.
 Bu kurulmadan `trainee`/`instructor` seviyeleri pratikte kullanılamaz;
 `public` ve `staff` çalışır durumdadır.
 
-### 5.3 `DocumentFiles.accessLevel` zorlanmıyor
+### 5.3 `DocumentFiles.accessLevel` zorlanmıyor — **ARTIK ZORLANIYOR (2026-09-07)**
 
-`document-files` koleksiyonunda **eski** bir `accessLevel` alanı vardır
-(değerler: public / staff / participants / trainers / internal). Bu alan
-yalnızca bir **etikettir** — hiçbir erişim kuralı ona bakmaz.
+> Bu madde geçersizdir. Alan artık hem panel listelerinde hem **dosyanın
+> indirme adresinde** zorlanır; ölçülmüş matris **Bölüm 10.3**'tedir.
+> Aşağıdaki metin, kararın geçmişini göstermek için bırakılmıştır.
 
-İki liste karıştırılmamalıdır:
+`document-files` koleksiyonunun `accessLevel` alanı bir zamanlar yalnızca bir
+**etiketti** — hiçbir erişim kuralı ona bakmıyordu.
+
+İki liste hâlâ **ayrıdır** ve karıştırılmamalıdır:
 
 | | Koleksiyon | Zorlanıyor mu | Değerler |
 |---|---|---|---|
 | `LIBRARY_ACCESS_LEVELS` | `library-resources` | **Evet** | public, staff, instructor, trainee |
-| `ACCESS_LEVELS` (eski) | `document-files` | Hayır | public, staff, participants, trainers, internal |
+| `ACCESS_LEVELS` | `document-files` | **Evet** (2026-09-07'den beri) | public, staff, participants, trainers, internal |
 
-**Öneri:** `document-files` de aynı kurala bağlanmalı ve değerler tek listede
-birleştirilmelidir. Mevcut kayıtlarda `participants` → `trainee`,
-`trainers` → `instructor`, `internal` → `staff` eşlemesiyle bir veri göçü
-gerekir.
+Değerler **birleştirilmedi**. Birleştirmek, yüklü her belgenin seviyesini
+değiştiren bir veri göçü gerektirirdi ve `internal` gibi bir seviyenin
+kütüphanede karşılığı yoktur. Bunun yerine eşleşme açık yazıldı:
+`DOCUMENT_ACCESS_LEVEL_TO_ROLES` (bkz. **Bölüm 10.2**). Tek kaynak, açık
+harita, veri göçü yok.
 
 ### 5.4 Hız sınırlama uygulama katmanında yok
 
@@ -444,6 +496,98 @@ await payload.create({ collection: 'users', overrideAccess: true, user: yonetici
 
 ---
 
+## 10. Dosya erişimi — ölçülmüş matris
+
+Belge dosyalarının korunması iki katmanlıdır ve **ikisi de gereklidir**.
+
+### 10.1 Neden `read` kuralı tek başına yetmiyordu
+
+Dosyalar `public/documents` altında duruyordu. Next.js `public/` içindeki
+her şeyi diskten doğrudan verir — istek Payload'a **hiç uğramaz**. Yani
+kurala ne yazılırsa yazılsın, dosyanın ikinci ve tamamen korumasız bir
+adresi vardı.
+
+Ölçüm (2026-09-07, anonim istek, düzeltme öncesi):
+
+```
+GET /api/document-files/file/videoplayback%20(1).mp4   → 206
+GET /documents/videoplayback%20(1).mp4                 → 206
+```
+
+`staticDir` `private/documents`e taşındı. İkinci adres artık **404**.
+
+> **Kural:** yüklenen dosyaların dizini `public/` altına ASLA konmaz —
+> `media` dışında; o koleksiyon zaten herkese açıktır ve öyle olmalıdır.
+
+### 10.2 Seviye → rol eşleşmesi
+
+`document-files` koleksiyonu `ACCESS_LEVELS` listesini kullanır ve bu liste
+kütüphanenin listesiyle **aynı değerleri taşımaz**. Eşleşme açık yazılır:
+`fields/options.ts → DOCUMENT_ACCESS_LEVEL_TO_ROLES`.
+
+| Seviye | İndirebilen `role` |
+|---|---|
+| `public` | herkes (anonim dahil) |
+| `staff` | `staff` |
+| `participants` | `trainee` |
+| `trainers` | `instructor` |
+| `internal` | yalnızca `admin` |
+
+Panel rolü olan (`admin`, `editor`, `author`, `viewer`) herkes tümünü görür.
+
+Bir seviye haritaya yazılmazsa o seviyedeki dosyayı **kimse** indiremez —
+hata güvenli tarafa düşer. `internal` bilinçli olarak en dar yoruma
+(`admin`) eşlenmiştir; kurum "kurum içi" ile personeli de kastediyorsa
+haritaya `staff` eklenir. Tersini varsaymak sızıntı üretir.
+
+### 10.3 Doğrulanmış matris
+
+Her hücre, **dosyanın kendisine** atılmış gerçek bir HTTP isteğidir
+(panel listesi değil). Hem tarayıcı çerezi hem `Authorization: JWT` ile
+ölçülmüş, ikisi de aynı sonucu vermiştir.
+
+```
+seviye          anonim      staff       trainee     instructor
+--------------------------------------------------------------
+public          İNDİ 206    İNDİ 206    İNDİ 206    İNDİ 206
+staff           RED  403    İNDİ 206    RED  403    RED  403
+participants    RED  403    RED  403    İNDİ 206    RED  403
+trainers        RED  403    RED  403    RED  403    İNDİ 206
+internal        RED  403    RED  403    RED  403    RED  403
+```
+
+Kapatmayı olduğu kadar **açmayı** da ölçmek şarttır: yalnızca "403 aldı mı"
+bakılsaydı, her şeyi kilitleyen bozuk bir kural da "başarılı" görünürdü.
+
+### 10.4 Ölçüm tuzağı — çerez `Origin` başlığı ister
+
+Payload'ın CSRF koruması (`payload.config.ts → csrf: allowedOrigins`) çerez
+kimliğini yalnızca izinli bir `Origin` başlığıyla kabul eder. Gerçek tarayıcı
+bu başlığı her zaman gönderir; sunucu tarafı `fetch` göndermez.
+
+```
+gerçek çerez                 → 403   (oturum yok sayıldı)
+gerçek çerez + Origin        → 206   (oturum tanındı)
+Authorization: JWT <token>   → 206
+```
+
+Bu başlık unutulursa ölçüm "yetkili kullanıcı da indiremiyor" gibi **yanlış**
+bir tablo üretir ve çalışan bir kural bozuk sanılır.
+
+İkinci tuzak: çerezin adı `payload-token` **değildir** — `cookiePrefix: 'aiftc'`
+ayarı yüzünden `aiftc-token`'dır. Adı elle yazmak yerine yanıtın `set-cookie`
+başlığı ayrıştırılmalıdır.
+
+### 10.5 Arşivleme bir erişim kararı değildir
+
+`isArchived` belgeyi listelerden gizler ama **mevcut bağlantıları kırmaz** —
+alanın kendi açıklaması bunu söyler. Bu yüzden erişim kuralına
+karıştırılmamıştır: arşivlemek bir görünürlük tercihi, erişim seviyesi bir
+yetki kararıdır. İkisi birleştirilseydi, arşivlenen bir formun daha önce
+paylaşılmış bağlantısı sessizce 403'e dönerdi.
+
+---
+
 ## Kaynak dosyalar
 
 | Ne | Nerede |
@@ -463,4 +607,8 @@ await payload.create({ collection: 'users', overrideAccess: true, user: yonetici
 | Kütüphane künye sayfası | `src/app/(frontend)/[locale]/kutuphane/[slug]/page.tsx` |
 | Arama sonuçlarında erişim süzgeci | `src/app/(frontend)/[locale]/arama/page.tsx` → `satirlariZenginlestir` |
 | İndirme sayacı ucu | `src/app/api/library/[id]/hit/route.ts` |
+| Belge dosyası erişimi | `src/access/index.ts` → `documentFileReadAccess` |
+| Belge seviyesi → rol haritası | `src/fields/options.ts` → `DOCUMENT_ACCESS_LEVEL_TO_ROLES` |
+| Dosyaların diskteki yeri | `src/collections/DocumentFiles.ts` → `upload.staticDir` |
+| Üretimde dizin/cilt | `Dockerfile`, `docker-compose.yml` |
 | Şema sorusu sürücüsü | `src/scripts/run-with-schema-prompts.mjs` |

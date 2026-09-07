@@ -150,8 +150,12 @@ services:
     volumes:
       # MEDIA_STORAGE_ADAPTER=local için kalıcılık. S3 kullanılıyorsa boş kalır
       # ama bağlı olması zarar vermez.
+      #
+      # `documents` cildi `public/` ALTINA BAĞLANMAZ. Orada durursa Next
+      # dosyaları hiçbir kod çalıştırmadan servis eder ve Payload'ın erişim
+      # kuralı devreye giremez (bkz. Dockerfile ve DocumentFiles.ts).
       - media:/app/public/media
-      - documents:/app/public/documents
+      - documents:/app/private/documents
     networks: [aiftc]
 
 networks:

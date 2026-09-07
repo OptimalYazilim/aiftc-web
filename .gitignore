@@ -51,7 +51,22 @@ tsconfig.tsbuildinfo
 # ---------------------------------------------------------------------------
 # Yerel disk depolamada Payload dosyaları buraya yazar. Üretimde S3 kullanılır
 # (MEDIA_STORAGE_ADAPTER=s3); bu klasörler yalnızca geliştirme içindir.
+#
+# İKİ FARKLI YER, İKİ FARKLI GEREKÇE:
+#   public/media      → HERKESE AÇIK. Logolar, kapak görselleri, galeri
+#                       kareleri. Next bunları doğrudan diskten servis eder ve
+#                       öyle olmalıdır; anonim ziyaretçi bunları görmeli.
+#   private/documents → KORUMALI. Belge dosyaları `public/` DIŞINDA durur,
+#                       çünkü `public/` altındaki her şey hiçbir kod
+#                       çalışmadan servis edilir ve Payload'ın erişim kuralı
+#                       devreye giremez. Ölçüldü ve kapatıldı (2026-09-07);
+#                       bkz. collections/DocumentFiles.ts ve
+#                       docs/access-control-guide.md 5.1.
 public/media
+private/documents
+
+# Eski konum. Yeni yükleme buraya YAZILMAZ; devralınan kurulumlarda kalmış
+# dosyalar depoya girmesin diye satır bırakıldı.
 public/documents
 
 # ---------------------------------------------------------------------------

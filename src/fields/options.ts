@@ -390,6 +390,34 @@ export const ACCESS_LEVEL_TO_ROLE: Record<string, string> = {
 }
 
 /**
+ * BELGE DOSYASI ERISIM SEVIYESI -> HEDEF KITLE ROLLERI  (Sartname 1.7 / 12.1)
+ * ============================================================================
+ * `DocumentFiles.accessLevel` alani `ACCESS_LEVELS` listesini kullanir ve o
+ * liste `LIBRARY_ACCESS_LEVELS` ile AYNI DEGERLERI TASIMAZ:
+ *
+ *   kutuphane :  public · staff · instructor · trainee
+ *   belgeler  :  public · staff · participants · trainers · internal
+ *
+ * Iki liste tarihsel olarak ayri dogdu ve degerleri esitlemek, yuklu her
+ * belgenin seviyesini degistiren bir veri gocu gerektirirdi. Bunun yerine
+ * eslestirme ACIK yazilir ve TEK YERDE durur.
+ *
+ * `public` bu haritada YOKTUR — herkese aciktir, role bakilmaz.
+ *
+ * `internal` ("Kurum ici") BOS DIZIYE eslenir: yalnizca `role = admin` olan
+ * kullanici erisir. Bu bilincli olarak en dar yorumdur. Kural sudur: bir
+ * seviye haritaya yazilmazsa o seviyedeki dosyayi kimse indiremez — hata
+ * GUVENLI tarafa duser. Kurum "kurum ici" ile personeli de kastediyorsa
+ * buraya 'staff' eklenir; tersini varsaymak sizinti uretir.
+ */
+export const DOCUMENT_ACCESS_LEVEL_TO_ROLES: Record<string, string[]> = {
+  staff: ['staff'],
+  participants: ['trainee'],
+  trainers: ['instructor'],
+  internal: [],
+}
+
+/**
  * ICERIK YONETIM IS AKISI  (Sartname 1.6)
  *
  * Bu alan Payload'in `_status` (draft/published) alaninin YERINE GECMEZ;
