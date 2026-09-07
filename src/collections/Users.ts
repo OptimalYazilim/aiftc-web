@@ -243,12 +243,23 @@ export const Users: CollectionConfig = {
       Payload yetkisiz alani sessizce dusurur, ama para iceren bir alanda
       tek savunma hattina guvenilmez.
 
-      SURE BITINCE NE OLUR — DURUST SINIR.
-      `subscriptionEndsAt` gecmiste kaldiginda hicbir sey OTOMATIK olmaz:
-      bu alanlar bugun bir ERISIM KURALI degildir, bir KAYITTIR. Kutuphane
-      erisimi hala `role` + `accessLevel` uzerinden yurur. Abonelige bagli
-      bir kapi kurulacaksa o kural ayrica yazilmali ve suresi gecmis
-      aboneligi reddetmelidir — sessizce calisiyor sanilmamalidir.
+      SURE BITINCE NE OLUR — ARTIK ZORLANIYOR.
+      Bu iki alan bir KAYIT olarak dogdu; artik bir ERISIM KURALIDIR.
+      `access/index.ts -> aboneligiEksik` her istekte bakar: paketi olmayan
+      veya bitis tarihi gecmis bir DISARIDAN KATILIMCI (`role = trainee`),
+      `accessLevel` seviyesi yetse bile seviyeli kutuphane kayitlarina ve
+      belge dosyalarina ULASAMAZ; anonim ziyaretci seviyesine duser.
+
+      MUAF OLANLAR: `role` degeri admin / staff / instructor olan hesaplar ve
+      panel rolu (`roles`) tasiyan herkes. Kurumun kendi tarafi kendi
+      kutuphanesine abone olmaz.
+
+      HERKESE ACIK ICERIK ETKILENMEZ — kapi kullaniciyi kilitlemez, anonim
+      seviyeye indirir.
+
+      MEVCUT HESAPLAR: bu kural devreye girdiginde paketi olmayan onceki
+      katilimcilar seviyeli icerigi ANINDA kaybeder. Once paket ve tarih
+      atanmalidir; kontrol sorgusu docs/access-control-guide.md icinde.
     */
     {
       name: 'subscriptionPlan',
@@ -282,9 +293,9 @@ export const Users: CollectionConfig = {
         position: 'sidebar',
         date: { pickerAppearance: 'dayOnly', displayFormat: 'dd.MM.yyyy' },
         description: {
-          tr: 'Bu tarihten sonra abonelik geçersiz sayılır. DİKKAT: tarih geçtiğinde sistem otomatik bir kısıtlama uygulamaz — bu alan bir kayıttır, erişim kuralı değildir.',
-          en: 'After this date the subscription is void. NOTE: nothing is restricted automatically — this is a record, not an access rule.',
-          ru: 'После этой даты подписка недействительна. Автоматических ограничений нет.',
+          tr: 'ZORLANIR: bu günün sonunda abonelik biter ve katılımcı yalnızca herkese açık içeriği görebilir. BOŞ BIRAKMAYIN — boş tarih “süresiz” değil, “aboneliksiz” sayılır. Yönetici, personel ve eğitmenler bu kısıttan muaftır.',
+          en: 'ENFORCED: access ends at the close of this day; the participant then sees public content only. Do NOT leave empty — an empty date counts as “no subscription”, not “unlimited”. Staff, instructors and administrators are exempt.',
+          ru: 'ПРИМЕНЯЕТСЯ: доступ заканчивается в конце этого дня. Пустая дата означает «нет подписки», а не «бессрочно».',
         },
       },
     },

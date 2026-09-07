@@ -173,9 +173,9 @@ export const DocumentFiles: CollectionConfig = {
           seviyeye gore korunuyor (access/index.ts -> documentFileReadAccess).
         */
         description: {
-          tr: 'ZORLANIR: dosyanın indirme adresi bu seviyeye göre korunur. “Herkese açık” dışındaki bir belgeyi, adresini bilse bile yetkisiz kimse indiremez. Seviye→rol eşleşmesi: personel → OGM/UOEM personeli, katılımcı → eğitim katılımcıları, eğitmen → eğitmenler, kurum içi → yalnızca yönetici.',
-          en: 'ENFORCED: the download URL itself is protected by this level. Anything other than Public cannot be downloaded without the matching role, even with the direct link.',
-          ru: 'ПРИМЕНЯЕТСЯ: сам адрес файла защищён этим уровнем.',
+          tr: 'ZORLANIR: dosyanın indirme adresi bu seviyeye göre korunur. “Herkese açık” dışındaki bir belgeyi, adresini bilse bile yetkisiz kimse indiremez. Seviye→rol eşleşmesi: personel → OGM/UOEM personeli, katılımcı → eğitim katılımcıları, eğitmen → eğitmenler, kurum içi → yalnızca yönetici. AYRICA: dışarıdan katılımcının rolü yetse bile geçerli bir aboneliği yoksa indiremez.',
+          en: 'ENFORCED: the download URL itself is protected by this level. Anything other than Public cannot be downloaded without the matching role, even with the direct link. External participants additionally need a valid subscription.',
+          ru: 'ПРИМЕНЯЕТСЯ: сам адрес файла защищён этим уровнем. Внешним участникам также нужна действующая подписка.',
         },
       },
     },

@@ -125,6 +125,8 @@ bırakılmıştır. Açık kalanlar kuruma teslimde ayrıca raporlanmalıdır.
 | 5.5 E-posta adaptörü | ✅ Kuruldu (2026-09-07) |
 | 5.5.1 Site tarafı sıfırlama akışı | ✅ Kuruldu (2026-09-07) |
 | 5.5.2 Parola politikası sıfırlamada atlanıyordu | ✅ Kapatıldı (2026-09-07) |
+| 5.6 Abonelik erişim kapısı | ✅ Kuruldu (2026-09-07) |
+| 5.6.1 Süresi geçmiş aboneliği kimse bildirmiyor | ⚠️ Kalan sınır — kurum kararı bekliyor |
 
 ### 5.1 Belge dosyalarının adresleri — **KAPATILDI (2026-09-07)**
 
@@ -392,6 +394,125 @@ sunucu noktası, tek kural.
 
 ---
 
+### 5.6 Abonelik erişim kapısı — **KURULDU (2026-09-07)**
+
+`subscriptionPlan` ve `subscriptionEndsAt` alanları Commerce modülüyle birlikte
+bir **kayıt** olarak doğmuştu: tarih geçtiğinde hiçbir şey olmuyordu. Artık bir
+**erişim kuralıdır**.
+
+**Kural** — `src/access/index.ts` → `aboneligiEksik()`
+
+Dışarıdan gelen bir katılımcı (`role = trainee`), `accessLevel` seviyesi yetse
+bile şu iki koşulu sağlamıyorsa seviyeli içeriğe erişemez:
+
+1. bir **abonelik paketi** atanmış olacak, **ve**
+2. `subscriptionEndsAt` **geçmemiş** olacak.
+
+Kapı kapandığında kullanıcı **anonim ziyaretçi seviyesine düşer** — kilitlenmez.
+`public` içerik açık kalır. `false` döndürülseydi aboneliği biten bir katılımcı
+herkese açık duyuru ekini bile indiremezdi.
+
+**Muaf olanlar:** panel rolü (`roles`) taşıyan herkes ve hedef kitle rolü
+`admin` / `staff` / `instructor` olan hesaplar. Kurumun kendi tarafı kendi
+kütüphanesine abone olmaz. Muafiyet listesi **tersinden** yazılmıştır (kim
+muaf), çünkü unutulan bir rol o rolün tüm kullanıcılarını kilitler — hatanın
+görünür olması istendi.
+
+**Uygulandığı iki kural:** `libraryReadAccess` ve `documentFileReadAccess`.
+İkincisi dosyanın kendisini koruduğu için etkisi doğrudandır: aboneliği bitmiş
+bir katılımcı, dosyanın tam adresini bilse bile indiremez.
+
+#### İki karar ve gerekçesi
+
+**Bitiş günü, günün SONUNA kadar geçerlidir.** Tarih `dayOnly` seçilir ve günün
+başında saklanır. Ham karşılaştırma yapılsaydı "31.12.2026'ya kadar geçerli"
+yazan bir abonelik 31 Aralık **sabahı** biterdi — panelde okunan tarihten bir
+gün önce. Ödemesi alınmış bir aboneliği erken kesmek, bir gün fazla açık
+bırakmaktan ağırdır; belirsizlik müşteri lehine çözüldü.
+
+**Tarihsiz abonelik geçersizdir, "süresiz" değil.** Tersi varsayılsaydı tarihi
+girmeyi *unutmak* kalıcı bedava erişim verirdi. Unutmanın sonucu sessizce
+açılan bir kapı olmamalıdır. Panelde alan açıklaması bunu söyler.
+
+#### Ölçüm (2026-09-07, gerçek HTTP)
+
+Yedi hesap, altı içerik kaydı, canlı `/api` uçları. Oturum çerezi
+`aiftc-token`, her istekte `Origin` başlığı (CSRF).
+
+| Hesap | İçerik | Sonuç |
+|---|---|---|
+| Süresi geçmiş abonelik | katılımcı seviyeli kütüphane kaydı | **404** |
+| Süresi geçmiş abonelik | katılımcı seviyeli belge **dosyası** | **403** |
+| Aboneliği hiç olmayan | katılımcı seviyeli kayıt / dosya | **404 / 403** |
+| Tarihsiz abonelik | katılımcı seviyeli kayıt | **404** |
+| Süresi geçmiş abonelik | **herkese açık** kayıt / dosya | **200 / 200** |
+| Geçerli abonelik | katılımcı seviyeli kayıt / dosya | **200 / 200** |
+| **Bugün** biten abonelik | katılımcı seviyeli kayıt | **200** |
+| Personel (aboneliksiz) | personel seviyeli dosya | **200** |
+| Eğitmen (aboneliksiz) | eğitmen seviyeli kayıt | **200** |
+| Geçerli abonelikli katılımcı | **personel** seviyeli dosya | **403** |
+| Geçerli abonelikli katılımcı | **eğitmen** seviyeli kayıt | **404** |
+| Anonim | katılımcı seviyeli kayıt / dosya | **404 / 403** |
+
+18/18 geçti.
+
+**404 mü, 403 mü?** Kayıt uçları **404**, dosya ucu **403** döner. Kural
+`false` değil bir `Where` filtresi döndürdüğü için kayıt sorgudan çıkar ve
+Payload "yok" der — yetkisiz kişi kaydın **var olduğunu** bile öğrenemez. Bu,
+403'ten daha dar bir sızıntıdır ve bilinçli tercihtir (aynı gerekçe:
+`libraryReadAccess` docblock'u). İkisi de erişimi engeller.
+
+**Son iki satır ayrıca önemlidir:** kapı, seviye→rol haritasının **yerini
+almaz**, ona **eklenir**. Geçerli aboneliği olan bir katılımcı hâlâ personele
+özel içeriği göremez. Yalnızca engellemeyi ölçmek, her şeyi kapatan bozuk bir
+kuralı da "başarılı" gösterirdi; bu yüzden matris iki yönü de sınar.
+
+#### Ölçüm sırasında düzeltilen iki hata — **testte, kuralda değil**
+
+1. Test hesapları `payload.create` ile bağlam verilmeden kuruldu ve
+   `Users.beforeValidate` onları dışarıdan başvuru sayıp `pending` +
+   aboneliksiz yaptı. Ölçüm anlamsız çıkıyordu. Düzeltme: gerçek bir yönetici
+   bağlamı geçirildi **ve** betik, yazılan `role`/`accountStatus`/`plan`
+   değerlerini geri okuyup doğruladı.
+2. Muafiyet ilk denemede `participants` seviyeli bir belgeyle ölçüldü; personel
+   o belgeye zaten erişemez (harita `participants → trainee`). Yanlış negatif.
+   Düzeltme: her rol **kendi** seviyesindeki içerikle sınandı.
+
+### 5.6.1 KALAN SINIR — süresi geçmiş aboneliği kimse bildirmiyor
+
+Kapı **anlık** çalışır: her istekte tarihe bakılır, doğru sonucu verir. Ama:
+
+- Aboneliği biten kullanıcıya **e-posta gitmez**; içerik bir gün sessizce
+  kaybolur. Bir hatırlatma işi (ör. bitişe 30/7/1 gün kala) kurulmadı.
+- Site tarafında **"aboneliğiniz sona erdi"** diyen bir ekran yoktur; kayıt
+  listede görünmez, o kadar. Kullanıcı sebebini anlamaz.
+- Panelde **süresi geçmiş abonelikleri listeleyen** hazır bir görünüm yoktur;
+  `subscriptionEndsAt` sıralanabilir ama filtre elle kurulur.
+
+Üçü de ürün kararıdır, güvenlik açığı değildir — kapı her hâlükârda kapalıdır.
+
+#### KURULUM UYARISI — devralınan veritabanı
+
+Bu kural devreye girdiğinde **paketi olmayan her `trainee` hesabı** seviyeli
+içeriği anında kaybeder. Bu geliştirme veritabanında ölçüldü: etkilenen hesap
+**yok** (`trainee` rolünde kayıt bulunmuyor). Canlı veya devralınan bir
+veritabanında **kuruluma başlamadan önce** kontrol edin:
+
+```sql
+SELECT id, email, subscription_plan_id, subscription_ends_at
+FROM users
+WHERE role = 'trainee'
+  AND (subscription_plan_id IS NULL
+       OR subscription_ends_at IS NULL
+       OR subscription_ends_at < now());
+```
+
+Dönen her satır, yayına alındığı an erişimi daralacak bir hesaptır. Önce paket
+ve bitiş tarihi atanmalı, ya da bu hesapların gerçekten kısıtlanması gerektiği
+kurumca teyit edilmelidir.
+
+---
+
 ## 6. Değişiklik yaparken
 
 - Erişim seviyesi listesine yeni bir değer eklerseniz, **`AUDIENCE_ROLES`
@@ -401,6 +522,10 @@ sunucu noktası, tek kural.
 - `role` alanını kullanıcı **kendisi değiştiremez**: alan düzeyinde
   `create`/`update` yetkisi yalnızca `admin` rolündedir. Bu kısıt
   kaldırılmamalıdır — aksi hâlde kullanıcı kendi erişim seviyesini yükseltir.
+- **Yeni bir hedef kitle rolü eklerseniz**, `src/access/index.ts` içindeki
+  `ABONELIKTEN_MUAF` listesine bakın. Liste "kim muaf" yönünde yazılıdır: yeni
+  rol eklenmezse o roldeki herkes abonelik kapısına takılır ve seviyeli içeriği
+  kaybeder. Kurum içi bir rolse listeye ekleyin (bkz. 5.6).
 - Şema değişikliği yaptıysanız üretim için migration üretin:
   `node src/scripts/run-migrate-create.mjs <ad>`
 

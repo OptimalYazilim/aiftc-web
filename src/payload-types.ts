@@ -729,7 +729,7 @@ export interface DocumentFile {
   language?: ('tr' | 'en' | 'ru')[] | null;
   version?: string | null;
   /**
-   * ENFORCED: the download URL itself is protected by this level. Anything other than Public cannot be downloaded without the matching role, even with the direct link.
+   * ENFORCED: the download URL itself is protected by this level. Anything other than Public cannot be downloaded without the matching role, even with the direct link. External participants additionally need a valid subscription.
    */
   accessLevel: 'public' | 'staff' | 'participants' | 'trainers' | 'internal';
   /**
@@ -1499,7 +1499,7 @@ export interface LibraryResource {
    */
   reviewStatus: 'draft' | 'in_review' | 'approved' | 'published';
   /**
-   * Who can see this record. Anything other than Public requires a login. NOTE: this hides the record but does not protect the attached file URL.
+   * Who can see this record. Anything other than Public requires a login, and external participants also need a valid subscription. NOTE: this hides the record but does not protect an attached image URL.
    */
   accessLevel: 'public' | 'staff' | 'instructor' | 'trainee';
   /**
@@ -1675,7 +1675,7 @@ export interface User {
    */
   subscriptionPlan?: (number | null) | SubscriptionPlan;
   /**
-   * After this date the subscription is void. NOTE: nothing is restricted automatically — this is a record, not an access rule.
+   * ENFORCED: access ends at the close of this day; the participant then sees public content only. Do NOT leave empty — an empty date counts as “no subscription”, not “unlimited”. Staff, instructors and administrators are exempt.
    */
   subscriptionEndsAt?: string | null;
   preferredAdminLanguage?: ('tr' | 'en' | 'ru') | null;

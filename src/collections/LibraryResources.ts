@@ -149,9 +149,9 @@ export const LibraryResources: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description: {
-          tr: 'Bu kaydı kimler görebilir. "Herkese açık" dışındaki seçenekler oturum açmayı ZORUNLU kılar. DİKKAT: bu kural kaydı gizler, ekli dosyanın doğrudan adresini KORUMAZ (bkz. docs/access-control-guide.md).',
-          en: 'Who can see this record. Anything other than Public requires a login. NOTE: this hides the record but does not protect the attached file URL.',
-          ru: 'Кто видит эту запись. Любой уровень кроме «Открытый» требует входа.',
+          tr: 'Bu kaydı kimler görebilir. "Herkese açık" dışındaki seçenekler oturum açmayı ZORUNLU kılar; dışarıdan katılımcılar için ayrıca GEÇERLİ BİR ABONELİK gerekir (Kullanıcılar → Abonelik Bitiş Tarihi). DİKKAT: bu kural kaydı gizler, ekli GÖRSELİN doğrudan adresini korumaz (bkz. docs/access-control-guide.md).',
+          en: 'Who can see this record. Anything other than Public requires a login, and external participants also need a valid subscription. NOTE: this hides the record but does not protect an attached image URL.',
+          ru: 'Кто видит эту запись. Любой уровень кроме «Открытый» требует входа и действующей подписки для внешних участников.',
         },
       },
     },
