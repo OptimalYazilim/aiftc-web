@@ -38,6 +38,75 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? serverURL)
 const useS3 = process.env.MEDIA_STORAGE_ADAPTER === 's3'
 
 /**
+ * S3 NESNE ACL'I — VARSAYILAN `private`  (Kilavuz 5.1.2)
+ * ============================================================================
+ * "Kovadaki dosyalar `public-read` OLMAMALIDIR" sartinin kod tarafindaki
+ * karsiligi. Uc davranis vardir:
+ *
+ *   S3_ACL tanimsiz / 'private'  -> her nesne `private` ACL ile yazilir
+ *   S3_ACL='none'                -> ACL basligi HIC gonderilmez
+ *   S3_ACL='public-read'         -> UYGULAMA BASLAMAZ (asagida)
+ *
+ * NEDEN 'none' SECENEGI VAR — GERCEK BIR DAGITIM TUZAGI
+ * ---------------------------------------------------------------------------
+ * AWS'nin 2023'ten beri varsayilani olan "Bucket owner enforced" (Object
+ * Ownership) modunda ACL'ler TAMAMEN KAPALIDIR ve ACL basligi TASIYAN her
+ * PUT istegi `AccessControlListNotSupported` (400) ile reddedilir. Yani dogru
+ * yapilandirilmis modern bir kovada `private` gondermek YUKLEMEYI BOZAR.
+ * O kovada nesneler zaten herkese kapalidir; basligi birakmak dogru cozumdur.
+ *
+ * Varsayilanin yine de `private` olmasinin sebebi: yanlis tarafa dusen hata
+ * GURULTULU olmalidir. `private` + modern kova = yuklemede acik hata (fark
+ * edilir). Baslik hic gonderilmeseydi ve kova eski/gevsek olsaydi = SESSIZ
+ * sizinti. Ikisi arasinda gurultulu hata secilir.
+ *
+ * ACL TEK BASINA YETMEZ — bir kova politikasi (`s3:GetObject` herkese acik)
+ * her nesneyi yine de yayinlar ve bunu hicbir ACL geri alamaz. Gercek kontrol
+ * "Block Public Access"tir; dogrulamasi `pnpm s3:denetle` betigiyle yapilir.
+ */
+const s3Acl: 'private' | undefined = (() => {
+  const deger = (process.env.S3_ACL ?? 'private').trim().toLowerCase()
+
+  if (deger === 'public-read') {
+    /*
+      Sessizce yok saymak yerine BASLATMAYI REDDEDER. Bu deger yazilmissa bir
+      yanlis anlasilma vardir ve sonucu, kurumun butun belgelerinin adresini
+      bilen herkese acilmasidir. Onun yerine dagitim aninda patlar.
+    */
+    throw new Error(
+      "S3_ACL='public-read' KABUL EDILMIYOR: yuklenen belgeler herkese acik olamaz " +
+        '(bkz. docs/access-control-guide.md 5.1.2). Gecerli degerler: private | none',
+    )
+  }
+
+  if (deger === 'none' || deger === '') return undefined
+  return 'private'
+})()
+
+/**
+ * ON IMZALI (SIGNED) INDIRME — VARSAYILAN KAPALI, YALNIZCA `media` ICIN
+ * ============================================================================
+ * Acikken Payload, erisim denetimini gectikten SONRA istemciyi suresi dolan
+ * bir S3 adresine 302 ile yonlendirir; dosya baytlari uygulama sunucusundan
+ * gecmez. Buyuk video dosyalarinda bant genisligi kazanci gercektir.
+ *
+ * `document-files` ICIN ASLA ACILMAZ — bilincli.
+ * On imzali adres bir HAMILINE BELGEDIR: uretildikten sonra o sureyle
+ * sinirli olarak, LINKI ELINDE TUTAN HERKESTE calisir. Yetkili bir katilimci
+ * adresi kopyalayip paylastiginda, kurumun erisim kurali o sure boyunca
+ * devre disi kalir. Kutuphanenin kisitli belgeleri icin bu kabul edilemez;
+ * onlar her baytiyla Payload uzerinden akar ve her istek yeniden denetlenir.
+ *
+ * `media` (logo, kapak gorseli, galeri karesi) zaten herkese aciktir; orada
+ * paylasilabilir adres bir kayip degildir.
+ *
+ * VARSAYILAN KAPALI TUTULDU cunku 302 yanitini bir CDN veya ara katman
+ * onbellege alirsa, sure dolduktan sonra OLU adres servis edilir. Acmadan
+ * once o katmanin yonlendirmeyi onbellege ALMADIGI dogrulanmalidir.
+ */
+const s3ImzaliMedya = process.env.S3_SIGNED_DOWNLOADS === 'true'
+
+/**
  * E-POSTA ADAPTORU  (Sartname 12.1 / Kilavuz 5.2)
  * ============================================================================
  * Adaptor TANIMLI DEGILKEN Payload su uyariyi verir ve e-postayi konsola
@@ -425,14 +494,44 @@ export default buildConfig({
       },
     }),
 
-    // --- Medya depolama ----------------------------------------------------
+    /*
+      ======================================================================
+      MEDYA DEPOLAMA — S3 / MinIO   (Sartname 12.1 · Kilavuz 5.1.2)
+      ======================================================================
+      `MEDIA_STORAGE_ADAPTER=s3` degilse bu eklenti HIC kurulmaz ve dosyalar
+      yerel diskte kalir (`media` -> public/media, `document-files` ->
+      private/documents). Iki modda da dosyanin ADRESI ayni kalir:
+      `/api/<koleksiyon>/file/<ad>`.
+
+      ----------------------------------------------------------------------
+      `disablePayloadAccessControl` ASLA VERILMEZ — EN KRITIK SATIR BURADA
+      OLMAYAN SATIRDIR.
+      ----------------------------------------------------------------------
+      O secenek verilirse eklenti, dosyanin `url` alanini DOGRUDAN S3
+      adresine cevirir. Sonuc: istek Payload'a hic ugramaz, koleksiyonun
+      `read` kurali (documentFileReadAccess) CALISMAZ ve erisim seviyesi
+      yeniden bir etikete doner. Bu, `public/documents` tuzaginin (bkz.
+      DocumentFiles.ts) S3 uzerindeki birebir esidir.
+
+      Tipi geregi yalnizca `true` alabilir — `false` yazip niyeti belgeye
+      dokemek MUMKUN DEGILDIR. Bu yuzden koruma iki yerde durur:
+        1. bu yorum,
+        2. `pnpm s3:denetle` betigi, `url` alaninin hala `/api/...` ile
+           basladigini OLCER ve `http` ile basliyorsa hata verir.
+    */
     ...(useS3
       ? [
           s3Storage({
             collections: {
-              media: true,
+              /* Herkese acik gorseller. On imzali indirme yalnizca burada ve
+                 yalnizca acikca istendiginde (bkz. `s3ImzaliMedya`). */
+              media: s3ImzaliMedya ? { signedDownloads: { expiresIn: 900 } } : true,
+              /* Kisitli belgeler: HER ZAMAN Payload uzerinden akar. */
               'document-files': true,
             },
+            /* Nesneler `private` yazilir; gerekcesi ve `none` kacis kapisi
+               icin dosyanin basindaki `s3Acl` notu. */
+            acl: s3Acl,
             bucket: process.env.S3_BUCKET ?? '',
             config: {
               region: process.env.S3_REGION,

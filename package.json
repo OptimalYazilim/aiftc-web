@@ -19,7 +19,8 @@
     "migrate:create": "pnpm payload migrate:create",
     "migrate": "pnpm payload migrate",
     "migrate:status": "pnpm payload migrate:status",
-    "seed": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/seed.ts"
+    "seed": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/seed.ts",
+    "s3:denetle": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/s3-gizlilik-denetimi.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.0.0",
@@ -43,6 +44,7 @@
     "sharp": "^0.33.5"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "3.1124.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",

@@ -116,7 +116,7 @@ bırakılmıştır. Açık kalanlar kuruma teslimde ayrıca raporlanmalıdır.
 |---|---|
 | 5.1 Belge dosyalarının adresleri | ✅ Kapatıldı (2026-09-07) |
 | 5.1.1 `media` bilerek açık | ⚠️ Kalan sınır — kurum kararı bekliyor |
-| 5.1.2 S3 kovası | ⚠️ Kurulum şartı |
+| 5.1.2 S3 / MinIO depolama | ✅ Yapılandırıldı + ölçüldü (2026-09-08) — kova denetimi `pnpm s3:denetle` ile kurulumda ZORUNLU |
 | 5.2 Ziyaretçi kayıt / giriş ekranı | ✅ Kuruldu (2026-09-07) |
 | 5.2.1 Parola alt sınırı | ✅ Eklendi (2026-09-07) |
 | 5.2.2 Devralınan veritabanında kilitli hesap | ⚠️ Kurulum kontrolü |
@@ -170,14 +170,105 @@ ulaşabilir.
 
 Kurum bir karar verene kadar **kısıtlı görsel `media`ya yüklenmemelidir**.
 
-### 5.1.2 KALAN SINIR — S3 kovası
+### 5.1.2 S3 / MinIO depolama — **YAPILANDIRILDI + ÖLÇÜLDÜ (2026-09-08)**
 
-`MEDIA_STORAGE_ADAPTER=s3` iken dosyalar yine Payload'ın ucundan sunulur ve
-erişim kuralı geçerlidir. Ancak **kovanın kendisi herkese açıksa** S3/MinIO
-adresi doğrudan çalışır ve Payload devre dışı kalır.
+`MEDIA_STORAGE_ADAPTER=s3` iken dosyalar S3'e yazılır ama **Payload'ın
+ucundan sunulmaya devam eder**; erişim kuralı iki modda da aynı şekilde
+çalışır. Bu bölüm bunun nasıl sağlandığını ve **neyin kod tarafından
+sağlanamayacağını** ayırır.
 
-**Kurulumda zorunlu:** kova `private` olmalı, nesnelere yalnızca uygulamanın
-kimlik bilgileriyle erişilmelidir.
+#### Kodun sağladığı üç şey
+
+**1. `disablePayloadAccessControl` ASLA verilmez.** Eklentinin o seçeneği,
+dosyanın `url` alanını doğrudan S3 adresine çevirir; istek Payload'a hiç
+uğramaz ve `documentFileReadAccess` **çalışmaz**. Bu, kapatılan
+`public/documents` açığının (bkz. 5.1) S3 üzerindeki birebir eşidir. Seçeneğin
+tipi yalnızca `true` kabul eder — `false` yazıp niyeti belgelemek **mümkün
+değildir**, o yüzden koruma `payload.config.ts` içindeki yorumda ve aşağıdaki
+ölçümde durur.
+
+**2. Nesneler `private` ACL ile yazılır** (`S3_ACL`, varsayılan `private`).
+`S3_ACL=public-read` yazılırsa **uygulama başlamaz** — sessizce yok saymak
+yerine dağıtım anında patlar.
+
+> **Dağıtım tuzağı:** AWS'nin 2023'ten beri varsayılanı olan *Bucket owner
+> enforced* modunda ACL'ler tamamen kapalıdır ve ACL başlığı taşıyan her PUT
+> `AccessControlListNotSupported` (400) ile reddedilir. O kovalarda
+> `S3_ACL=none` yapın; nesneler zaten kapalıdır. Varsayılanın yine de
+> `private` olmasının sebebi, hatanın **gürültülü** tarafa düşmesidir:
+> yüklemede açık hata, sessiz sızıntıdan iyidir.
+
+**3. Ön imzalı (signed) indirme yalnızca `media` için ve varsayılan kapalı.**
+`document-files` **hiçbir koşulda** ön imzalı sunulmaz: ön imzalı adres bir
+**hamiline belgedir** — üretildikten sonra süresi boyunca linki elinde tutan
+herkeste çalışır. Yetkili bir katılımcı adresi paylaştığında kurumun erişim
+kuralı o süre boyunca devre dışı kalır.
+
+#### Kodun sağlayamadığı şey — kovanın kendisi
+
+Bir kova politikası (`s3:GetObject` herkese açık) her nesneyi yayınlar ve
+**bunu hiçbir ACL geri alamaz**. Bu bir yapılandırma şartıdır; söz olarak
+değil ölçüm olarak doğrulanır:
+
+```bash
+pnpm s3:denetle
+```
+
+Betik kovaya tahmin edilemez adlı bir sonda yazar, sonra aynı adrese
+**imzasız** bir istek atar — yani internetteki bir yabancının atacağı isteği.
+403/404 dönerse kova kapalıdır; **200 dönerse kurumun tüm yüklü belgeleri
+dışarıya açıktır**. Sonda her durumda silinir. AWS'de ayrıca kova politikası
+ve *Block Public Access* okunur; sağlayıcı bu uçları desteklemiyorsa sonuç
+"bilinmiyor" yazılır — **"sorun yok" yazılmaz**, yoksa denetim sessizce işe
+yaramaz hâle gelirdi.
+
+MinIO'da kapalı tutmak için: `mc anonymous set none myminio/aiftc-media`
+
+#### Ölçüm (2026-09-08)
+
+Docker/MinIO kurulu olmadığı için ölçüm, S3 uyumlu asgari bir sunucu yazılıp
+uygulama ona bağlanarak yapıldı (aynı yaklaşım daha önce SMTP için de
+kullanıldı). 14/14 geçti:
+
+| Ölçüm | Sonuç |
+|---|---|
+| Nesne gerçekten S3'e yazıldı | ✓ (70 B) |
+| PUT isteğinde `ACL: private` başlığı | ✓ |
+| Dosya yerel diske **yazılmadı** | ✓ |
+| `doc.url` Payload dosya ucunu gösteriyor | ✓ `/api/document-files/file/…` |
+| `doc.url` S3 uç noktasını göstermiyor | ✓ |
+| Anonim → kısıtlı belge | **403** |
+| Süresi geçmiş abonelik → kısıtlı belge | **403** |
+| Geçerli abonelikli katılımcı → kendi seviyesi | **200**, 70 B (S3'teki nesneyle aynı) |
+| Personel → personel seviyeli belge | **200** |
+| Anonim → herkese açık belge | **200** |
+| `media` nesnesi S3'te, url'si Payload ucundan, anonim servis | ✓ / ✓ / **200** |
+
+Denetim betiği **ters yönde de** sınandı: kasten herkese açık olan sahte kovaya
+karşı çalıştırıldığında "KOVA HERKESE AÇIK" diyip çıkış kodu 1 verdi. Yalnızca
+kapalı kovada "başarılı" demek yetmezdi — açık kovayı yakalamayan bir denetim
+betiği, denetim yapıldığı yanılsaması üretir.
+
+#### Ölçüm sırasında bulunan tuzak — SESSİZ YÜKLEME KAYBI
+
+Yerel API ile **aynı `context` nesnesi** birden çok `payload.create` çağrısında
+paylaşılırsa, bulut depolama eklentisinin `afterChange` kancası ilk çağrıdan
+sonra `req.context.skipCloudStorage` bayrağını görür ve **sonraki bütün
+yüklemeleri atlar**. Hata fırlatılmaz: kayıt oluşur, `filename` dolar, panelde
+her şey normal görünür — ama **dosya hiçbir yerde yoktur** ve indirme 404
+döner.
+
+Ölçülen dizi (sahte S3 istek günlüğü):
+
+```
+PUT    /aiftc-test/tani-bir.png   acl=private     ← 1. yükleme: yazıldı
+HEAD   /aiftc-test/tani-iki.png                   ← 2. yükleme: PUT HİÇ YOK
+```
+
+**Kural:** `payload.create` çağrılarına verilen `context` **her çağrıda taze
+bir nesne** olmalıdır (`context: { skipRevalidate: true }` satır içi, ya da bir
+üretici fonksiyon). Birden çok dosya yükleyen seed/göç betikleri bu kurala
+uymazsa veriyi sessizce kaybeder.
 
 ### 5.2 Ziyaretçi kayıt / giriş ekranı — **KURULDU (2026-09-07)**
 
