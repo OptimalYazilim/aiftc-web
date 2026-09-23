@@ -10,6 +10,7 @@ import { authHref } from '@/i18n/routes'
 import { MIN_PAROLA } from '@/lib/passwordPolicy'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
+import { useTurnstile } from './useTurnstile'
 
 /**
  * KAYIT FORMU  (Şartname 1.7 · Kılavuz 5.2)
@@ -69,7 +70,10 @@ const hataKodu = (govde: unknown): string | null => {
   return typeof kod === 'string' ? kod : null
 }
 
-export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
+export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | null }> = ({
+  locale,
+  captchaSiteKey,
+}) => {
   const t = useTranslations('auth')
 
   const [alanlar, setAlanlar] = useState<Alanlar>({
@@ -81,7 +85,9 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
   })
   const [hatalar, setHatalar] = useState<Hatalar>({})
   const [durum, setDurum] = useState<'bos' | 'gonderiliyor' | 'basarili'>('bos')
-  const [sonuc, setSonuc] = useState<'ag' | 'genel' | 'limit' | null>(null)
+  const [sonuc, setSonuc] = useState<'ag' | 'genel' | 'limit' | 'captcha' | null>(null)
+
+  const turnstile = useTurnstile(captchaSiteKey, locale)
 
   const alanDegistir = (ad: keyof Alanlar) => (deger: string) => {
     setAlanlar((onceki) => ({ ...onceki, [ad]: deger }))
@@ -114,6 +120,26 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
     setDurum('gonderiliyor')
     setSonuc(null)
 
+    /*
+      CAPTCHA JETONU — gönderimden hemen önce alınır.
+      Widget kapalıysa (site anahtarı yok) `null` döner ve sunucu da zaten
+      doğrulama yapmaz; iki taraf aynı ortam değişkenine bakar.
+
+      Jeton alınamıyorsa BURADA durulur ve istek hiç atılmaz: sunucu onu
+      400 ile reddederdi ve kullanıcı "genel hata" görürdü. Sebebi bilinen
+      bir başarısızlığı, bilinmeyen bir başarısızlık gibi göstermeyiz.
+    */
+    let captchaToken: string | null = null
+    if (captchaSiteKey) {
+      captchaToken = await turnstile.tokenAl()
+      if (!captchaToken) {
+        setSonuc('captcha')
+        setDurum('bos')
+        turnstile.sifirla()
+        return
+      }
+    }
+
     try {
       const cevap = await fetch('/api/users', {
         method: 'POST',
@@ -129,8 +155,17 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
           email: alanlar.email.trim(),
           password: alanlar.password,
           ...(alanlar.unit.trim() ? { unit: alanlar.unit.trim() } : {}),
+          ...(captchaToken ? { captchaToken } : {}),
         }),
       })
+
+      /*
+        JETON HARCANDI — sonuç ne olursa olsun widget sıfırlanır.
+        Turnstile jetonu tek kullanımlıktır; sıfırlamadan yapılan ikinci
+        gönderim `timeout-or-duplicate` ile reddedilir ve kullanıcı, düzelttiği
+        alanla hiç ilgisi olmayan bir güvenlik hatası görürdü.
+      */
+      turnstile.sifirla()
 
       if (cevap.ok) {
         setDurum('basarili')
@@ -146,6 +181,11 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
         setHatalar({ email: t('errorEmailTaken') })
       } else if (hataKodu(govde) === 'password_too_short') {
         setHatalar({ password: t('errorPasswordShort', { min: MIN_PAROLA }) })
+      } else if (String(hataKodu(govde) ?? '').startsWith('captcha_')) {
+        /* Üç CAPTCHA kodu (eksik / geçersiz / sağlayıcıya ulaşılamadı) tek
+           mesajla karşılanır: kullanıcının yapacağı şey üçünde de aynıdır ve
+           hangisinin geldiğini söylemek, saldırgana geri bildirim olurdu. */
+        setSonuc('captcha')
       } else {
         setSonuc('genel')
       }
@@ -191,7 +231,9 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
             ? t('errorNetwork')
             : sonuc === 'limit'
               ? t('errorRateLimited')
-              : t('errorGeneric')}
+              : sonuc === 'captcha'
+                ? t('errorCaptcha')
+                : t('errorGeneric')}
         </AuthNotice>
       ) : null}
 
@@ -265,6 +307,32 @@ export const RegisterForm: React.FC<{ locale: Locale }> = ({ locale }) => {
       <AuthNotice ton="bilgi" baslik={t('statusPendingTitle')}>
         {t('statusPending')}
       </AuthNotice>
+
+      {/*
+        CAPTCHA — normalde HİÇBİR ŞEY GÖRÜNMEZ.
+        `appearance: 'interaction-only'` ile kutu yalnızca Cloudflare gerçekten
+        bir etkileşim isterse belirir; o zaman da düğmenin hemen üstünde,
+        beklendiği yerde durur. Site anahtarı tanımlı değilse bu blok hiç
+        basılmaz — boş bir kapsayıcı da bırakılmaz.
+      */}
+      {captchaSiteKey ? (
+        <div className="space-y-3">
+          <div ref={turnstile.kapsayiciRef} />
+
+          {turnstile.yuklenemedi ? (
+            <AuthNotice ton="uyari" baslik={t('captchaUnavailableTitle')} rol="alert">
+              {t('captchaUnavailable')}
+            </AuthNotice>
+          ) : null}
+
+          {/*
+            Şartname 12.3 / KVKK: üçüncü tarafa istek gittiği kullanıcıdan
+            gizlenmez. Turnstile çerez koymaz ve profilleme yapmaz, ama yine
+            de dış bir servistir ve bunu söylemek kullanıcının hakkıdır.
+          */}
+          <p className="text-xs text-ink-500">{t('captchaNotice')}</p>
+        </div>
+      ) : null}
 
       <button type="submit" disabled={durum === 'gonderiliyor'} className={AUTH_BUTTON}>
         {durum === 'gonderiliyor' ? t('registerSending') : t('registerSubmit')}

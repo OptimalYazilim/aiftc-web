@@ -10,6 +10,7 @@ import {
   isAdminOrSelf,
 } from '@/access'
 import { AUDIENCE_ROLES } from '@/fields/options'
+import { captchaAcikMi, captchaDogrula } from '@/lib/captcha'
 import { forgotPasswordHTML, forgotPasswordSubject } from '@/lib/forgotPasswordEmail'
 import { MIN_PAROLA, PAROLA_KISA_KODU, parolaGecerliMi } from '@/lib/passwordPolicy'
 
@@ -313,6 +314,71 @@ export const Users: CollectionConfig = {
     },
   ],
   hooks: {
+    /*
+      ======================================================================
+      BOT KORUMASI — CAPTCHA  (Şartname 12.1 · Kılavuz 5.2)
+      ======================================================================
+      NEDEN `beforeOperation`, `beforeValidate` DEĞİL
+      ----------------------------------------------------------------------
+      `captchaToken` bu koleksiyonun bir ALANI DEĞİLDİR. `beforeOperation`,
+      isteğin gövdesini Payload'ın alan işleyicilerinden ÖNCE görür; jeton
+      burada okunur ve `data`dan ÇIKARILIR, böylece hiçbir zaman doğrulamaya
+      ya da veritabanına ulaşmaz.
+
+      HANGİ İSTEKLER DENETLENİR
+      ----------------------------------------------------------------------
+      Yalnızca DIŞARIDAN gelen kayıt: `create` + oturum YOK + erişim
+      denetimi aşılmamış (`overrideAccess !== true`). Bu üç koşul birlikte
+      "internetten gelen anonim kayıt" demektir.
+
+      Dışarıda kalanlar bilinçlidir:
+        - yöneticinin panelden hesap açması (`req.user` var),
+        - seed/göç betikleri ve iç çağrılar (`overrideAccess: true`),
+        - her türlü `update` (parola değiştirme, onaylama).
+      Bunlara CAPTCHA istemek, insan operatörü ve otomasyonu bir bot gibi
+      cezalandırırdı.
+
+      ANAHTAR TANIMLI DEĞİLSE KANCA HİÇ ÇALIŞMAZ — gerekçesi ve bunun bedeli
+      lib/captcha.ts başındaki "ÜÇ DURUM" notunda.
+    */
+    beforeOperation: [
+      async ({ args, operation, req, overrideAccess }) => {
+        if (operation !== 'create') return args
+        if (overrideAccess === true || req.user) return args
+        if (!captchaAcikMi()) return args
+
+        const veri = (args as { data?: Record<string, unknown> }).data ?? {}
+        const jeton = veri.captchaToken
+
+        /* Jeton her hâlükârda gövdeden düşer — doğrulama başarısız olsa bile,
+           çünkü aşağıda zaten hata fırlatılır ve bu satır ikinci savunmadır. */
+        const { captchaToken: _atilan, ...temizVeri } = veri
+
+        const sonuc = await captchaDogrula(jeton)
+
+        if (!sonuc.ok) {
+          req.payload.logger.warn(
+            `Kayıt reddedildi — CAPTCHA: ${sonuc.kod}${sonuc.ayrinti ? ` (${sonuc.ayrinti})` : ''}`,
+          )
+
+          /*
+            Mesaj KULLANICIYA GÖRÜNÜR ama neden reddedildiğini AYRINTILI
+            anlatmaz: "hangi hata koduyla reddedildin" bilgisi bir saldırgana
+            deneme yanılma kolaylığı sağlar. Makine kodu istemcinin doğru
+            metni seçmesine yeter.
+          */
+          throw new APIError(
+            'Güvenlik doğrulaması tamamlanamadı. Sayfayı yenileyip tekrar deneyin.',
+            400,
+            { code: sonuc.kod },
+            true,
+          )
+        }
+
+        return { ...args, data: temizVeri }
+      },
+    ],
+
     /*
       ======================================================================
       DIŞARIDAN KAYIT SANITASYONU  (Şartname 1.7)

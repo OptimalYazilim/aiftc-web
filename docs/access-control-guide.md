@@ -122,6 +122,7 @@ bırakılmıştır. Açık kalanlar kuruma teslimde ayrıca raporlanmalıdır.
 | 5.2.2 Devralınan veritabanında kilitli hesap | ⚠️ Kurulum kontrolü |
 | 5.3 `DocumentFiles.accessLevel` | ✅ Artık zorlanıyor (2026-09-07) |
 | 5.4 Hız sınırlama (kimlik uçları) | ✅ Kuruldu (2026-09-07) — ters vekil katmanı yine gerekli |
+| 5.4.1 Kayıtta CAPTCHA (bot ağı) | ✅ Kuruldu + ölçüldü (2026-09-08) — anahtarlar `.env`'e GİRİLMELİ, yoksa koruma kapalıdır (bkz. Bölüm 8) |
 | 5.5 E-posta adaptörü | ✅ Kuruldu (2026-09-07) |
 | 5.5.1 Site tarafı sıfırlama akışı | ✅ Kuruldu (2026-09-07) |
 | 5.5.2 Parola politikası sıfırlamada atlanıyordu | ✅ Kapatıldı (2026-09-07) |
@@ -805,15 +806,137 @@ Kayıt dışarıya açılmadan önce iki hata düzeltildi:
 | `roles` varsayılanı `[author]` idi | Dışarıdan kayıt olan **panel içerik yetkisi** alırdı | Varsayılan `[]`, zorunluluk kaldırıldı |
 | `access.admin` = `Boolean(user)` | Oturum açan **herkes** `/admin` panelini açabilirdi | `canAccessAdminPanel` — panel rolü şart |
 
-### AÇIK MADDE — spam koruması yok
+### Spam koruması — **İKİ KATMAN, İKİSİ DE KURULDU**
 
-Kayıt ucunda **CAPTCHA ve hız sınırlama yoktur**. Bir bot sınırsız sayıda
-`pending` hesap açabilir. Erişim açısından zararsızdır (hiçbiri giriş yapamaz)
-ama yönetici listesini kirletir ve veritabanını şişirir.
-**Ters vekil / WAF katmanında sınırlama zorunludur.**
+| Katman | Neyi durdurur | Neyi durdurmaz |
+|---|---|---|
+| Hız sınırlama (`middleware.ts`) | Tek bir IP'nin seri kayıt denemesi | Binlerce IP'ye yayılmış bot ağı |
+| CAPTCHA (`lib/captcha.ts`) | Otomatik istemciyi, IP sayısından bağımsız | İnsan eliyle açılan sahte hesabı |
 
-E-posta adaptörü de tanımlı olmadığı için onay bildirimi ve şifre sıfırlama
-e-postaları kullanıcıya ulaşmaz (bkz. 5.2).
+Biri ötekinin yerine geçmez. Ters vekil / WAF katmanındaki sınırlama yine de
+önerilir; o da bu ikisinin yerine geçmez.
+
+E-posta adaptörü tanımlı değilse onay bildirimi ve şifre sıfırlama e-postaları
+kullanıcıya ulaşmaz (bkz. 5.2).
+
+#### CAPTCHA — Cloudflare Turnstile (2026-09-08)
+
+**Neden Turnstile, neden reCAPTCHA değil.** Bu proje ziyaretçi verisini üçüncü
+taraflara açmamak için zaten karar vermiş durumda: yazı tipleri çalışma anında
+Google'dan çekilmez, kendi origin'imizden servis edilir. reCAPTCHA v3 eklemek o
+kararı sessizce geri alır ve her ziyaretçiyi Google'ın reklam altyapısına bağlı
+bir izleyiciyle karşılaştırırdı. Turnstile çerez koymaz ve davranışsal
+profilleme yapmaz.
+
+> **Yine de bir üçüncü taraftır.** KVKK aydınlatma metnine eklenmesi gerekir.
+> Bu bir yazılım kararı değil, hukuk biriminin işidir — metin bu depoda
+> yazılmaz (bkz. Bölüm 5 giriş notu).
+
+**Paket kurulmadı.** Turnstile bir `<script>` etiketi ve bir POST isteğidir; React
+sarmalayıcı bir bağımlılık, iki satırlık iş için bakımı gereken bir yüzey daha
+açardı.
+
+**Nerede doğrulanır.** `Users.hooks.beforeOperation` — `beforeValidate` değil.
+`captchaToken` bu koleksiyonun bir *alanı değildir*; `beforeOperation` isteğin
+gövdesini Payload'ın alan işleyicilerinden önce görür, jeton orada okunur ve
+`data`dan **çıkarılır**, böylece veritabanına hiç ulaşmaz.
+
+**Kimden istenir.** Yalnızca `create` + oturum yok + `overrideAccess !== true`.
+Yani internetten gelen anonim kayıt. Yöneticinin panelden hesap açması, seed
+betikleri ve her türlü `update` muaftır — onlara CAPTCHA sormak insan
+operatörünü ve otomasyonu bot gibi cezalandırırdı.
+
+##### Üç durum — karıştırmayın
+
+| Durum | Davranış |
+|---|---|
+| Anahtar yok | Koruma **kapalı**, kayıt eskisi gibi çalışır |
+| Anahtar var, jeton geçersiz/yok | **400**, reddedilir |
+| Anahtar var, sağlayıcıya **ulaşılamıyor** | **400**, reddedilir (*fail-closed*) |
+
+Üçüncü satır bilinçlidir: alternatifi "ulaşamadım, geçir" olurdu ve o da
+saldırganın Cloudflare'e giden yolu bozması hâlinde korumayı tamamen devre dışı
+bırakırdı. **Doğrulanamayan bir jeton, geçerli bir jeton değildir.**
+
+Birinci satır da bilinçlidir ve **bedeli vardır**: anahtarı doldurmayı unutan
+bir dağıtımda bot koruması yoktur. Alternatifi, anahtar tanımlanana kadar kayıt
+ekranının tamamen bozulmasıydı. Bunun yerine sunucu açılışında `[captcha]`
+uyarısı yazılır ve dağıtım kontrol listesinde madde olarak durur.
+
+##### İki anahtar, ikisi birden
+
+`CAPTCHA_SITE_KEY` ve `CAPTCHA_SECRET_KEY` ayrı ayrı iş görür ve **biri olmadan
+öteki zarar verir**:
+
+- yalnızca *secret*: widget çizilmez, jeton üretilmez, sunucu her kaydı
+  reddeder → **kayıt ekranı kilitlenir**
+- yalnızca *site*: widget çizilir, kullanıcı doğrulama yapar, sunucu hiçbir şey
+  denetlemez → **güvenlik tiyatrosu**
+
+İkisi de sessizce yanlış çalışır; bu yüzden açılışta ayrı ayrı uyarı yazılır.
+
+##### Kayıt sayfası artık dinamik — sebebi bir dağıtım tuzağı
+
+Site anahtarı sunucu bileşeninde okunup forma özellik olarak geçirilir
+(`NEXT_PUBLIC_` kullanılmaz: değeri tüm istemci paketine gömerdi). Sayfa statik
+üretilseydi bu değer **derleme anında** gömülürdü; Docker imajı anahtarsız
+derlenip ortam değişkenleri yalnızca çalışma anında verildiğinde — bu projenin
+compose kurulumu tam olarak böyle — forma `null` giderdi ve sunucu gizli
+anahtarı gördüğü için **her kaydı reddederdi**. Bu yüzden
+`export const dynamic = 'force-dynamic'`. Bedeli yok: sayfa veritabanına hiç
+bakmayan bir formdur.
+
+##### Jeton tek kullanımlıktır — sıfırlama zorunlu
+
+Aynı jeton ikinci kez doğrulatılırsa Cloudflare `timeout-or-duplicate` döner.
+İlk gönderim **başka** bir sebeple (e-posta zaten kayıtlı, parola kısa)
+başarısız olur ve kullanıcı düzeltip tekrar gönderirse, jeton harcanmıştır:
+ikinci deneme, düzelttiği alanla hiç ilgisi olmayan bir güvenlik hatasıyla
+reddedilirdi. Bu yüzden **her** gönderimden sonra widget sıfırlanır.
+
+##### Ölçüm (2026-09-08)
+
+Cloudflare'in resmî test anahtarlarıyla; hesap gerekmedi. 14/14 geçti.
+
+*Sağlayıcı entegrasyonu — gerçek Cloudflare istekleri:*
+
+| Senaryo | Sonuç |
+|---|---|
+| her-zaman-geçer anahtarı | kabul |
+| jeton yok / boşluktan ibaret | `captcha_required` |
+| her-zaman-kalır anahtarı | `captcha_failed` · `invalid-input-response` |
+| harcanmış jeton | `captcha_failed` · `timeout-or-duplicate` |
+
+*Fail-closed — sağlayıcıya ulaşılamıyor:*
+
+| Senaryo | Sonuç |
+|---|---|
+| `ECONNREFUSED` | **reddedildi** (`captcha_unavailable`) |
+| zaman aşımı (`TimeoutError`) | **reddedildi** |
+| sağlayıcı 502 | **reddedildi** |
+
+*Kayıt ucu — uçtan uca, çalışan sunucu:*
+
+| Senaryo | Sonuç |
+|---|---|
+| jetonsuz `POST /api/users` | **400** · `captcha_required` |
+| geçerli jetonla | **201** |
+| jeton veritabanına yazıldı mı | **hayır** |
+| kayıt yine `pending` + rolsüz doğdu | evet |
+| Yerel API (seed) jetonsuz | çalışıyor (muaf) |
+
+*Tarayıcıda, gerçek formla:*
+
+- Widget yüklendi, **görünür bir kutu çizilmedi** (`interaction-only`), jeton
+  üretildi, gönderilen gövdede `captchaToken` vardı → **201**.
+- E-posta çakışmasıyla başarısız gönderim → düzelt → tekrar gönder: **201**.
+- `turnstile.reset` çağrı sayacı: başarısız gönderimden sonra **0 → 1**.
+
+> Son satır ayrıca ölçüldü çünkü test anahtarı **sabit bir sahte jeton**
+> döndürür: iki gönderimde de aynı jeton görünüyordu, yani "yeniden gönderim
+> çalıştı" tek başına sıfırlamanın gerçekleştiğini **kanıtlamıyordu**. Sayaç o
+> boşluğu kapatır; harcanmış jetonun reddedildiği ise yukarıdaki tabloda ayrıca
+> ölçülü.
 
 ---
 
