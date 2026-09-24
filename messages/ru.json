@@ -20,7 +20,10 @@
     "projectPortal": "Страница проекта",
     "search": "Поиск",
     "signIn": "Вход",
-    "register": "Регистрация"
+    "register": "Регистрация",
+    "signOut": "Выйти",
+    "signingOut": "Выход…",
+    "account": "Моя учётная запись"
   },
   "common": {
     "readMore": "Подробнее",

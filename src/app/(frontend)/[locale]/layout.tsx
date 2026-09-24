@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
 import React from 'react'
 
+import { SessionProvider } from '@/components/account/SessionProvider'
 import { SessionTimeoutNotice } from '@/components/account/SessionTimeoutNotice'
 import { SubscriptionBanner } from '@/components/account/SubscriptionBanner'
 import { CookieBanner } from '@/components/layout/CookieBanner'
@@ -96,6 +97,13 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={meta.hrefLang} dir={meta.direction} className={inter.variable}>
       <body className="flex min-h-dvh flex-col bg-canvas font-sans">
         <NextIntlClientProvider messages={messages}>
+          {/*
+            OTURUM TEK YERDEN OKUNUR. Once uc bilesen (baslik hesap menusu,
+            abonelik seridi, oturum suresi uyarisi) /api/users/me'yi AYRI
+            AYRI cagiriyordu: sayfa basina uc ozdes istek ve birbirinden
+            bagimsiz cevaplar. Saglayici tek istek atar, sonucu paylasir.
+          */}
+          <SessionProvider>
           {/* WCAG 2.2 — 2.4.1 Blokları Atlama. DOM'daki ilk odaklanabilir öğe. */}
           <a href="#main-content" className="skip-link">
             {t('skipToContent')}
@@ -139,6 +147,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             showPreferences={cookieBanner?.allowPreferenceManagement !== false}
             policyHref={policySlug ? pageHref(locale, policySlug) : null}
           />
+          </SessionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

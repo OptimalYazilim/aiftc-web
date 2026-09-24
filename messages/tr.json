@@ -20,7 +20,10 @@
     "projectPortal": "Proje sayfası",
     "search": "Ara",
     "signIn": "Giriş",
-    "register": "Kayıt Ol"
+    "register": "Kayıt Ol",
+    "signOut": "Çıkış Yap",
+    "signingOut": "Çıkılıyor…",
+    "account": "Hesabım"
   },
   "common": {
     "readMore": "Devamını oku",

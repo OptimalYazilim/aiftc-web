@@ -1,7 +1,9 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
+
+import { useOturum } from './SessionProvider'
 
 /**
  * OTURUM SÜRESİ UYARISI  (Kontrol Listesi 66 · 67 · WCAG 2.2.1)
@@ -58,44 +60,23 @@ const UYARI_ESIGI_MS = 5 * 60 * 1000
 /** Şerit görünürken kalan süre bu aralıkla tazelenir. */
 const SAYAC_ARALIGI_MS = 30 * 1000
 
-type MeYaniti = { user?: unknown; exp?: number }
-
 export const SessionTimeoutNotice: React.FC = () => {
   const t = useTranslations('session')
 
-  /** Jetonun bitiş anı (ms). `null` = oturum yok ya da henüz okunmadı. */
-  const [bitis, setBitis] = useState<number | null>(null)
+  /*
+    BİTİŞ ANI BAĞLAMDAN GELİR (bkz. SessionProvider).
+    Önceki sürüm kendi `/api/users/me` çağrısını yapıyordu; aynı isteği
+    abonelik şeridi ve başlıktaki hesap menüsü de atıyordu.
+  */
+  const { biter: baglamBitis, yenile } = useOturum()
+
+  /** Uzatma sonrası yerel olarak güncellenen bitiş anı. */
+  const [yerelBitis, setYerelBitis] = useState<number | null>(null)
+  const bitis = yerelBitis ?? baglamBitis
+
   const [simdi, setSimdi] = useState<number | null>(null)
   const [uzatiliyor, setUzatiliyor] = useState(false)
   const [uzatmaBasarisiz, setUzatmaBasarisiz] = useState(false)
-  const sokulduRef = useRef(false)
-
-  /** Oturumu okur; `exp` yoksa oturum yok demektir. */
-  const oturumuOku = useCallback(async () => {
-    try {
-      const yanit = await fetch('/api/users/me', { credentials: 'include', cache: 'no-store' })
-      if (!yanit.ok) return null
-      const govde = (await yanit.json()) as MeYaniti
-      if (!govde?.user || typeof govde.exp !== 'number') return null
-      return govde.exp * 1000
-    } catch {
-      /*
-        Ağ hatasında SESSİZ KAL. "Oturumunuz bitiyor" demek, geçici bir
-        bağlantı sorununu kalıcı bir oturum sorunu gibi gösterirdi.
-      */
-      return null
-    }
-  }, [])
-
-  useEffect(() => {
-    sokulduRef.current = false
-    void oturumuOku().then((deger) => {
-      if (!sokulduRef.current) setBitis(deger)
-    })
-    return () => {
-      sokulduRef.current = true
-    }
-  }, [oturumuOku])
 
   /*
     ZAMANLAYICI YALNIZCA GEREKTİĞİNDE KURULUR.
@@ -150,14 +131,16 @@ export const SessionTimeoutNotice: React.FC = () => {
       if (!yanit.ok) throw new Error('uzatilamadi')
       const govde = (await yanit.json()) as { exp?: number }
       if (typeof govde?.exp !== 'number') throw new Error('exp yok')
-      setBitis(govde.exp * 1000)
+      setYerelBitis(govde.exp * 1000)
       setSimdi(null)
+      /* Bağlamdaki kullanıcı bilgisi de tazelensin. */
+      void yenile()
     } catch {
       setUzatmaBasarisiz(true)
     } finally {
       setUzatiliyor(false)
     }
-  }, [])
+  }, [yenile])
 
   if (bitis === null || simdi === null) return null
 

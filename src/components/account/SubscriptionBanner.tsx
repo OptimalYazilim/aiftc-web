@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
-import { abonelikDurumu, type AbonelikDurumu } from '@/lib/subscription'
+import { abonelikDurumu } from '@/lib/subscription'
+
+import { useOturum } from './SessionProvider'
 
 /**
  * ABONELİK UYARI ŞERİDİ — SESSİZ YETKİ DÜŞÜMÜNÜN AÇIKLAMASI
@@ -77,60 +79,18 @@ import { abonelikDurumu, type AbonelikDurumu } from '@/lib/subscription'
  * ============================================================================
  */
 
-/** `/api/users/me` yanıtından yalnızca gereken alanlar. */
-type MeYaniti = {
-  user?: {
-    role?: unknown
-    roles?: unknown
-    subscriptionPlan?: unknown
-    subscriptionEndsAt?: unknown
-  } | null
-}
-
 export const SubscriptionBanner: React.FC<{ contactHref: string }> = ({ contactHref }) => {
   const t = useTranslations('subscription')
-  const [durum, setDurum] = useState<AbonelikDurumu | null>(null)
 
-  useEffect(() => {
-    /*
-      Bileşen sayfadan ayrılırken gelen yanıtı YOK SAY. Şerit yerleşimde
-      (layout) durduğu için gezinmede sökülmez, ama sayfa hızlı kapatılırsa
-      React "unmounted component" uyarısı verir; bayrak onu keser.
-    */
-    let gecerli = true
+  /*
+    OTURUM ARTIK BAGLAMDAN OKUNUR (bkz. SessionProvider).
+    Onceki surum kendi `/api/users/me` cagrisini yapiyordu; ayni istegi
+    ayrica oturum suresi uyarisi ve baslik hesap menusu da atiyordu. Ucu de
+    ayni cevabi bekliyordu ama birbirinden habersizdi.
+  */
+  const { durum: oturumDurumu, kullanici } = useOturum()
 
-    const oku = async () => {
-      try {
-        const yanit = await fetch('/api/users/me', {
-          /* Oturum çerezi (`aiftc-token`) olmadan yanıt her zaman `user: null`
-             olurdu. GET olduğu için CSRF/Origin kısıtı devreye girmez. */
-          credentials: 'include',
-          /* Şerit KULLANICIYA ÖZELDİR; ara katman veya tarayıcı bu yanıtı
-             önbelleğe alırsa bir kullanıcının durumu diğerine gösterilir. */
-          cache: 'no-store',
-        })
-        if (!yanit.ok) {
-          if (gecerli) setDurum('oturum-yok')
-          return
-        }
-        const govde = (await yanit.json()) as MeYaniti
-        if (gecerli) setDurum(abonelikDurumu(govde?.user ?? null))
-      } catch {
-        /*
-          Ağ hatasında SESSİZ KAL. Şeridi göstermek, aboneliği geçerli olan
-          birine "aboneliğiniz doldu" demek olurdu — geçici bir bağlantı
-          sorununu kalıcı bir hesap sorunu gibi gösteren bu hata, sessiz
-          kalmaktan kötüdür.
-        */
-        if (gecerli) setDurum('oturum-yok')
-      }
-    }
-
-    void oku()
-    return () => {
-      gecerli = false
-    }
-  }, [])
+  const durum = oturumDurumu === 'var' ? abonelikDurumu(kullanici) : null
 
   // Yanıt gelene kadar hiçbir şey basılmaz: yanıp sönen bir şerit olmaz.
   if (durum !== 'suresi-doldu' && durum !== 'abonelik-yok') return null

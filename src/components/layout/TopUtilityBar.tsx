@@ -6,6 +6,8 @@ import type { Locale } from '@/i18n/locales'
 import { authHref, href } from '@/i18n/routes'
 import type { PortalLink } from '@/lib/portalLinks'
 
+import { AccountMenu } from '@/components/account/AccountMenu'
+
 import { PortalLinks } from './PortalLinks'
 
 /**
@@ -93,27 +95,14 @@ export const TopUtilityBar = async ({
             Soldaki "Personel Girişi" bundan FARKLIDIR: o, EK-2 yönetim
             portalına (ayrı sistem) gider. Bu ise sitenin kendi hesabıdır.
           */}
-          <Link
-            href={authHref('login', locale)}
-            className="inline-flex min-h-9 items-center gap-2 rounded px-2 py-1 font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
-          >
-            <svg
-              aria-hidden="true"
-              focusable="false"
-              viewBox="0 0 16 16"
-              width="1em"
-              height="1em"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M6.5 13.5h-3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3" />
-              <path d="M10.5 11 14 8l-3.5-3M14 8H6" />
-            </svg>
-            {t('signIn')}
-          </Link>
+          {/*
+            OTURUMA GÖRE DEĞİŞİR — sunucuda karar verilemez.
+            Çerez httpOnly olduğu için istemci onu okuyamaz; durum
+            `/api/users/me` ile öğrenilir. Başlığı sunucuda çerezden
+            kurmak her sayfayı dinamik hâle getirir ve tüm ISR önbelleğini
+            kaldırırdı (bkz. AccountMenu ve SessionProvider docblock'ları).
+          */}
+          <AccountMenu girisHref={authHref('login', locale)} />
 
           <span aria-hidden="true" className="h-4 w-px bg-white/20" />
 

@@ -20,7 +20,10 @@
     "projectPortal": "Project page",
     "search": "Search",
     "signIn": "Sign in",
-    "register": "Register"
+    "register": "Register",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "account": "My account"
   },
   "common": {
     "readMore": "Read more",
