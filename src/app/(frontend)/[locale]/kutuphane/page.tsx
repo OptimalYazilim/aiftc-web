@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
@@ -9,7 +11,7 @@ import {
 import type { LibraryResourceItem } from '@/components/library/LibraryResourceCard'
 import { LIBRARY_ALBUM_TYPE, LIBRARY_RESOURCE_TYPES } from '@/fields/options'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
-import { ROUTES } from '@/i18n/routes'
+import { href, ROUTES } from '@/i18n/routes'
 import { buildMetadata } from '@/lib/metadata'
 import {
   resolveAttachment,
@@ -50,18 +52,34 @@ import { payloadClient } from '@/lib/queries'
  *   2. Sayısı sıfır olan filtre HİÇ BASILMAZ — ziyaretçi boş sonuç veren bir
  *      butona tıklamaz.
  *
- * ISR: 5 dakika. Yayın eklendiğinde `hooks/revalidate.ts` anında tazeler.
+ * ---------------------------------------------------------------------------
+ * NEDEN ARTIK STATİK DEĞİL
+ * ---------------------------------------------------------------------------
+ * Sayfa 5 dakikalık ISR ile üretiliyordu ve Local API'ye `user` GEÇMİYORDU.
+ * Sonucu ölçülmüştü (kılavuz 5.6.2): aboneliği geçerli bir katılımcı bile
+ * listede yalnızca herkese açık kayıtları görüyordu —
+ *
+ *     aynı oturum, /api/library-resources → 3 kayıt (1 public + 2 trainee)
+ *     aynı oturum, /tr/kutuphane          → "1 yayın"
+ *
+ * Yani `accessLevel` site yüzünde hiç kimseye bir şey AÇMIYORDU; yalnızca
+ * kapatıyordu. Listeyi kişiye özel yapmanın bedeli önbelleğin kalkmasıdır:
+ * önbelleğe alınmış bir HTML, sonraki ziyaretçiye ÖNCEKİNİN yetkisiyle
+ * üretilmiş listeyi gösterirdi. Bu bir sızıntı olurdu, ödünleşim değil.
+ *
+ * `force-dynamic` bu yüzden bir tercih değil ZORUNLULUKTUR. Aynı sebeple
+ * `generateStaticParams` kaldırıldı: önceden üretilecek bir çıktı yok.
  * ============================================================================
  */
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
 
-type Props = { params: Promise<{ locale: Locale }> }
-
-export function generateStaticParams() {
-  return LOCALE_CODES.map((locale) => ({ locale }))
+type Props = {
+  params: Promise<{ locale: Locale }>
+  /** `?egitim=<slug>` — bkz. aşağıdaki "EĞİTİME GÖRE SÜZME" notu. */
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
   const { locale } = await params
   if (!isLocale(locale)) return {}
 
@@ -100,7 +118,14 @@ const galleryOf = (value: unknown): ResolvedImage[] =>
         .filter((image): image is ResolvedImage => image !== null)
     : []
 
-export default async function LibraryPage({ params }: Props) {
+/** `?egitim=slug` — dizi gelirse ilk değer, boşsa null. */
+const egitimSlugu = (deger: string | string[] | undefined): string | null => {
+  const ham = Array.isArray(deger) ? deger[0] : deger
+  const temiz = ham?.trim()
+  return temiz ? temiz : null
+}
+
+export default async function LibraryPage({ params, searchParams }: Props) {
   const { locale } = await params
   if (!isLocale(locale)) notFound()
 
@@ -109,10 +134,63 @@ export default async function LibraryPage({ params }: Props) {
   const t = await getTranslations('library')
   const payload = await payloadClient()
 
+  /*
+    ======================================================================
+    OTURUM SUNUCUDA OKUNUR
+    ======================================================================
+    `payload.auth` istek başlıklarındaki `aiftc-token` çerezini çözer ve
+    kullanıcıyı döner. Bu kullanıcı aşağıdaki sorguya GEÇİRİLİR; ancak o
+    zaman `libraryReadAccess` gerçek role göre çalışır ve katılımcı kendi
+    seviyesindeki kayıtları GÖREBİLİR.
+
+    Oturum yoksa `user` null gelir ve kural anonim dalına düşer — yani
+    davranış eskisiyle birebir aynı kalır.
+  */
+  const { user } = await payload.auth({ headers: await headers() })
+
+  /*
+    ======================================================================
+    EĞİTİME GÖRE SÜZME  (`?egitim=<slug>`)
+    ======================================================================
+    Eğitim künyesindeki "Eğitim Materyallerine Git" düğmesi buraya bu
+    parametreyle gelir. Süzme SUNUCUDA yapılır, istemcide değil:
+
+      - sayaçlar ("Rapor 3") doğru kalır; istemcide süzülseydi filtre
+        çubuğu süzülmemiş toplamları gösterirdi,
+      - adres paylaşılabilir ve yer imine eklenebilir,
+      - JavaScript kapalıyken de çalışır.
+
+    Slug ÇÖZÜLEMEZSE süzme UYGULANMAZ ve tüm liste basılır. Alternatif
+    (boş liste göstermek) kullanıcıyı "kütüphane boş" sanmaya iterdi;
+    burada asıl olan kütüphanedir, süzgeç bir kolaylıktır.
+  */
+  const istenenEgitim = egitimSlugu((await searchParams).egitim)
+
+  const egitim = istenenEgitim
+    ? (
+        await payload.find({
+          collection: 'training-programs',
+          locale,
+          where: { slug: { equals: istenenEgitim } },
+          limit: 1,
+          depth: 0,
+          overrideAccess: false,
+          user,
+        })
+      ).docs[0]
+    : undefined
+
   const result = await payload.find({
     collection: 'library-resources',
     locale,
-    where: { _status: { equals: 'published' } },
+    where: egitim
+      ? {
+          and: [
+            { _status: { equals: 'published' } },
+            { relatedTrainings: { in: [egitim.id] } },
+          ],
+        }
+      : { _status: { equals: 'published' } },
     /*
       Öne çıkarılanlar en üstte, sonra yeniden eskiye. Payload çok alanlı
       sıralamayı dizi olarak alır; `-featured` true değerleri öne taşır.
@@ -141,8 +219,13 @@ export default async function LibraryPage({ params }: Props) {
 
       SINIR: bu kural KAYDI korur, ekli dosyanın doğrudan adresini korumaz
       (bkz. docs/access-control-guide.md).
+
+      `user`: kuralın ANONİM mi yoksa ROLLÜ mü değerlendirileceğini bu
+      belirler. Geçilmediğinde Payload sorguyu oturumsuz sayar — sayfanın
+      önceki hâlindeki sorun tam olarak buydu.
     */
     overrideAccess: false,
+    user,
   })
 
   const items: LibraryResourceItem[] = result.docs.map((doc) => {
@@ -241,14 +324,39 @@ export default async function LibraryPage({ params }: Props) {
             {t('listHeading')}
           </h2>
 
+          {/*
+            AKTİF EĞİTİM SÜZGECİ GÖRÜNÜR OLMALI.
+            Süzgeç sessizce uygulansaydı kullanıcı kısalmış bir liste görüp
+            "kütüphanede bu kadar mı var?" diye düşünürdü — daha önce abonelik
+            kapısında ölçtüğümüz "sessiz düşüm" sorununun aynısı. Şerit hem
+            hangi süzgecin açık olduğunu söyler hem de KALDIRMA yolunu verir.
+          */}
+          {egitim ? (
+            <p
+              role="status"
+              className="mb-8 flex flex-col gap-2 border-s-2 border-s-line-strong bg-surface-alt p-5 text-sm sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
+            >
+              <span className="text-ink-700">
+                {t('filteredByTraining', { egitim: egitim.title ?? istenenEgitim ?? '' })}
+              </span>
+              <Link
+                href={href('library', locale)}
+                className="shrink-0 font-semibold text-shell-900 underline underline-offset-4 hover:text-brand-800 focus-visible:text-brand-800"
+              >
+                {t('showAllRecords')}
+              </Link>
+            </p>
+          ) : null}
+
           {items.length === 0 ? (
             /*
-              Koleksiyon henüz doldurulmamış. Boş bir filtre çubuğu ve sıfır
-              sonuç göstermek yerine, editöre ve ziyaretçiye durumu söyleyen
-              tek bir satır basılır.
+              İki ayrı boşluk, iki ayrı cümle: koleksiyonun tamamen boş olması
+              ile SÜZGECİN sonuç vermemesi aynı şey değildir. Tek mesaj
+              kullanılsaydı, eğitime materyal bağlanmadığı hâlde ziyaretçi
+              "kütüphane boş" sanırdı.
             */
             <p className="rounded-sm border border-line bg-surface p-6 text-ink-700">
-              {t('emptyCollection')}
+              {egitim ? t('noMaterialsForTraining') : t('emptyCollection')}
             </p>
           ) : (
             <LibraryCatalog items={items} types={typeOptions} topics={topicOptions} locale={locale} />

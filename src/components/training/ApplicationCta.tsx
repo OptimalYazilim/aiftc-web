@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import React from 'react'
 
@@ -10,6 +9,8 @@ import { resolveApplicationHref } from '@/lib/externalLinks'
 import { isApplicationOpen } from '@/lib/trainingStatus'
 
 import { ExternalLink } from '../ui/ExternalLink'
+
+import { ApplicationCtaLink } from './ApplicationCtaLink'
 
 /**
  * BAŞVURU AKSİYONU  (Şartname 6.4, 12.2)
@@ -45,6 +46,12 @@ type Props = {
   locale: Locale
   /** Basvuru talebine iliskilendirilecek egitim kaydi. */
   trainingId?: number
+  /**
+   * Egitimin slug'i — kutuphaneye `?egitim=<slug>` olarak tasinir.
+   * Kimlik (id) DEGIL slug kullanilir: adres paylasilabilir ve okunabilir
+   * olmali, ayrica icerik gocunde id'ler degisebilir.
+   */
+  trainingSlug?: string | null
   status: TrainingProgram['status']
   target: TrainingProgram['applicationTarget']
   services: ExternalService
@@ -53,7 +60,14 @@ type Props = {
 const BUTTON_BASE =
   'inline-flex min-h-11 w-full items-center justify-center rounded px-5 text-center font-semibold'
 
-export const ApplicationCta = async ({ locale, trainingId, status, target, services }: Props) => {
+export const ApplicationCta = async ({
+  locale,
+  trainingId,
+  trainingSlug,
+  status,
+  target,
+  services,
+}: Props) => {
   const t = await getTranslations('training')
 
   const open = isApplicationOpen(status)
@@ -108,11 +122,37 @@ export const ApplicationCta = async ({ locale, trainingId, status, target, servi
       ? `${href('contact', locale)}?tur=basvuru&egitim=${trainingId}`
       : href('contact', locale)
 
+    /*
+      BUTON OTURUMA GÖRE DEĞİŞİR  (UX — aynı düğme iki kitleye hitap edemez)
+      --------------------------------------------------------------------
+      Önceki sürümde herkes aynı "Bilgi Al" düğmesini görüyordu. Giriş yapmış
+      bir katılımcı için bu YANLIŞ EYLEMDİR: o kişi zaten kayıtlıdır, aradığı
+      şey eğitimin materyalidir.
+
+        oturum YOK → "Ön Başvuru Yap"            iletişim formuna gider
+        oturum VAR → "Eğitim Materyallerine Git" kütüphaneye gider
+
+      Karar İSTEMCİDE verilir (çerez httpOnly'dir); bu sunucu bileşeni iki
+      olasılığı da hazırlar, seçimi `ApplicationCtaLink` yapar. Görsel
+      sınıflar iki hâlde de AYNI — değişen yalnızca metin ve hedef.
+
+      Hedef, egitimin materyallerine SUZULMUS kutuphanedir
+      (`?egitim=<slug>`). Kutuphane sayfasi artik oturumu sunucuda
+      okuyor, yani katilimci kendi seviyesindeki kayitlari da gorur.
+    */
     return (
       <div>
-        <Link href={contactHref} className={activeClass}>
-          {t('requestInfo')}
-        </Link>
+        <ApplicationCtaLink
+          bilgiHref={contactHref}
+          bilgiEtiketi={t('preApply')}
+          materyalHref={
+            trainingSlug
+              ? `${href('library', locale)}?egitim=${encodeURIComponent(trainingSlug)}`
+              : href('library', locale)
+          }
+          materyalEtiketi={t('goToMaterials')}
+          className={activeClass}
+        />
         {target?.contactUnit ? (
           <p className="mt-3 text-sm text-ink-600">
             {t('contactUnit')}: {target.contactUnit}

@@ -23,7 +23,8 @@
     "register": "Kayıt Ol",
     "signOut": "Çıkış Yap",
     "signingOut": "Çıkılıyor…",
-    "account": "Hesabım"
+    "account": "Hesabım",
+    "profile": "Profilim"
   },
   "common": {
     "readMore": "Devamını oku",
@@ -126,7 +127,10 @@
     "fieldCopyright": "Telif",
     "fieldIdentifier": "Tanımlayıcı",
     "fieldDownloads": "İndirme",
-    "fieldSource": "Kaynak adres"
+    "fieldSource": "Kaynak adres",
+    "filteredByTraining": "Yalnızca “{egitim}” eğitimine ait materyaller gösteriliyor.",
+    "showAllRecords": "Tüm kayıtları göster",
+    "noMaterialsForTraining": "Bu eğitime bağlı bir materyal henüz eklenmemiş. Kütüphanenin tamamını görmek için süzgeci kaldırabilirsiniz."
   },
   "training": {
     "statusLabel": "Eğitim durumu",
@@ -156,7 +160,6 @@
     "assessment": "Değerlendirme Yöntemi",
     "certificateConditions": "Sertifika Koşulları",
     "backToCatalog": "Tüm eğitimlere dön",
-    "requestInfo": "Bilgi Al",
     "contactUnit": "İletişim",
     "noticeNotAccepting": "Bu eğitim için başvuru alınmamaktadır.",
     "noticePlanned": "Bu eğitimin başvuruları henüz açılmadı. Başvuru dönemi eğitim takviminden duyurulacaktır.",
@@ -170,7 +173,9 @@
     "practiceHeading": "Uygulama ve Simülasyon",
     "usesSimulation": "Simülasyon merkezi kullanılıyor",
     "hasFieldExercise": "Saha uygulaması içerir",
-    "simulationSystems": "Kullanılan sistemler"
+    "simulationSystems": "Kullanılan sistemler",
+    "preApply": "Ön Başvuru Yap",
+    "goToMaterials": "Eğitim Materyallerine Git"
   },
   "classroom": {
     "pageTitle": "Sanal Sınıf",
@@ -561,5 +566,33 @@
     "extendFailed": "Oturum uzatılamadı. Bağlantınızı kontrol edip yeniden deneyin; sorun sürerse yeniden giriş yapmanız gerekir.",
     "expiredTitle": "Oturumunuz sona erdi",
     "expiredBody": "Korumalı içeriklere erişmek için yeniden giriş yapmanız gerekiyor."
+  },
+  "profile": {
+    "metaTitle": "Profilim",
+    "eyebrow": "HESAP",
+    "title": "Profilim",
+    "intro": "Hesap bilgileriniz, kütüphane erişiminiz ve kuruma gönderdiğiniz başvurular.",
+    "accountHeading": "Hesap Bilgileri",
+    "fieldName": "Ad Soyad",
+    "fieldEmail": "E-posta",
+    "fieldUnit": "Kurum / Birim",
+    "fieldRole": "Erişim Rolü",
+    "fieldStatus": "Durum",
+    "changePassword": "Parolamı değiştir",
+    "subscriptionHeading": "Kütüphane Erişimi",
+    "subscriptionActive": "Aboneliğiniz geçerli.",
+    "subscriptionExempt": "Kurum içi rolünüz nedeniyle abonelik aranmıyor.",
+    "subscriptionExpired": "Aboneliğinizin süresi doldu.",
+    "subscriptionNone": "Hesabınıza tanımlı bir abonelik bulunmuyor.",
+    "fieldPlan": "Paket",
+    "fieldEndsAt": "Bitiş Tarihi",
+    "goToLibrary": "Kütüphaneye git",
+    "requestsHeading": "Başvurularım",
+    "requestsIntro": "{eposta} adresiyle gönderdiğiniz kayıtlar listelenir.",
+    "requestsEmpty": "Bu adresle gönderilmiş bir başvuru bulunamadı.",
+    "trainingsHeading": "Katıldığım Eğitimler",
+    "trainingsNotTracked": "Katılım kayıtları bu sistemde henüz tutulmuyor. Hangi eğitimlere katıldığınız bilgisini merkezden öğrenebilirsiniz.",
+    "certificatesHeading": "Sertifikalarım",
+    "certificatesNotTracked": "Kişiye özel sertifika ve katılım belgesi kayıtları bu sistemde henüz tutulmuyor. Belgeniz için merkezle iletişime geçin."
   }
 }

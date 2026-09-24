@@ -23,7 +23,8 @@
     "register": "Register",
     "signOut": "Sign out",
     "signingOut": "Signing out…",
-    "account": "My account"
+    "account": "My account",
+    "profile": "My profile"
   },
   "common": {
     "readMore": "Read more",
@@ -126,7 +127,10 @@
     "fieldCopyright": "Copyright",
     "fieldIdentifier": "Identifier",
     "fieldDownloads": "Downloads",
-    "fieldSource": "Source URL"
+    "fieldSource": "Source URL",
+    "filteredByTraining": "Showing only materials for “{egitim}”.",
+    "showAllRecords": "Show all records",
+    "noMaterialsForTraining": "No material has been linked to this training yet. Clear the filter to see the whole library."
   },
   "training": {
     "statusLabel": "Training status",
@@ -156,7 +160,6 @@
     "assessment": "Assessment Method",
     "certificateConditions": "Certificate Conditions",
     "backToCatalog": "Back to all training",
-    "requestInfo": "Request information",
     "contactUnit": "Contact",
     "noticeNotAccepting": "Applications are not being accepted for this programme.",
     "noticePlanned": "Applications for this programme have not opened yet. The application period will be announced in the training calendar.",
@@ -170,7 +173,9 @@
     "practiceHeading": "Practice and simulation",
     "usesSimulation": "Uses the simulation centre",
     "hasFieldExercise": "Includes a field exercise",
-    "simulationSystems": "Systems used"
+    "simulationSystems": "Systems used",
+    "preApply": "Start pre-application",
+    "goToMaterials": "Go to training materials"
   },
   "classroom": {
     "pageTitle": "Virtual classroom",
@@ -561,5 +566,33 @@
     "extendFailed": "The session could not be extended. Check your connection and try again; if the problem persists you will need to sign in again.",
     "expiredTitle": "Your session has ended",
     "expiredBody": "Sign in again to reach protected content."
+  },
+  "profile": {
+    "metaTitle": "My profile",
+    "eyebrow": "ACCOUNT",
+    "title": "My profile",
+    "intro": "Your account details, library access and the requests you have sent to the centre.",
+    "accountHeading": "Account details",
+    "fieldName": "Full name",
+    "fieldEmail": "E-mail",
+    "fieldUnit": "Organisation / unit",
+    "fieldRole": "Access role",
+    "fieldStatus": "Status",
+    "changePassword": "Change my password",
+    "subscriptionHeading": "Library access",
+    "subscriptionActive": "Your subscription is valid.",
+    "subscriptionExempt": "No subscription is required for your internal role.",
+    "subscriptionExpired": "Your subscription has expired.",
+    "subscriptionNone": "No subscription is assigned to your account.",
+    "fieldPlan": "Plan",
+    "fieldEndsAt": "Ends on",
+    "goToLibrary": "Go to the library",
+    "requestsHeading": "My requests",
+    "requestsIntro": "Records submitted with the address {eposta}.",
+    "requestsEmpty": "No request was found for this address.",
+    "trainingsHeading": "Trainings I attended",
+    "trainingsNotTracked": "Attendance records are not kept in this system yet. The centre can tell you which programmes you attended.",
+    "certificatesHeading": "My certificates",
+    "certificatesNotTracked": "Individual certificates and attendance documents are not kept in this system yet. Contact the centre for your document."
   }
 }

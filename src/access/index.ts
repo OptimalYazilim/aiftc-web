@@ -239,6 +239,63 @@ export const documentFileReadAccess: Access = ({ req: { user } }) => {
 }
 
 /**
+ * FORM BASVURULARI — OKUMA ERISIMI  (KVKK / Sartname 12.2)
+ * ===========================================================================
+ * OLCULMUS SIZINTI (2026-09-24)
+ * ---------------------------------------------------------------------------
+ * Kural `read: isAuthenticated` idi. Bu, koleksiyon yazildiginda dogruydu:
+ * o tarihte "oturum acmis kullanici" demek PANEL PERSONELI demekti.
+ *
+ * Ziyaretci kaydi acildiginda (Sartname 1.7) bu varsayim SESSIZCE COKTU.
+ * Olcum, onaylanmis sirdan bir `trainee` hesabiyla yapildi:
+ *
+ *     GET /api/form-requests  ->  HTTP 200, 5 kayit
+ *     donen alanlar: baskalarinin AD SOYAD, E-POSTA ve MESAJ metinleri
+ *
+ * Yani siteye kaydolup onaylanan herkes, kuruma gonderilmis butun iletisim
+ * ve basvuru formlarini okuyabiliyordu. Bu bir yetki asimi degil, KISISEL
+ * VERI IFSASIDIR.
+ *
+ * YENI KURAL
+ * ---------------------------------------------------------------------------
+ *   panel rolu (admin/editor/author/viewer)  -> tumunu gorur
+ *   hedef kitle rolu admin veya staff        -> tumunu gorur (talebi onlar isler)
+ *   diger oturumlar                          -> YALNIZCA KENDI e-postasiyla
+ *                                               gonderilmis kayitlari gorur
+ *   oturum yok                               -> hicbir sey
+ *
+ * KENDI KAYDINI GORMESI BILINCLIDIR: KVKK'nin "ilgili kisinin kendi verisine
+ * erisimi" hakkidir ve profil sayfasi bunun uzerine kurulur.
+ *
+ * ESLESME E-POSTA UZERINDENDIR — SINIRI ACIK SOYLENIR.
+ * Basvuru formu KIMLIK DOGRULAMAZ; ziyaretci istedigi adresi yazabilir ve
+ * form kaydi bir kullanici hesabina ILISKI ile bagli DEGILDIR. Dolayisiyla:
+ *   - hesabinin e-postasini degistiren kisi eski basvurularini goremez,
+ *   - baskasinin adresini yazarak gonderilmis bir form, o adresin sahibine
+ *     gorunur (kendi adresine gelen bir talebi gormesi zaten makuldur).
+ * Gercek bir kayit iliskisi icin formun kullaniciya baglanmasi gerekir; bu
+ * ayri bir istir (bkz. docs/access-control-guide.md).
+ */
+export const formRequestReadAccess: Access = ({ req: { user } }) => {
+  if (!user) return false
+
+  if (hasRole('admin', 'editor', 'author', 'viewer')(user)) return true
+  const audience = audienceRoleOf(user)
+  if (audience === 'admin' || audience === 'staff') return true
+
+  const eposta = (user as { email?: unknown }).email
+  if (typeof eposta !== 'string' || eposta.length === 0) return false
+
+  /*
+    `like`, Payload'in Postgres adaptorunde ILIKE'a cevrilir: form
+    alanina "Ad.Soyad@Kurum.TR" yazilmis olsa bile hesabin kucuk harfli
+    adresiyle eslesir. `equals` buyuk/kucuk harf duyarli oldugu icin
+    kullanicinin kendi kaydini GOREMEDIGI sessiz bir bosluk birakirdi.
+  */
+  return { email: { like: eposta } }
+}
+
+/**
  * TICARI KAYITLARI YONETENLER  (Commerce — teklif ve abonelik)
  * ===========================================================================
  * Teklif kayitlari HEM ticari HEM kisisel veri tasir: musteri adi, iletisim

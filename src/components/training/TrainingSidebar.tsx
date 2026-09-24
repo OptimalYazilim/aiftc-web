@@ -122,6 +122,7 @@ export const TrainingSidebar = async ({ locale, doc, services }: Props) => {
           <ApplicationCta
             locale={locale}
             trainingId={doc.id}
+            trainingSlug={doc.slug}
             status={doc.status}
             target={doc.applicationTarget}
             services={services}

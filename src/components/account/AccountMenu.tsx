@@ -38,11 +38,22 @@ import { useOturum } from './SessionProvider'
  * olurdu.
  *
  * ---------------------------------------------------------------------------
- * "HESABIM" SAYFASI YOK — UYDURULMADI
+ * AD ARTIK BAĞLANTIDIR
  * ---------------------------------------------------------------------------
- * Sitede henüz bir hesap/profil sayfası bulunmuyor. Olmayan bir sayfaya
- * bağlantı vermek 404 üretirdi; bu yüzden kullanıcının adı BAĞLANTI DEĞİL,
- * düz metindir. Hesap sayfası açıldığında bu metin bağlantıya çevrilir.
+ * Önceki sürümde kullanıcının adı düz metindi, çünkü gidilecek bir profil
+ * sayfası YOKTU ve olmayan bir rotaya bağlantı 404 üretirdi. `/[locale]/profil`
+ * açıldığı için ad artık bağlantıya çevrildi.
+ *
+ * AÇILIR MENÜ (dropdown) KURULMADI — bilinçli. Menü altında şu an TEK öğe
+ * olurdu ("Profilim"); tek seçenekli bir açılır menü, kullanıcıya fazladan
+ * bir tıklama ve klavye kullanıcısına fazladan bir odak durağı ekler,
+ * karşılığında hiçbir şey vermez. İkinci bir hesap sayfası eklendiğinde
+ * menüye dönüştürülmelidir.
+ *
+ * Dar ekranda ad gizlidir (`sm:` eşiği); o yüzden profil bağlantısının
+ * erişilebilir ismi ADIN KENDİSİ DEĞİL, `aria-label` ile verilen açık
+ * ifadedir — ekran okuyucu "Deniz Yılmaz, bağlantı" yerine "Profilim,
+ * bağlantı" duyar ve nereye gideceğini bilir.
  *
  * ---------------------------------------------------------------------------
  * ÇIKIŞ
@@ -76,6 +87,24 @@ const GirisIkonu = () => (
   </svg>
 )
 
+const ProfilIkonu = () => (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    viewBox="0 0 16 16"
+    width="1em"
+    height="1em"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="8" cy="5.5" r="2.6" />
+    <path d="M2.8 13.8c.9-2.5 2.9-3.9 5.2-3.9s4.3 1.4 5.2 3.9" />
+  </svg>
+)
+
 const CikisIkonu = () => (
   <svg
     aria-hidden="true"
@@ -94,7 +123,10 @@ const CikisIkonu = () => (
   </svg>
 )
 
-export const AccountMenu: React.FC<{ girisHref: string }> = ({ girisHref }) => {
+export const AccountMenu: React.FC<{ girisHref: string; profilHref: string }> = ({
+  girisHref,
+  profilHref,
+}) => {
   const t = useTranslations('nav')
   const { durum, kullanici, yenile } = useOturum()
   const [cikiliyor, setCikiliyor] = useState(false)
@@ -138,12 +170,23 @@ export const AccountMenu: React.FC<{ girisHref: string }> = ({ girisHref }) => {
         başlık yüksekliğinin artması ölçülmüş bir sorundu (bkz.
         TopUtilityBar docblock'u).
       */}
-      <span
+      {/*
+        MOBİLDE DE ULAŞILABİLİR OLMALI.
+        İlk sürümde bağlantının tamamı `sm:` eşiğinin altında gizleniyordu;
+        telefondan giren kullanıcının profile gidecek HİÇBİR yolu kalmıyordu.
+        Artık ikon her zaman görünür, yalnızca AD dar ekranda gizlenir —
+        şeridin yüksekliği korunur (mobilde başlık yüksekliği ölçülmüş bir
+        kısıttır, bkz. TopUtilityBar docblock'u).
+      */}
+      <Link
+        href={profilHref}
         title={ad}
-        className="hidden max-w-[9rem] truncate px-2 py-1 text-white/85 sm:inline-block"
+        aria-label={t('profile')}
+        className="inline-flex min-h-9 min-w-9 max-w-[11rem] items-center justify-center gap-2 rounded px-2 py-1 text-white/85 underline-offset-4 sm:justify-start transition-colors hover:bg-white/10 hover:text-white hover:underline focus-visible:bg-white/10 focus-visible:text-white focus-visible:underline"
       >
-        {ad}
-      </span>
+        <ProfilIkonu />
+        <span className="hidden truncate sm:inline">{ad}</span>
+      </Link>
 
       <button type="button" onClick={cikisYap} disabled={cikiliyor} className={BAGLANTI_SINIFI}>
         <CikisIkonu />

@@ -97,6 +97,13 @@ export const AUTH_ROUTES = {
    * birlikte arama motorlarına hiç sızmaz.
    */
   resetPassword: { tr: '/sifre-sifirla', en: '/reset-password', ru: '/sbros-parolya' },
+  /**
+   * PROFIL DE KIMLIK ROTASIDIR — bilincli olarak burada.
+   * Sayfa oturum ister ve icerigi KISIYE OZELDIR; site haritasina girmemeli
+   * ve arama motoruna acilmamalidir. AUTH_ROUTES kumesi `ROUTE_KEYS` disinda
+   * tutuldugu icin bu davranis kendiliginden saglanir.
+   */
+  profile: { tr: '/profil', en: '/profile', ru: '/profil' },
 } as const satisfies Record<string, Record<Locale, string>>
 
 export type AuthRouteKey = keyof typeof AUTH_ROUTES

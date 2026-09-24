@@ -102,7 +102,10 @@ export const TopUtilityBar = async ({
             kurmak her sayfayı dinamik hâle getirir ve tüm ISR önbelleğini
             kaldırırdı (bkz. AccountMenu ve SessionProvider docblock'ları).
           */}
-          <AccountMenu girisHref={authHref('login', locale)} />
+          <AccountMenu
+            girisHref={authHref('login', locale)}
+            profilHref={authHref('profile', locale)}
+          />
 
           <span aria-hidden="true" className="h-4 w-px bg-white/20" />
 

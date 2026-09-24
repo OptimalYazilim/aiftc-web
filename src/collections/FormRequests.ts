@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { canAuthorContent, canDeleteContent, isAuthenticated } from '@/access'
+import { canAuthorContent, canDeleteContent, formRequestReadAccess } from '@/access'
 import { FOCUS_COUNTRIES, SUBMISSION_STATUSES, SUBMISSION_TYPES } from '@/fields/options'
 
 /**
@@ -62,7 +62,7 @@ export const FormRequests: CollectionConfig = {
     },
   },
   access: {
-    read: isAuthenticated,
+    read: formRequestReadAccess,
     /*
       Genel API'den kayıt AÇILMAZ. Ön yüz sunucu eylemi Local API kullanır ve
       erişimi kendi içinde aşar; ziyaretçinin tarayıcısı bu koleksiyona
