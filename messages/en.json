@@ -249,7 +249,8 @@
     "noResults": "No training matched your criteria. Try clearing the filters.",
     "quotaValue": "{count, plural, one {# place} other {# places}}",
     "filterHeading": "Filters",
-    "eyebrow": "Training calendar"
+    "eyebrow": "Training calendar",
+    "pastTraining": "Past training"
   },
   "news": {
     "metaTitle": "News and announcements",
@@ -545,5 +546,14 @@
     "noneTitle": "No subscription is assigned to your account",
     "noneBody": "Restricted library records and protected documents require an institutional subscription; public content remains open in every case.",
     "contactLink": "Contact the centre"
+  },
+  "session": {
+    "warningTitle": "Your session is about to end",
+    "warningBody": "For security reasons your session will end in {dakika} minutes. Extend it to carry on where you left off.",
+    "extend": "Extend session",
+    "extending": "Extending…",
+    "extendFailed": "The session could not be extended. Check your connection and try again; if the problem persists you will need to sign in again.",
+    "expiredTitle": "Your session has ended",
+    "expiredBody": "Sign in again to reach protected content."
   }
 }

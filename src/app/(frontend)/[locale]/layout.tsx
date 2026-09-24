@@ -5,8 +5,10 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
 import React from 'react'
 
+import { SessionTimeoutNotice } from '@/components/account/SessionTimeoutNotice'
 import { SubscriptionBanner } from '@/components/account/SubscriptionBanner'
 import { CookieBanner } from '@/components/layout/CookieBanner'
+import { RouteFocus } from '@/components/layout/RouteFocus'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { buildAlternates, getLocaleMeta, isLocale, LOCALE_CODES } from '@/i18n/locales'
@@ -99,6 +101,13 @@ export default async function LocaleLayout({ children, params }: Props) {
             {t('skipToContent')}
           </a>
 
+          {/*
+            Istemci tarafi gezinmede odak <body>ye dusuyordu (olculdu).
+            Rota degisince odak ana icerige tasinir ve yeni sayfa basligi
+            duyurulur — Kontrol Listesi 79/80. Ilk yuklemede calismaz.
+          */}
+          <RouteFocus />
+
           <SiteHeader locale={locale} />
 
           {/*
@@ -108,6 +117,13 @@ export default async function LocaleLayout({ children, params }: Props) {
             için hiçbir şey basmaz.
           */}
           <SubscriptionBanner contactHref={href('contact', locale)} />
+
+          {/*
+            Oturum 8 saat sonra doluyor (Users.auth.tokenExpiration). Bitise
+            5 dakika kala uyarir ve tek tiklamayla uzatir — Kontrol Listesi
+            66/67. Anonim ziyaretcide hicbir sey basmaz.
+          */}
+          <SessionTimeoutNotice />
 
           {/* tabIndex={-1}: atlama bağlantısı odağı buraya taşıyabilsin diye. */}
           <main id="main-content" tabIndex={-1} className="flex-1 outline-none">

@@ -306,6 +306,7 @@ export const TrainingCalendar: React.FC<Props> = ({ locale, items, topics }) => 
                           item={item}
                           labels={{
                             status: tt('statusLabel'),
+                            past: t('pastTraining'),
                             deliveryMode: tt('deliveryMode'),
                             venue: tt('venue'),
                             quota: tt('quota'),
@@ -340,6 +341,8 @@ const CalendarRow: React.FC<{
   item: TimelineTraining
   labels: {
     status: string
+    /** "Geçmiş eğitim" — soluklaştırmanın metinsel karşılığı (Madde 44/47). */
+    past: string
     deliveryMode: string
     venue: string
     quota: string
@@ -370,6 +373,19 @@ const CalendarRow: React.FC<{
     >
       {/* Sol sütun: gün aralığı */}
       <p className="shrink-0 sm:w-28">
+        {/*
+          "GEÇMİŞ" YALNIZCA SOLUKLUKLA ANLATILMIYOR  (Kontrol Listesi 44 · 47)
+          --------------------------------------------------------------------
+          Yukarıdaki `opacity-70` bu satırın geçmişte kaldığını söyleyen TEK
+          işaretti. Opaklık ne renk ne metindir: ekran okuyucu kullanıcısı
+          bunu hiç duymaz, düşük görme keskinliğine sahip kullanıcı ise %70
+          ile %100 arasındaki farkı güvenilir biçimde ayırt edemez — takvimde
+          geçmiş ve yaklaşan eğitim birbirine karışır.
+
+          Karşılığı metinle verilir. `sr-only` olduğu için GÖRSEL DÜZEN
+          DEĞİŞMEZ; soluklaştırma da yerinde kalır, artık tek taşıyıcı değil.
+        */}
+        {isPast ? <span className="sr-only">{labels.past}: </span> : null}
         <time dateTime={item.startDate ?? undefined} className="text-xl font-bold text-brand-800">
           {dayRange}
         </time>
