@@ -1,6 +1,5 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import React, { useDeferredValue, useId, useMemo, useState } from 'react'
 
@@ -80,15 +79,35 @@ type Props = {
   items: CatalogTraining[]
   topics: CatalogFilterOption[]
   statuses: CatalogFilterOption[]
+  /**
+   * Adresteki `?konu=slug` degeri — SUNUCUDA okunup buraya gecilir.
+   *
+   * NEDEN `useSearchParams()` DEGIL — URETIM DERLEMESI BUNU REDDEDIYOR:
+   *   useSearchParams() should be wrapped in a suspense boundary
+   *   Export encountered an error on /en/egitim-programlari, exiting the build
+   *
+   * `next dev` bu hatayi HIC gostermiyordu; yalnizca `next build` sirasinda
+   * ortaya cikti (olculdu, E2E altyapisi kurulurken). Kanca, sayfayi statik
+   * uretimden dusuruyor ve Suspense sinirini zorunlu kiliyor.
+   *
+   * Sunucuda okumak uc sorunu birden cozuyor: sayfa statik kalabiliyor,
+   * Suspense sinirina gerek kalmiyor ve on secim JavaScript KAPALIYKEN de
+   * calisiyor. Ayni desen kutuphanedeki `?egitim=` suzgecinde de kullanildi.
+   */
+  konuParametresi?: string | null
 }
 
-export const TrainingCatalog: React.FC<Props> = ({ locale, items, topics, statuses }) => {
+export const TrainingCatalog: React.FC<Props> = ({
+  locale,
+  items,
+  topics,
+  statuses,
+  konuParametresi = null,
+}) => {
   const t = useTranslations('catalog')
   const tt = useTranslations('training')
   // Kontenjan metni takvim sözlüğünde tanımlı; iki yerde ayrı çeviri tutulmaz.
   const tc = useTranslations('calendar')
-
-  const searchParams = useSearchParams()
 
   /**
    * Adresteki `?konu=slug` konu filtresini ÖNSEÇER (footer bağlantıları).
@@ -99,14 +118,13 @@ export const TrainingCatalog: React.FC<Props> = ({ locale, items, topics, status
    * boş sonuç listesi değil, filtresiz katalog gösterir.
    */
   const initialTopics = useMemo(() => {
-    const raw = searchParams.get(TOPIC_PARAM)
-    if (!raw) return []
+    if (!konuParametresi) return []
 
-    const wanted = new Set(raw.split(',').map((value) => value.trim()))
+    const wanted = new Set(konuParametresi.split(',').map((value) => value.trim()))
     return topics.filter((topic) => topic.slug && wanted.has(topic.slug)).map((t) => t.value)
-    // Yalnızca ilk değer için; bağımlılıklar bilerek dışarıda bırakılmadı,
-    // `useState` başlangıç değeri olarak bir kez kullanılıyor.
-  }, [searchParams, topics])
+    // Yalnızca ilk değer için; `useState` başlangıç değeri olarak bir kez
+    // kullanılır, sonrasında filtreler kullanıcının denetimindedir.
+  }, [konuParametresi, topics])
 
   const [query, setQuery] = useState('')
   const [selectedTopics, setSelectedTopics] = useState<string[]>(initialTopics)

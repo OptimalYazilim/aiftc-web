@@ -34,14 +34,18 @@ import { payloadClient } from '@/lib/queries'
  */
 export const revalidate = 300
 
-type Props = { params: Promise<{ locale: Locale }> }
+type Props = {
+  params: Promise<{ locale: Locale }>
+  /** `?konu=slug` — konu on secimi (footer baglantilari). */
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
 
 /** Üç dil de önceden üretilir; ISR yalnızca tazelemek için çalışır. */
 export function generateStaticParams() {
   return LOCALE_CODES.map((locale) => ({ locale }))
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
   const { locale } = await params
   if (!isLocale(locale)) return {}
 
@@ -61,11 +65,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 type TopicRef = { id: string | number; title?: string | null; slug?: string | null; category?: string | null }
 
-export default async function TrainingCatalogPage({ params }: Props) {
+export default async function TrainingCatalogPage({ params, searchParams }: Props) {
   const { locale } = await params
   if (!isLocale(locale)) notFound()
 
   setRequestLocale(locale)
+
+  /*
+    KONU ON SECIMI SUNUCUDA OKUNUR.
+    Onceki surum bunu `useSearchParams()` ile istemcide okuyordu ve URETIM
+    DERLEMESI o yuzden BASARISIZ OLUYORDU (olculdu, bkz. TrainingCatalog).
+    Sunucuda okumak sayfayi statik tutar ve JavaScript kapaliyken de calisir.
+
+    `searchParams` okunan bir sayfa Next tarafindan dinamik hale getirilir;
+    bu kabul edilebilir cunku katalog zaten 5 dakikalik ISR ile yeniden
+    uretiliyordu ve icerigi kisiye ozel degildir.
+  */
+  const konuHam = (await searchParams).konu
+  const konuParametresi = (Array.isArray(konuHam) ? konuHam[0] : konuHam)?.trim() || null
 
   const t = await getTranslations('catalog')
   const payload = await payloadClient()
@@ -173,6 +190,7 @@ export default async function TrainingCatalogPage({ params }: Props) {
         </h2>
 
         <TrainingCatalog
+          konuParametresi={konuParametresi}
           locale={locale}
           items={items}
           topics={[...topicOptions.values()].sort((a, b) => a.label.localeCompare(b.label, locale))}
