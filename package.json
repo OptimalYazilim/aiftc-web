@@ -20,7 +20,10 @@
     "migrate": "pnpm payload migrate",
     "migrate:status": "pnpm payload migrate:status",
     "seed": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/seed.ts",
-    "s3:denetle": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/s3-gizlilik-denetimi.ts"
+    "s3:denetle": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/s3-gizlilik-denetimi.ts",
+    "test:e2e": "dotenv -e .env.test -- playwright test",
+    "test:e2e:ui": "dotenv -e .env.test -- playwright test --ui",
+    "test:e2e:migrate": "dotenv -e .env.test -- payload migrate"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.0.0",
@@ -45,11 +48,13 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "3.1124.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "dotenv": "^17.4.2",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.1.0",
     "tailwindcss": "^4.0.0",

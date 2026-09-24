@@ -1,0 +1,35 @@
+{
+  // ==========================================================================
+  // PLAYWRIGHT İÇİN AYRI TSCONFIG — ÜRETİM DERLEMESİNE DOKUNMAZ
+  // ==========================================================================
+  // NEDEN GEREKLİ
+  // --------------------------------------------------------------------------
+  // Testler Payload yapılandırmasını KENDİ SÜRECİNDE yükler (tohumlama ve
+  // veritabanı doğrulaması için). O zincirde `src/hooks/revalidate.ts`
+  // `next/cache` içe aktarır.
+  //
+  // `next` paketinin `exports` haritası YOKTUR (ölçüldü) ve düz Node ESM
+  // uzantı tamamlama yapmaz: `next/cache` dosya yolu olarak aranır, dosyanın
+  // gerçek adı `next/cache.js`tir ve çözümleme ERR_MODULE_NOT_FOUND ile
+  // patlar. Next kendi derleyicisinde bu sorun yaşanmaz; sorun yalnızca
+  // Playwright'ın Node ESM yükleyicisinde ortaya çıkar.
+  //
+  // ÇÖZÜM: yalnızca TEST sürecinde `next/cache` bir sahte modüle eşlenir.
+  // Uygulama sunucusu (`next start`) AYRI bir süreçtir ve gerçek `next/cache`i
+  // kullanmaya devam eder; bu dosya üretim derlemesinde hiç okunmaz.
+  //
+  // `src/hooks/revalidate.ts`i `next/cache.js` yazacak şekilde değiştirmek de
+  // işe yarardı ama uygulama kodunu yalnızca test altyapısı için bozmak
+  // olurdu — ve Next'in ileride ekleyebileceği bir `exports` haritası o
+  // yazımı geçersiz kılardı.
+  // ==========================================================================
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // `extends` `paths`i TAMAMEN değiştirir; taban eşlemeler tekrar yazılmalı.
+    "paths": {
+      "@/*": ["./src/*"],
+      "@payload-config": ["./src/payload.config.ts"],
+      "next/cache": ["./e2e/yardimcilar/next-cache-testte.ts"]
+    }
+  }
+}
