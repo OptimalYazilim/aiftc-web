@@ -10,9 +10,14 @@ karşılığını anlatır. İki okuyucusu vardır:
 - **Panel editörü** → "Bu kaydı kime açtım?" (Bölüm 1–3)
 - **Sistem yöneticisi / geliştirici** → "Kural nerede zorlanıyor?" (Bölüm 4–6)
 
-> **Kod yazacaksanız önce Bölüm 9 ve 10'u okuyun.** Orada, doğru yazılmış bir
-> erişim kuralının hiç çalışmadığı üç gerçek durum anlatılıyor. Kuralın var
-> olması, uygulandığı anlamına gelmiyor.
+Bölüm 11 ayrı bir eksendir: **erişilebilirlik** (WCAG 2.2 A / 122 maddelik
+kontrol listesi). Aynı belgede durur çünkü aynı sınıftandır — orada da kuralın
+yazılmış olması, uygulandığı anlamına gelmiyor.
+
+> **Kod yazacaksanız önce Bölüm 9, 10 ve 11.10'u okuyun.** Orada, doğru
+> yazılmış bir kuralın hiç çalışmadığı gerçek durumlar anlatılıyor: erişim
+> kuralı sorguya girmiyor, `aria-live` duyurmuyor, `focus()` hiçbir şey
+> yapmıyor. Hepsi ölçülerek bulundu.
 
 ---
 
@@ -1165,6 +1170,286 @@ paylaşılmış bağlantısı sessizce 403'e dönerdi.
 
 ---
 
+## 11. Erişilebilirlik — WCAG 2.2 A ve 122 maddelik kontrol listesi
+
+Bu bölüm, **"Web Siteleri ve Mobil Uygulamaların Erişilebilirliği Kontrol
+Listesi — A Seviyesi"** (v2.2.20.00, 122 madde / 31 WCAG başlığı) karşısında
+yapılan denetimi ve uygulanan düzeltmeleri anlatır.
+
+Listenin okunma kuralı: **`*` işaretli maddelerin cevabı "evet", `**` işaretli
+tek maddenin (95) cevabı "hayır" olmalıdır.**
+
+> Erişilebilirlik bu belgeye, erişim kontrolüyle aynı sebepten girdi: ikisi de
+> **"kural yazılmış olması, uygulandığı anlamına gelmiyor"** sınıfından. Bir
+> `aria-live` etiketi DOM'dadır ama duyurulmaz; bir `focus-visible` sınıfı
+> derlenmiştir ama çalışmaz. Aşağıdaki her madde ÖLÇÜLMÜŞTÜR.
+
+### 11.1 Zaten karşılanıyordu — dokunulmadı
+
+Denetim, kod tabanının büyük kısmının şartı zaten sağladığını gösterdi. Bunlar
+**yeniden yazılmadı**; doğrulandı ve olduğu gibi bırakıldı:
+
+| Madde | Durum |
+|---|---|
+| 2 — görsel alternatif metni | 16/16 `<Image>` `alt` taşıyor; dekoratifler `alt=""`, `Media.alt` CMS'te `required: true` |
+| 22 — başlık hiyerarşisi | `h1` (hero) → `h2` (bölüm) → `h3` (kart) → `h4` (takvim), atlama yok |
+| 24 / 26 — paragraf ve liste etiketleri | `<p>`, `<ul>`/`<ol>`/`<dl>` kullanılıyor |
+| 29/30/31 — tablo etiketleri | Sitede veri tablosu **yok**; gerekmedi |
+| 33 — navigasyon rolü | 18 ayrı `<nav aria-label>` landmark'ı |
+| 35 / 114 / 115 / 118 — form etiketleri | Her alanın görünür `<label htmlFor>`ı var |
+| 51 / 63 — klavye kontrolü | `onClick` taşıyan `div`/`span` **yok**; hepsi gerçek `<button>`/`<a>` |
+| 77 — blokların pas geçilmesi | `skip-link`, DOM'daki ilk odaklanabilir öğe |
+| 93 — sayfa dili | `<html lang>` üç dilde doğru |
+| 122 — ad/rol/durum/değer | `aria-expanded`, `aria-controls`, `aria-current`, `aria-pressed`, `aria-live` yerinde |
+
+### 11.2 Formlar — hata özeti ve alan kümeleri
+
+**Madde 103 · 104 · 105 · 106 · 107 · 112 · 113 · 117 · 89**
+
+Alan bazlı hata mesajları vardı ama **hata özeti yoktu**: uzun bir formda ekran
+okuyucu kullanıcısı kaç hata olduğunu ancak formu baştan sona gezerek
+öğreniyordu.
+
+`src/components/ui/FormErrorSummary.tsx` — formun başında, `role="alert"`,
+odak oraya taşınır, her satır ilgili alana `#id` ile bağlanır (105: kullanıcı
+araya giren alanları tek tek gezmeden hatalı alana atlar) ve hata sayısı
+**sayfa başlık çubuğuna** yazılır (106).
+
+`src/components/ui/FieldGroup.tsx` — `<fieldset>`/`<legend>` ile benzer alanlar
+gruplanır (112/113). Kayıt formunda iki küme (kimlik / parola), iletişim
+formunda dört (talep türü / iletişim / mesaj / açık rıza).
+
+> **`min-w-0` ZORUNLUDUR.** `fieldset`in `min-inline-size: min-content`
+> tarayıcı varsayılanı, içine konan grid düzenlerini taşırır. Sınıf
+> düşürülürse iki sütunlu alan ızgarası mobilde yatay kaydırma üretir.
+> Ölçüldü: 375 px'te dört `fieldset` de 335 px, taşma yok.
+
+Hata mesajı **görünür etiketle başlar** (89): `"Ad Soyad: Bu alan zorunludur"`.
+Yalnız "Bu alan zorunludur" hangi alan olduğunu söylemezdi.
+
+**Ölçüm** (`/tr/kayit`, boş form gönderimi):
+
+```
+sayfa başlığı → "(3 hata) — Kayıt | AIFTC"
+özet başlığı  → "Formda 3 hata var…"
+odak          → özet kutusunda
+bağlantıya tıkla → odak ilgili <input> üzerinde
+```
+
+### 11.3 Klavye odağı — hover'ın karşılığı
+
+**Madde 59** — *"Rengi değişen bağlantı klavye ile de renk değiştirebiliyor mu?"*
+
+Sitede hover'da renk değiştiren **151 sınıf** vardı, hiçbirinin odak karşılığı
+yoktu. İki farklı kalıp gerektiği için ikisi ayrı ayrı uygulandı:
+
+| Öğe | Eklenen |
+|---|---|
+| Doğrudan `<a>` / `<button>` | `focus-visible:` |
+| Kart sarmalayıcısı (tıklanabilir öğe **içeride**) | `focus-within:` |
+| Sarmalayıcıya bağlı iç öğeler (`group-hover:`) | `group-focus-within:` |
+
+Kart sarmalayıcısına `focus-visible:` yazmak **işe yaramazdı**: odaklanan öğe
+sarmalayıcı değil içindeki bağlantıdır.
+
+### 11.4 Modallar — odak girişi, Escape, odak dönüşü
+
+**Madde 56 · 57 · 62 · 63**
+
+Native `<dialog>` + `showModal()` odak tuzağını ve üst katmanı ücretsiz verir
+(bkz. `useModalDialog` docblock'u). Eksik olan ikisi eklendi:
+
+- **Açılışta** odak pencere kabuğuna alınır — aksi hâlde `showModal()` odağı
+  pencerenin ilk odaklanabilir öğesine atar ve okuyucu içeriği ortadan okumaya
+  başlar.
+- **Kapanışta** odak pencereyi AÇAN öğeye döner.
+
+Aynı düzen disclosure panellerinde de kuruldu: `HeaderShell` (mobil menü) ve
+`MainNav` (alt menü, odak panelden çıkınca kapanır).
+
+**Ölçüm** (kütüphane künye sayfası, gerçek Escape tuşu):
+
+```
+açılış  → :modal true · odak DIALOG'da · gövde kaydırma kilitli
+Escape  → kapandı · odak TETİKTE · kaydırma geri verildi
+Kapat ⨯ → kapandı · odak TETİKTE
+mobil menü: açılışta odak ilk bağlantıda, Escape'te düğmede
+```
+
+### 11.5 Dinamik bildirimler — kalıcı canlı bölge
+
+**Madde 96 · 103 · 109**
+
+`role="status"` örtük `aria-live` taşır, ama ekran okuyucular canlı bölgeyi
+**bölge DOM'da zaten varken içeriği değişirse** duyurur. Bu projedeki
+bildirimlerin çoğu içerikleriyle **birlikte** DOM'a giriyordu:
+
+```tsx
+{sonuc ? <AuthNotice …>…</AuthNotice> : null}
+```
+
+Bölge de metin de aynı anda belirdiği için okuyucunun "değişiklik" sayacağı bir
+öncesi yok. En pahalı örnek iletişim formu: gönderim başarılı olunca **formun
+tamamı** yerini bildirime bırakıyor.
+
+`src/components/ui/LiveRegion.tsx` sayfada **her zaman** durur (boşken bile) ve
+yalnızca metni değişir. Görsel bildirimler olduğu gibi kaldı; bu bölge onların
+sesli karşılığıdır.
+
+### 11.6 Rota değişimi — başlık ve odak
+
+**Madde 78 · 79 · 80 · 81**
+
+App Router istemci tarafı gezinmede sayfayı yenilemez. Ölçüm ikiye ayırdı:
+
+```
+/tr → /tr/kutuphane
+document.title         → doğru güncellendi        ✅
+document.activeElement → BODY                      ❌
+```
+
+Başlıkta sorun yoktu (`generateMetadata` her rotada çalışıyor). Odak
+kayboluyordu: tıklanan bağlantı DOM'dan kalkınca odak `<body>`ye düşüyor ve
+klavye kullanıcısı her geçişte **belgenin en başına** dönüyordu.
+
+`src/components/layout/RouteFocus.tsx` odağı `<main id="main-content">`
+üzerine taşır ve yeni sayfa başlığını `aria-live` ile duyurur.
+
+> **İlk yüklemede çalışmaz — bilinçli.** Sayfa ilk açıldığında odağı taşımak,
+> "İçeriğe geç" atlama bağlantısını erişilemez hâle getirir; o bağlantının tüm
+> amacı odak belgenin başındayken ilk sırada olmaktır.
+
+> **Odak `<h1>`e değil `<main>`e gider.** `<h1>` odaklanabilir değildir ve onu
+> `tabIndex={-1}` yapmak sayfadaki her başlığı ayrı bir odak hedefine çevirme
+> baskısı yaratır. `<main>` bir landmark'tır: okuyucu "ana içerik" der, hemen
+> ardından `<h1>`i okur.
+
+### 11.7 Zaman sınırı — oturum uyarısı
+
+**Madde 66 · 67**
+
+`Users.auth.tokenExpiration = 60 * 60 * 8` — oturum jetonu giriş anından
+**8 saat** sonra geçersiz olur. Hareketsizlik değil, **mutlak** bir süre.
+
+Uyarı yoktu. Yaşanan şuydu: süresi dolan katılımcı korumalı bir belgeye
+tıkladığında çıplak bir 403 alıyor, sebebini anlamıyor ve bunu arıza sanıyordu.
+
+Madde 67'nin istisnaları burada geçerli **değil**: süre gerçek zamanlı bir
+etkinliğin parçası değil, uzatmak işlemi geçersiz kılmıyor ve sınır 20 saatten
+kısa.
+
+`src/components/account/SessionTimeoutNotice.tsx` — `/api/users/me` içindeki
+`exp` okunur, bitişe **5 dakika** kala şerit belirir, *"Oturumu uzat"* düğmesi
+`/api/users/refresh-token` çağırır. Uzatma sayısı **sınırsız** (67-c "en az 10
+kez" şartının üstünde). Anonim ziyaretçide hiçbir şey basılmaz, zamanlayıcı
+kurulmaz.
+
+**Ölçüm** (`tokenExpiration` geçici olarak 6 dakikaya indirilip geri alındı):
+
+| Kalan süre | Şerit |
+|---|---|
+| 5.90 dk | yok (eşik 5 dk) |
+| 3.75 dk | **var** — "…4 dakika içinde sonlanacak…", `role="status"` |
+| uzatıldı | 3.56 dk → **5.96 dk**, şerit kayboldu |
+| anonim | yok |
+
+### 11.8 Değişiklik gerektirmeyen iki başlık — ölçülüp bırakıldı
+
+**Madde 68 · 69 · 72 — otomatik oynayan içerik.** Taranan: `autoPlay` (0),
+`carousel`/`slider` (0), `setInterval` (0), döngüsel CSS animasyonu (0). Tek
+`<video>` (`MediaDialog`) `controls` + `preload="metadata"` ile gelir,
+kullanıcı tıklamadan başlamaz. **Var olmayan bir carousel'e "Durdur" düğmesi
+eklenmedi.**
+
+**Madde 87 · 88 — işaretçi iptali.** `onMouseDown` / `onPointerDown` /
+`onTouchStart` ile **eylem gerçekleştiren hiçbir bileşen yok**; tüm
+etkinleştirmeler `onClick` (yani `mouseup`) üzerinde, dolayısıyla kullanıcı
+basılı tutup imleci dışarı kaydırarak iptal edebiliyor. Tek `pointerdown`
+dinleyicisi `MainNav`'ın dışarı tıklayınca menüyü kapatmasıdır — bir
+etkinleştirme değil, tek tıkla geri alınabilir bir kapatma.
+
+**Madde 95** (cevabı "hayır" olmalı) — `onFocus` ile bağlam değiştiren öğe yok.
+Tek yönlendirme kullanıcının **Gönder** eylemine bağlı, bu da Madde 97'ye uyar.
+
+### 11.9 Sadece renkle bilgi — tek ihlal
+
+**Madde 45 · 46 · 47**
+
+Durum rozetlerinin tamamı zaten doğruydu: altı ayrı yerde
+`<span className="sr-only">{statusPrefix}: </span>` + görünür metin.
+
+Tek ihlal takvimdeydi: geçmiş eğitimler **yalnızca `opacity-70`** ile
+işaretleniyordu. Opaklık ne renk ne metindir — ekran okuyucu hiç duymaz, düşük
+görme keskinliğinde %70 ile %100 güvenilir biçimde ayırt edilemez; takvimde
+geçmiş ve yaklaşan eğitim birbirine karışıyordu. `sr-only` metin eklendi,
+soluklaştırma yerinde kaldı (artık tek taşıyıcı değil).
+
+---
+
+### 11.10 Ölçülmüş tuzaklar — erişilebilirlik tarafı
+
+Bölüm 9'un erişilebilirlik karşılığı. Beşi de bu depoda gerçekten oluştu.
+
+#### 11.10.1 `t()` ICU parametresi bekleyen metni ham anahtar olarak basar
+
+Sayfa başlığı şablonu `t('errorTitlePrefix')` ile alınıyordu. Metin `{sayi}`
+içerdiği ve `t()` parametre almadığı için next-intl anahtarın **kendisini**
+döndürdü:
+
+```
+document.title → "auth.errorTitlePrefix — Kayıt | AIFTC"
+```
+
+Yerleştirmeyi bileşen yaptığı için **ham** dizge gerekiyordu:
+`String(t.raw('errorTitlePrefix'))`.
+
+#### 11.10.2 StrictMode, efekt içinde yakalanan değeri bozar
+
+Modal kapanınca odak açan öğeye dönmüyordu. `document.activeElement` efektin
+içinde **yerel değişkene** alınıyordu; StrictMode efekti iki kez çalıştırır:
+
+```
+efekt1    → dialog.focus()        odak pencerede
+temizlik1 → acan.focus()          odak tetikleyicide (doğru)
+efekt2    → acan = activeElement  ← bu anda yakalanan değer kararsız
+```
+
+`focus` çağrıları izlenerek ölçüldü: temizlik1'de tetikleyiciye dönüş
+görüldü, ama **gerçek kapanışta hiçbir `focus` çağrısı yapılmadı**. Değer
+`useRef` ile bileşen ömrü boyunca **tek kez** doldurulunca düzeldi.
+
+> **Kural:** açan öğe, odak tuzağı, kaydırma konumu gibi "açılışta yakalanıp
+> kapanışta geri verilen" her değer `useRef`te tutulmalıdır — efekt gövdesinde
+> değil.
+
+#### 11.10.3 `<dialog>` varsayılan olarak odaklanamaz
+
+`dialog.focus()` sessizce başarısız oluyordu; `<dialog>` odaklanabilir bir öğe
+değildir. `tabIndex={-1}` eklenmeden bu çağrının hiçbir etkisi yok.
+
+#### 11.10.4 Programla çağrılan `.focus()` CSS renk geçişini başlatmıyor
+
+Odak renk değişimleri ilk ölçümlerde "çalışmıyor" göründü: sınıf DOM'da,
+kural CSS'te, `:focus-within` eşleşiyor — ama `getComputedStyle` eski rengi
+veriyordu. Sebep koddan değildi:
+
+```
+transition: none  → renk anında hedefe gitti (rgb(217,213,204) → rgb(6,40,34))
+gerçek fare hover → geçiş normal çalıştı
+```
+
+Otomasyon ortamında `element.focus()` `transition`ı tetiklemiyor. **Kuralı
+değil ölçüm yöntemini düzeltmek gerekiyordu.** Odak stillerini doğrularken
+`transition: none` ile veya gerçek klavye/fare olayıyla ölçün.
+
+#### 11.10.5 Canlı bölge, içeriğiyle birlikte DOM'a girerse duyurulmaz
+
+Bölüm 11.5'in özeti, ama tuzak olarak da yazılmayı hak ediyor: `role="status"`
+eklemek **yetmez**. Bölge, metin değişmeden önce DOM'da olmalıdır. Koşullu
+render edilen bir bildirim kutusu bu şartı sağlamaz.
+
+---
+
 ## Kaynak dosyalar
 
 | Ne | Nerede |
@@ -1189,3 +1474,12 @@ paylaşılmış bağlantısı sessizce 403'e dönerdi.
 | Dosyaların diskteki yeri | `src/collections/DocumentFiles.ts` → `upload.staticDir` |
 | Üretimde dizin/cilt | `Dockerfile`, `docker-compose.yml` |
 | Şema sorusu sürücüsü | `src/scripts/run-with-schema-prompts.mjs` |
+| S3 kovası gizlilik denetimi | `src/scripts/s3-gizlilik-denetimi.ts` → `pnpm s3:denetle` |
+| Bot koruması (CAPTCHA) | `src/lib/captcha.ts`, `src/collections/Users.ts` → `hooks.beforeOperation` |
+| Abonelik durumu (tek kaynak) | `src/lib/subscription.ts` → `abonelikDurumu` |
+| Form hata özeti | `src/components/ui/FormErrorSummary.tsx` |
+| Form alan kümesi | `src/components/ui/FieldGroup.tsx` |
+| Kalıcı canlı bölge | `src/components/ui/LiveRegion.tsx` |
+| Modal odak yönetimi | `src/components/library/useModalDialog.ts` |
+| Rota değişiminde odak | `src/components/layout/RouteFocus.tsx` |
+| Oturum süresi uyarısı | `src/components/account/SessionTimeoutNotice.tsx` |
