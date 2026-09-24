@@ -64,6 +64,7 @@ const hataKodu = (govde: unknown): string | null => {
 
 export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
   const t = useTranslations('auth')
+  const tn = useTranslations('nav')
 
   /** Hata ozetinde kullanilacak GORUNUR etiketler (Madde 89). */
   const etiketler: Record<keyof Alanlar, string> = {
@@ -74,6 +75,8 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
   /* Sabit alan kimlikleri — hata ozeti `#id` ile baglanir (Madde 105/107). */
   const taban = useId()
   const alanId = (ad: keyof Alanlar) => `${taban}-${ad}`
+  /** e-Devlet düğmesinin açıklamasına `aria-describedby` ile bağlanır. */
+  const edevletNotId = `${taban}-edevlet`
 
   const hataListesiUret = (h: Hatalar) =>
     (Object.keys(h) as (keyof Alanlar)[])
@@ -306,6 +309,85 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
       <button type="submit" disabled={durum === 'gonderiliyor'} className={AUTH_BUTTON}>
         {durum === 'gonderiliyor' ? t('loginSending') : t('loginSubmit')}
       </button>
+
+      {/*
+        ======================================================================
+        e-DEVLET İLE GİRİŞ — HENÜZ BAĞLI DEĞİL
+        ======================================================================
+        Entegrasyon kurulmadı; düğme bir YER TUTUCUDUR ve bunu kullanıcıdan
+        gizlemez. "Yakında" rozeti görünür metindir, süslemesi değil.
+
+        ----------------------------------------------------------------------
+        RESMÎ AMBLEM KULLANILMADI — BİLİNÇLİ
+        ----------------------------------------------------------------------
+        e-Devlet Kapısı bir kamu kimlik sistemidir ve amblemi kurumun resmî
+        işaretidir. Çalışmayan bir düğmenin üzerine o amblemi koymak, var
+        olmayan bir entegrasyonu RESMÎ GÖRÜNDÜRÜR. Nötr bir kimlik kartı
+        ikonu kullanıldı; gerçek entegrasyon kurulduğunda marka varlıkları
+        kurumun kendi yönergesine göre eklenmelidir.
+
+        ----------------------------------------------------------------------
+        `disabled` DEĞİL `aria-disabled` — ERİŞİLEBİLİRLİK GEREKÇESİ
+        ----------------------------------------------------------------------
+        `disabled` özniteliği düğmeyi ODAK SIRASINDAN TAMAMEN ÇIKARIR: klavye
+        ve ekran okuyucu kullanıcısı böyle bir seçeneğin VAR OLDUĞUNU bile
+        öğrenemez. Oysa buradaki bilgi ("bu yol yakında açılacak") tam olarak
+        duyurulması gereken şey.
+
+        `aria-disabled` düğmeyi keşfedilebilir bırakır, "devre dışı" diye
+        duyurur ve `aria-describedby` ile gerekçeyi bağlar. Tıklama
+        `preventDefault` ile değil, `type="button"` ve işleyici olmamasıyla
+        etkisiz kalır — form GÖNDERİLMEZ.
+
+        Görsel olarak da pasif okunur: sönük metin + kesikli kenarlık. Bilgi
+        yalnızca renkle verilmez (Kontrol Listesi 47), rozet metni taşır.
+      */}
+      <div className="space-y-3">
+        {/*
+          AYIRAÇ — iki giriş yolu arasındaki seçimi görünür kılar.
+          Çizgi `aria-hidden`: "veya" kelimesi metin olarak zaten okunuyor,
+          çizgiyi ayrıca duyurmanın faydası yok.
+        */}
+        <p className="flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-ink-500">
+          <span aria-hidden="true" className="h-px flex-1 bg-line" />
+          {t('orDivider')}
+          <span aria-hidden="true" className="h-px flex-1 bg-line" />
+        </p>
+
+        <button
+          type="button"
+          aria-disabled="true"
+          aria-describedby={edevletNotId}
+          className="inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-sm border border-dashed border-line-strong bg-surface px-6 text-sm font-bold text-ink-500"
+        >
+          <svg
+            aria-hidden="true"
+            focusable="false"
+            viewBox="0 0 20 20"
+            width="1.15em"
+            height="1.15em"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="2" y="4" width="16" height="12" rx="2" />
+            <circle cx="7" cy="9.5" r="1.8" />
+            <path d="M4.2 13.6c.5-1.3 1.6-2 2.8-2s2.3.7 2.8 2M12 8.5h4M12 11.5h3" />
+          </svg>
+
+          {t('edevletSubmit')}
+
+          <span className="rounded-sm bg-surface-alt px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-ink-600">
+            {tn('comingSoonBadge')}
+          </span>
+        </button>
+
+        <p id={edevletNotId} className="text-xs leading-relaxed text-ink-500">
+          {t('edevletNotice')}
+        </p>
+      </div>
 
       {/*
         İKİ İKİNCİL YOL, TEK ŞERİTTE.

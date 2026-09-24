@@ -541,7 +541,10 @@
     "errorTitlePrefix": "({sayi} hata)",
     "groupIdentity": "Kimlik ve kurum bilgileri",
     "groupPassword": "Parola",
-    "groupCredentials": "Giriş bilgileri"
+    "groupCredentials": "Giriş bilgileri",
+    "orDivider": "veya",
+    "edevletSubmit": "e-Devlet ile Giriş Yap",
+    "edevletNotice": "e-Devlet Kapısı ile giriş henüz etkin değildir. Bu seçenek hazır olduğunda burada açılacaktır; şimdilik e-posta ve parolanızla giriş yapın."
   },
   "subscription": {
     "expiredTitle": "Abonelik süreniz doldu",

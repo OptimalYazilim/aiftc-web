@@ -541,7 +541,10 @@
     "errorTitlePrefix": "({sayi} errors)",
     "groupIdentity": "Identity and organisation",
     "groupPassword": "Password",
-    "groupCredentials": "Sign-in details"
+    "groupCredentials": "Sign-in details",
+    "orDivider": "or",
+    "edevletSubmit": "Sign in with e-Devlet",
+    "edevletNotice": "Sign-in through the e-Devlet gateway is not active yet. The option will open here once it is ready; for now, please use your e-mail address and password."
   },
   "subscription": {
     "expiredTitle": "Your subscription has expired",

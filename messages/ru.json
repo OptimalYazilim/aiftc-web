@@ -541,7 +541,10 @@
     "errorTitlePrefix": "(ошибок: {sayi})",
     "groupIdentity": "Личные и организационные данные",
     "groupPassword": "Пароль",
-    "groupCredentials": "Данные для входа"
+    "groupCredentials": "Данные для входа",
+    "orDivider": "или",
+    "edevletSubmit": "Вход через e-Devlet",
+    "edevletNotice": "Вход через портал e-Devlet пока не активен. Этот способ появится здесь, когда будет готов; сейчас используйте адрес электронной почты и пароль."
   },
   "subscription": {
     "expiredTitle": "Срок вашей подписки истёк",
