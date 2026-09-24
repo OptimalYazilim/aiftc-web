@@ -87,7 +87,7 @@ export const CookieBanner: React.FC<Props> = ({
           {policyHref ? (
             <Link
               href={policyHref}
-              className="text-accent-700 underline underline-offset-4 hover:text-accent-600"
+              className="text-accent-700 underline underline-offset-4 hover:text-accent-600 focus-visible:text-accent-600"
             >
               {t('policyLink')}
             </Link>
@@ -99,7 +99,7 @@ export const CookieBanner: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => decide('denied')}
-              className={`${buttonBase} border border-line-strong text-ink-700 hover:bg-surface-alt`}
+              className={`${buttonBase} border border-line-strong text-ink-700 hover:bg-surface-alt focus-visible:bg-surface-alt`}
             >
               {t('reject')}
             </button>
@@ -107,7 +107,7 @@ export const CookieBanner: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => decide('granted')}
-            className={`${buttonBase} bg-brand-700 text-white hover:bg-brand-800`}
+            className={`${buttonBase} bg-brand-700 text-white hover:bg-brand-800 focus-visible:bg-brand-800`}
           >
             {t('accept')}
           </button>

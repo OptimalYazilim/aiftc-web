@@ -116,7 +116,7 @@ export const LibraryCta = async ({ locale }: { locale: Locale }) => {
 
           <Link
             href={href('library', locale)}
-            className="group inline-flex min-h-12 shrink-0 items-center gap-2 rounded-sm bg-brand-700 px-6 font-bold text-white transition-colors hover:bg-brand-800"
+            className="group inline-flex min-h-12 shrink-0 items-center gap-2 rounded-sm bg-brand-700 px-6 font-bold text-white transition-colors hover:bg-brand-800 focus-visible:bg-brand-800"
           >
             {t('homeCtaAction')}
             <svg

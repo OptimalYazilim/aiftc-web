@@ -90,7 +90,7 @@ export const ApplicationCta = async ({ locale, trainingId, status, target, servi
   }
 
   // --- Başvuruya açık ------------------------------------------------------
-  const activeClass = `${BUTTON_BASE} bg-brand-700 text-white hover:bg-brand-800`
+  const activeClass = `${BUTTON_BASE} bg-brand-700 text-white hover:bg-brand-800 focus-visible:bg-brand-800`
 
   /*
     İletişim birimine yönlendirme: harici sistem yok, iletişim sayfasına gider.

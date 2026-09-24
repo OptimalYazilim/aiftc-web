@@ -165,7 +165,7 @@ export const MediaDialog: React.FC<Props> = ({
           type="button"
           onClick={onClose}
           /* WCAG 2.2 — 2.5.8: 44×44 dokunma hedefi. */
-          className="-mr-2 -mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink-600 transition-colors hover:bg-surface-alt hover:text-shell-900"
+          className="-mr-2 -mt-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink-600 transition-colors hover:bg-surface-alt hover:text-shell-900 focus-visible:bg-surface-alt focus-visible:text-shell-900"
         >
           <svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" width="20" height="20">
             <path
@@ -292,7 +292,7 @@ export const MediaDialog: React.FC<Props> = ({
               <a
                 href={video.url}
                 download
-                className="group/dl inline-flex min-h-11 items-center gap-2 font-semibold text-white underline decoration-white/40 decoration-2 underline-offset-4 transition-colors hover:decoration-white"
+                className="group/dl inline-flex min-h-11 items-center gap-2 font-semibold text-white underline decoration-white/40 decoration-2 underline-offset-4 transition-colors hover:decoration-white focus-visible:decoration-white"
               >
                 {downloadLabel}
                 <svg

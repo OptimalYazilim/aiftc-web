@@ -27,7 +27,7 @@ type Props = {
 export const ArrowLink: React.FC<Props> = ({ href, children, className = '' }) => (
   <Link
     href={href}
-    className={`group inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap py-2 font-medium text-brand-800 underline underline-offset-4 hover:text-brand-700 ${className}`}
+    className={`group inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap py-2 font-medium text-brand-800 underline underline-offset-4 hover:text-brand-700 ${className} focus-visible:text-brand-700`}
   >
     {children}
     <svg

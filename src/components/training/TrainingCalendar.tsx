@@ -380,7 +380,7 @@ const CalendarRow: React.FC<{
         <h4 className="text-lg font-semibold leading-snug tracking-tight">
           <Link
             href={detailHref('training-program', locale, item.slug ?? '')}
-            className="text-shell-900 decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline"
+            className="text-shell-900 decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline focus-visible:text-brand-800"
           >
             {item.title}
           </Link>
@@ -444,7 +444,7 @@ const CalendarRow: React.FC<{
         <p className="mt-4">
           <Link
             href={detailHref('training-program', locale, item.slug ?? '')}
-            className="group inline-flex min-h-11 items-center gap-2 rounded-sm border border-line-strong px-4 text-sm font-semibold text-shell-900 transition-colors hover:border-brand-700 hover:bg-brand-50/60 hover:text-brand-800"
+            className="group inline-flex min-h-11 items-center gap-2 rounded-sm border border-line-strong px-4 text-sm font-semibold text-shell-900 transition-colors hover:border-brand-700 hover:bg-brand-50/60 hover:text-brand-800 focus-visible:border-brand-700 focus-visible:bg-brand-50/60 focus-visible:text-brand-800"
           >
             {labels.details}
             <span className="sr-only"> — {item.title}</span>

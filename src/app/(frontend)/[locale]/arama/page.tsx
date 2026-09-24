@@ -299,7 +299,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
             />
             <button
               type="submit"
-              className="ease-editorial inline-flex min-h-12 items-center justify-center rounded-full bg-shell-950 px-7 font-bold text-white transition-colors duration-300 hover:bg-shell-900"
+              className="ease-editorial inline-flex min-h-12 items-center justify-center rounded-full bg-shell-950 px-7 font-bold text-white transition-colors duration-300 hover:bg-shell-900 focus-visible:bg-shell-900"
             >
               {t('submit')}
             </button>
@@ -352,7 +352,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
                         {target ? (
                           <Link
                             href={target}
-                            className="text-shell-900 decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline"
+                            className="text-shell-900 decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline focus-visible:text-brand-800"
                           >
                             {row.title}
                           </Link>

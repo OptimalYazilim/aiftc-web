@@ -242,7 +242,7 @@ export default async function NewsDetailPage({ params }: Props) {
         <p className="mt-12">
           <Link
             href={href('news', locale)}
-            className="inline-flex min-h-11 items-center rounded border border-line-strong px-5 font-semibold text-brand-800 hover:border-brand-700"
+            className="inline-flex min-h-11 items-center rounded border border-line-strong px-5 font-semibold text-brand-800 hover:border-brand-700 focus-visible:border-brand-700"
           >
             ← {t('backToList')}
           </Link>

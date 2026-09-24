@@ -315,7 +315,7 @@ export const HomeHero = async ({ locale }: { locale: Locale }) => {
  */
 const HeroButton: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
   const className =
-    'ease-editorial inline-flex min-h-12 items-center justify-center rounded-sm bg-white px-7 text-base font-bold text-shell-900 transition-colors duration-300 hover:bg-brand-50'
+    'ease-editorial inline-flex min-h-12 items-center justify-center rounded-sm bg-white px-7 text-base font-bold text-shell-900 transition-colors duration-300 hover:bg-brand-50 focus-visible:bg-brand-50'
 
   if (!link.href) return null
 
@@ -338,7 +338,7 @@ const HeroButton: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
  */
 const HeroTextLink: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
   const className =
-    'group inline-flex min-h-12 items-center gap-2 text-base font-semibold text-white underline decoration-white/50 decoration-2 underline-offset-8 transition-colors hover:decoration-white'
+    'group inline-flex min-h-12 items-center gap-2 text-base font-semibold text-white underline decoration-white/50 decoration-2 underline-offset-8 transition-colors hover:decoration-white focus-visible:decoration-white'
 
   const content = (
     <>

@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl'
 import React, { useActionState, useId, useState } from 'react'
 
 import { FOCUS_COUNTRIES, SUBMISSION_TYPES } from '@/fields/options'
+import { FieldGroup } from '@/components/ui/FieldGroup'
+import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
 import type { Locale } from '@/i18n/locales'
 import { optionLabel } from '@/lib/optionLabel'
 
@@ -193,6 +195,32 @@ export const ContactForm: React.FC<ContactFormProps> = ({
 
   const errors = state.fieldErrors ?? {}
 
+  /*
+    HATA ÖZETİ LİSTESİ  (Kontrol Listesi 103 · 105 · 106 · 107)
+    Alan bazlı mesajlar yerinde kalır; bu liste onların yerine GEÇMEZ. Uzun
+    bir formda kullanıcının "kaç hata var, nerede" sorusunu tek bakışta
+    yanıtlar ve her satır ilgili alana bağlantı verir — araya giren alanları
+    tek tek gezmek gerekmez (105).
+
+    Mesaj GÖRÜNÜR ETİKETLE başlar (89): "Ad Soyad: Bu alan gereklidir".
+    Yalnız "Bu alan gereklidir" hangi alan olduğunu söylemezdi.
+  */
+  const hataEtiketleri: Record<string, string> = {
+    fullName: t('fieldFullName'),
+    organization: t('fieldOrganization'),
+    email: t('fieldEmail'),
+    subject: t('fieldSubject'),
+    message: t('fieldMessage'),
+    consent: t('fieldConsent'),
+  }
+
+  const hataListesi = Object.entries(errors)
+    .filter(([, mesaj]) => Boolean(mesaj))
+    .map(([alan, mesaj]) => ({
+      alanId: `${base}-${alan}`,
+      mesaj: `${hataEtiketleri[alan] ?? alan}: ${mesaj}`,
+    }))
+
   if (state.status === 'success') {
     return (
       /*
@@ -261,11 +289,25 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         </p>
       ) : null}
 
+      {/* Alan bazlı hataların listesi — formun başında, alanlardan önce. */}
+      <FormErrorSummary
+        hatalar={hataListesi}
+        baslik={t('errorSummaryCount', { sayi: hataListesi.length })}
+        belgeBasligiSablonu={String(t.raw('errorTitlePrefix'))}
+      />
+
       {/*
         TALEP TÜRÜ — Şartname 6.4 "başvuru süreçleri" ile 6.9 "iletişim" aynı
         gelen kutusuna düşer; ayrımı bu alan yapar. Sunucu değeri yeniden
         doğrular (bkz. actions.ts), buradaki seçim tek başına güvenilmez.
       */}
+      {/*
+        BENZER ALANLAR GRUPLANDI  (Kontrol Listesi 112 · 113)
+        Dort anlamli kume: talep turu, iletisim bilgileri, mesaj, onay.
+        `fieldset` kenarliksiz ve dolgusuzdur — gorsel duzen degismez,
+        degisen yalnizca yardimci teknolojinin duyurdugu yapidir.
+      */}
+      <FieldGroup baslik={t('groupRequest')} className="space-y-5">
       <SelectField
         id={`${base}-submissionType`}
         name="submissionType"
@@ -300,6 +342,9 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         </SelectField>
       ) : null}
 
+      </FieldGroup>
+
+      <FieldGroup baslik={t('groupContact')} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <Field
           id={`${base}-fullName`}
@@ -355,6 +400,9 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         requiredHint={t('requiredHint')}
       />
 
+      </FieldGroup>
+
+      <FieldGroup baslik={t('groupMessage')} className="space-y-5">
       <Field
         id={`${base}-subject`}
         name="subject"
@@ -376,8 +424,10 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         requiredHint={t('requiredHint')}
       />
 
+      </FieldGroup>
+
       {/* --- Açık rıza (Şartname 12.2) ------------------------------------ */}
-      <div>
+      <FieldGroup baslik={t('groupConsent')} gizliBaslik>
         <div className="flex gap-3">
           <input
             id={`${base}-consent`}
@@ -400,12 +450,12 @@ export const ContactForm: React.FC<ContactFormProps> = ({
             {errors.consent}
           </p>
         ) : null}
-      </div>
+      </FieldGroup>
 
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex min-h-11 items-center justify-center rounded bg-brand-700 px-6 font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-ink-500"
+        className="inline-flex min-h-11 items-center justify-center rounded bg-brand-700 px-6 font-semibold text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-ink-500 focus-visible:bg-brand-800"
       >
         {pending ? t('formSending') : t('formSubmit')}
       </button>

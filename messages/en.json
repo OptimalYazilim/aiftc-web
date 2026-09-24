@@ -315,7 +315,14 @@
     "fieldRelatedTrainingHint": "Select the programme you wish to apply for. If it is not listed, describe it in your message.",
     "fieldCountry": "Country",
     "optionNotSpecified": "Not specified",
-    "eyebrow": "Contact"
+    "eyebrow": "Contact",
+    "errorSummaryCount": "The form has {sayi} error(s). Select a link below to fix them.",
+    "errorTitlePrefix": "({sayi} errors)",
+    "groupRequest": "Request type",
+    "groupContact": "Contact details",
+    "groupMessage": "Your message",
+    "groupConsent": "Consent",
+    "fieldConsent": "Consent confirmation"
   },
   "search": {
     "metaTitle": "Search",
@@ -525,7 +532,12 @@
     "resetMissingToken": "You need to reach this page through the link in your e-mail. The verification key is missing from the address.",
     "resetInvalidTokenTitle": "The link has expired",
     "resetInvalidToken": "This reset link is no longer valid. Links expire after one hour; you can request a new one.",
-    "resetRequestNew": "Request a new link"
+    "resetRequestNew": "Request a new link",
+    "errorSummaryCount": "The form has {sayi} error(s). Select a link below to fix them.",
+    "errorTitlePrefix": "({sayi} errors)",
+    "groupIdentity": "Identity and organisation",
+    "groupPassword": "Password",
+    "groupCredentials": "Sign-in details"
   },
   "subscription": {
     "expiredTitle": "Your subscription has expired",

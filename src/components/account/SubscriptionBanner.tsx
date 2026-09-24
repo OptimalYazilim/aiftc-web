@@ -155,7 +155,7 @@ export const SubscriptionBanner: React.FC<{ contactHref: string }> = ({ contactH
 
         <Link
           href={contactHref}
-          className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-shell-900 underline underline-offset-4 hover:text-brand-800"
+          className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-shell-900 underline underline-offset-4 hover:text-brand-800 focus-visible:text-brand-800"
         >
           {t('contactLink')}
         </Link>

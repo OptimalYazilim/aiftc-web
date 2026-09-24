@@ -98,7 +98,7 @@ export const TrainingCard: React.FC<Props> = ({
         Hover renk TEK TAŞIYICI DEĞİL: başlık bağlantısı ve "Detayları İncele"
         mikro metni zaten görünür (WCAG 2.2 — 1.4.1).
       */
-      className={`group ease-editorial relative flex cursor-pointer flex-col rounded-card border border-line bg-surface p-5 transition-colors duration-500 hover:border-shell-900 ${
+      className={`group ease-editorial relative flex cursor-pointer flex-col rounded-card border border-line bg-surface p-5 transition-colors duration-500 hover:border-shell-900 focus-within:border-shell-900 ${
         size === 'large' ? 'justify-center md:p-7' : ''
       } ${className}`}
     >
@@ -198,14 +198,14 @@ export const TrainingCard: React.FC<Props> = ({
       {detailLabel ? (
         <p
           aria-hidden="true"
-          className="ease-editorial mt-auto flex items-center gap-1.5 pt-4 text-sm font-medium text-brand-800 transition-colors duration-500 group-hover:text-shell-950"
+          className="ease-editorial mt-auto flex items-center gap-1.5 pt-4 text-sm font-medium text-brand-800 transition-colors duration-500 group-hover:text-shell-950 group-focus-within:text-shell-950"
         >
           {detailLabel}
           <svg
             viewBox="0 0 16 16"
             width="1em"
             height="1em"
-            className="ease-editorial transition-transform duration-500 group-hover:translate-x-1"
+            className="ease-editorial transition-transform duration-500 group-hover:translate-x-1 group-focus-within:translate-x-1"
           >
             <path
               fill="none"

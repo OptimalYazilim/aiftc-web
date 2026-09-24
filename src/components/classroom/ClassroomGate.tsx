@@ -96,7 +96,7 @@ export const ClassroomGate: React.FC<Props> = ({ locale, roomId, instructions })
           type="submit"
           disabled={pending}
           aria-busy={pending}
-          className="inline-flex min-h-11 w-full items-center justify-center rounded bg-brand-800 px-5 font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:bg-ink-500 sm:w-auto"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded bg-brand-800 px-5 font-semibold text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:bg-ink-500 sm:w-auto focus-visible:bg-brand-900"
         >
           {pending ? t('gateSubmitting') : t('gateSubmit')}
         </button>

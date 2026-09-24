@@ -80,7 +80,7 @@ export const ProjectVisibilityStrip = async ({ locale }: { locale: Locale }) => 
             <ExternalLink
               href={projectData.externalUrl}
               trackId="project:fao"
-              className="mt-1 inline-block py-1.5 text-brand-100 underline underline-offset-4 hover:text-white"
+              className="mt-1 inline-block py-1.5 text-brand-100 underline underline-offset-4 hover:text-white focus-visible:text-white"
             >
               {t('projectPageLink')}
             </ExternalLink>

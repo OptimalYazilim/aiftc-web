@@ -2,12 +2,15 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useId, useState } from 'react'
 
 import type { Locale } from '@/i18n/locales'
 import { authHref } from '@/i18n/routes'
 
 import { MIN_PAROLA } from '@/lib/passwordPolicy'
+
+import { FieldGroup } from '@/components/ui/FieldGroup'
+import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 
@@ -70,6 +73,11 @@ export const ResetPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
   */
   const [token, setToken] = useState<string | null | undefined>(undefined)
 
+  /* Sabit alan kimlikleri — hata ozeti `#id` ile baglanir (Madde 105/107). */
+  const taban = useId()
+  const parolaId = `${taban}-password`
+  const tekrarId = `${taban}-passwordConfirm`
+
   const [parola, setParola] = useState('')
   const [tekrar, setTekrar] = useState('')
   const [hatalar, setHatalar] = useState<{ parola?: string; tekrar?: string }>({})
@@ -98,7 +106,7 @@ export const ResetPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
         <p className="text-sm">
           <Link
             href={authHref('forgotPassword', locale)}
-            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
           >
             {t('resetRequestNew')} →
           </Link>
@@ -162,7 +170,7 @@ export const ResetPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
         <p className="text-sm">
           <Link
             href={authHref('login', locale)}
-            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
           >
             {t('toLogin')}
           </Link>
@@ -173,13 +181,27 @@ export const ResetPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
 
   return (
     <form onSubmit={gonder} noValidate className="space-y-6">
+      {/* Hata ozeti — Madde 103/105/106/107. */}
+      <FormErrorSummary
+        hatalar={[
+          ...(hatalar.parola ? [{ alanId: parolaId, mesaj: `${t('fieldPassword')}: ${hatalar.parola}` }] : []),
+          ...(hatalar.tekrar
+            ? [{ alanId: tekrarId, mesaj: `${t('fieldPasswordConfirm')}: ${hatalar.tekrar}` }]
+            : []),
+        ]}
+        baslik={t('errorSummaryCount', {
+          sayi: (hatalar.parola ? 1 : 0) + (hatalar.tekrar ? 1 : 0),
+        })}
+        belgeBasligiSablonu={String(t.raw('errorTitlePrefix'))}
+      />
+
       {sonuc === 'jetonGecersiz' ? (
         <AuthNotice ton="uyari" baslik={t('resetInvalidTokenTitle')} rol="alert">
           <p>{t('resetInvalidToken')}</p>
           <p className="mt-2">
             <Link
               href={authHref('forgotPassword', locale)}
-              className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+              className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
             >
               {t('resetRequestNew')} →
             </Link>
@@ -197,7 +219,10 @@ export const ResetPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
 
       <p className="text-xs text-ink-500">{t('requiredHint')}</p>
 
+      {/* Madde 112/113: iki parola alani tek bir kume olusturur. */}
+      <FieldGroup baslik={t('groupPassword')} gizliBaslik className="space-y-6">
       <AuthField
+        id={parolaId}
         label={t('fieldPassword')}
         name="password"
         type="password"
@@ -215,6 +240,7 @@ export const ResetPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
       />
 
       <AuthField
+        id={tekrarId}
         label={t('fieldPasswordConfirm')}
         name="passwordConfirm"
         type="password"
@@ -229,6 +255,7 @@ export const ResetPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
         }}
         error={hatalar.tekrar}
       />
+      </FieldGroup>
 
       <button type="submit" disabled={durum === 'gonderiliyor'} className={AUTH_BUTTON}>
         {durum === 'gonderiliyor' ? t('resetSending') : t('resetSubmit')}

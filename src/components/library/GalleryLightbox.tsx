@@ -234,7 +234,7 @@ export const GalleryLightbox: React.FC<Props> = ({
             <a
               href={current.url}
               download
-              className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
             >
               <svg
                 aria-hidden="true"
@@ -259,7 +259,7 @@ export const GalleryLightbox: React.FC<Props> = ({
               type="button"
               onClick={onClose}
               /* WCAG 2.2 — 2.5.8: 44×44 dokunma hedefi. */
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
             >
               <svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" width="20" height="20">
                 <path
@@ -305,7 +305,7 @@ export const GalleryLightbox: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => go(index - 1)}
-              className="absolute left-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-shell-950/70 text-white transition-colors hover:border-white/60 hover:bg-shell-950 sm:left-4"
+              className="absolute left-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-shell-950/70 text-white transition-colors hover:border-white/60 hover:bg-shell-950 sm:left-4 focus-visible:border-white/60 focus-visible:bg-shell-950"
             >
               <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="22" height="22">
                 <path
@@ -359,7 +359,7 @@ export const GalleryLightbox: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => go(index + 1)}
-              className="absolute right-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-shell-950/70 text-white transition-colors hover:border-white/60 hover:bg-shell-950 sm:right-4"
+              className="absolute right-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-shell-950/70 text-white transition-colors hover:border-white/60 hover:bg-shell-950 sm:right-4 focus-visible:border-white/60 focus-visible:bg-shell-950"
             >
               <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="22" height="22">
                 <path

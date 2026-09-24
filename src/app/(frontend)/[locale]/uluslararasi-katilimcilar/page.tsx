@@ -150,7 +150,7 @@ export default async function InternationalGuidePage({ params }: Props) {
                   <li key={String(section.id)} className="border-t border-line-soft">
                     <a
                       href={`#${anchorOf(section.slug, section.sectionKey, index)}`}
-                      className="block py-2.5 text-sm text-ink-700 transition-colors duration-300 hover:text-brand-800"
+                      className="block py-2.5 text-sm text-ink-700 transition-colors duration-300 hover:text-brand-800 focus-visible:text-brand-800"
                     >
                       {section.title}
                     </a>
@@ -160,7 +160,7 @@ export default async function InternationalGuidePage({ params }: Props) {
                   <li className="border-t border-line-soft">
                     <a
                       href="#sss"
-                      className="block py-2.5 text-sm text-ink-700 transition-colors duration-300 hover:text-brand-800"
+                      className="block py-2.5 text-sm text-ink-700 transition-colors duration-300 hover:text-brand-800 focus-visible:text-brand-800"
                     >
                       {t('faqHeading')}
                     </a>
@@ -255,7 +255,7 @@ export default async function InternationalGuidePage({ params }: Props) {
                             <li key={`${String(file.url)}-${fileIndex}`}>
                               <a
                                 href={String(file.url)}
-                                className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                                className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                               >
                                 {String(file.title ?? file.filename ?? file.url)}
                                 {typeof file.humanFileSize === 'string' && file.humanFileSize ? (
@@ -280,14 +280,14 @@ export default async function InternationalGuidePage({ params }: Props) {
                                 <ExternalLink
                                   href={link.url}
                                   trackId="guide:link"
-                                  className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                                  className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                                 >
                                   {link.label}
                                 </ExternalLink>
                               ) : (
                                 <a
                                   href={link.url}
-                                  className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                                  className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                                 >
                                   {link.label}
                                 </a>
@@ -326,7 +326,7 @@ export default async function InternationalGuidePage({ params }: Props) {
                         key={String(faq.id)}
                         className="group border-t border-line-soft py-1"
                       >
-                        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-4 py-2 text-base font-semibold text-shell-900 transition-colors duration-300 hover:text-brand-800">
+                        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-4 py-2 text-base font-semibold text-shell-900 transition-colors duration-300 hover:text-brand-800 focus-visible:text-brand-800">
                           {faq.question}
                           <svg
                             aria-hidden="true"

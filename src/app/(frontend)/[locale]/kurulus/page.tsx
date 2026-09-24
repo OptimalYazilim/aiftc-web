@@ -267,7 +267,7 @@ export default async function AboutPage({ params }: Props) {
                   {anaProje.slug ? (
                     <Link
                       href={detailHref('project', locale, anaProje.slug)}
-                      className="underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:decoration-brand-700"
+                      className="underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:decoration-brand-700 focus-visible:decoration-brand-700 focus-within:decoration-brand-700"
                     >
                       {anaProje.title}
                     </Link>
@@ -354,7 +354,7 @@ export default async function AboutPage({ params }: Props) {
                       <dd className="text-sm leading-5">
                         <a
                           href={`mailto:${contact.email}`}
-                          className="text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                          className="text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700 focus-within:decoration-brand-700"
                         >
                           {contact.email}
                         </a>
@@ -411,7 +411,7 @@ export default async function AboutPage({ params }: Props) {
                     className="group flex min-h-14 items-center justify-between gap-4 py-3 transition-colors duration-500"
                   >
                     <span className="min-w-0">
-                      <span className="block text-base font-bold leading-snug text-shell-900 transition-colors duration-500 group-hover:text-brand-800">
+                      <span className="block text-base font-bold leading-snug text-shell-900 transition-colors duration-500 group-hover:text-brand-800 group-focus-within:text-brand-800">
                         {alt.title}
                       </span>
                       {alt.subtitle ? (
@@ -429,7 +429,7 @@ export default async function AboutPage({ params }: Props) {
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="shrink-0 text-brand-800 transition-transform duration-500 ease-editorial group-hover:translate-x-1"
+                      className="shrink-0 text-brand-800 transition-transform duration-500 ease-editorial group-hover:translate-x-1 group-focus-within:translate-x-1"
                     >
                       <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" />
                     </svg>

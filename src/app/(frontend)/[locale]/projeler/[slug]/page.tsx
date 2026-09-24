@@ -224,7 +224,7 @@ export default async function ProjectDetailPage({ params }: Props) {
                         <ExternalLink
                           href={partner.url}
                           trackId="project:partner"
-                          className="font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                          className="font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                         >
                           {partner.name}
                         </ExternalLink>
@@ -240,7 +240,7 @@ export default async function ProjectDetailPage({ params }: Props) {
             <p className="mt-14">
               <Link
                 href={href('projects', locale)}
-                className="inline-flex min-h-11 items-center border border-line-strong px-5 text-sm font-semibold text-brand-800 transition-colors duration-300 hover:border-brand-700"
+                className="inline-flex min-h-11 items-center border border-line-strong px-5 text-sm font-semibold text-brand-800 transition-colors duration-300 hover:border-brand-700 focus-visible:border-brand-700"
               >
                 ← {t('backToList')}
               </Link>
@@ -272,7 +272,7 @@ export default async function ProjectDetailPage({ params }: Props) {
                 <ExternalLink
                   href={doc.externalUrl}
                   trackId="project:external"
-                  className="text-sm font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                  className="text-sm font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                 >
                   {t('externalLink')}
                 </ExternalLink>

@@ -42,6 +42,13 @@ export const AuthField: React.FC<{
   hint?: string | null
   error?: string | null
   requiredMark: string
+  /**
+   * Dışarıdan verilen sabit kimlik. Hata özeti (`FormErrorSummary`) alana
+   * `#id` ile bağlantı verebilsin diye eklendi (Kontrol Listesi 105/107):
+   * `useId()` her render'da tahmin edilemez bir değer üretir ve özet onu
+   * hedefleyemezdi.
+   */
+  id?: string
 }> = ({
   label,
   name,
@@ -53,8 +60,10 @@ export const AuthField: React.FC<{
   hint,
   error,
   requiredMark,
+  id: disId,
 }) => {
-  const id = useId()
+  const otoId = useId()
+  const id = disId ?? otoId
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
   const describedBy = [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ')
@@ -74,6 +83,13 @@ export const AuthField: React.FC<{
         type={type}
         value={value}
         required={required}
+        /*
+          Kontrol Listesi 117: zorunluluk METİNLE de belirtilir (yukarıdaki
+          `requiredMark`). `aria-required` onu yardımcı teknolojiye ayrıca
+          bildirir; `required` özniteliği tarayıcı doğrulamasıdır, ikisi
+          birbirinin yerine geçmez.
+        */
+        aria-required={required || undefined}
         autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
@@ -133,4 +149,4 @@ export const AuthNotice: React.FC<{
 
 /** Birincil düğme — kütüphane künyesindeki aksiyonla aynı biçim. */
 export const AUTH_BUTTON =
-  'inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-sm bg-brand-700 px-6 text-sm font-bold text-white transition-colors duration-300 hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-ink-500'
+  'inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-sm bg-brand-700 px-6 text-sm font-bold text-white transition-colors duration-300 hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-ink-500 focus-visible:bg-brand-800'

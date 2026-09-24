@@ -101,7 +101,7 @@ type Props = {
 }
 
 const BUTTON_CLASS =
-  'group/action inline-flex min-h-12 items-center gap-2 rounded-sm bg-brand-700 px-6 text-sm font-bold text-white transition-colors duration-300 hover:bg-brand-800'
+  'group/action inline-flex min-h-12 items-center gap-2 rounded-sm bg-brand-700 px-6 text-sm font-bold text-white transition-colors duration-300 hover:bg-brand-800 focus-visible:bg-brand-800'
 
 export const LibraryDetailActions: React.FC<Props> = ({
   id,

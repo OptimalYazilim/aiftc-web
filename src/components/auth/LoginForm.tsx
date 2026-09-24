@@ -2,10 +2,13 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
 
 import type { Locale } from '@/i18n/locales'
 import { authHref, href as routeHref } from '@/i18n/routes'
+
+import { FieldGroup } from '@/components/ui/FieldGroup'
+import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 
@@ -61,6 +64,21 @@ const hataKodu = (govde: unknown): string | null => {
 export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
   const t = useTranslations('auth')
 
+  /** Hata ozetinde kullanilacak GORUNUR etiketler (Madde 89). */
+  const etiketler: Record<keyof Alanlar, string> = {
+    email: t('fieldEmail'),
+    password: t('fieldPassword'),
+  }
+
+  /* Sabit alan kimlikleri — hata ozeti `#id` ile baglanir (Madde 105/107). */
+  const taban = useId()
+  const alanId = (ad: keyof Alanlar) => `${taban}-${ad}`
+
+  const hataListesiUret = (h: Hatalar) =>
+    (Object.keys(h) as (keyof Alanlar)[])
+      .filter((ad) => Boolean(h[ad]))
+      .map((ad) => ({ alanId: alanId(ad), mesaj: `${etiketler[ad]}: ${h[ad]}` }))
+
   const [alanlar, setAlanlar] = useState<Alanlar>({ email: '', password: '' })
   const [hatalar, setHatalar] = useState<Hatalar>({})
   const [durum, setDurum] = useState<'bos' | 'gonderiliyor' | 'basarili'>('bos')
@@ -70,6 +88,8 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
     | { tur: 'gecersiz' | 'limit' | 'ag' | 'genel' }
     | { tur: 'durum'; kod: 'account_pending' | 'account_suspended' }
   >(null)
+
+  const hataListesi = hataListesiUret(hatalar)
 
   const alanDegistir = (ad: keyof Alanlar) => (deger: string) => {
     setAlanlar((onceki) => ({ ...onceki, [ad]: deger }))
@@ -167,6 +187,13 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
 
   return (
     <form onSubmit={gonder} noValidate className="space-y-6">
+      {/* Hata ozeti — Madde 103/105/106/107. */}
+      <FormErrorSummary
+        hatalar={hataListesi}
+        baslik={t('errorSummaryCount', { sayi: hataListesi.length })}
+        belgeBasligiSablonu={String(t.raw('errorTitlePrefix'))}
+      />
+
       {/* --- Sonuç bildirimi ------------------------------------------- */}
       {sonuc?.tur === 'durum' ? (
         <AuthNotice
@@ -180,7 +207,7 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
           <p className="mt-2">
             <Link
               href={routeHref('contact', locale)}
-              className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+              className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
             >
               {t('contactLink')} →
             </Link>
@@ -205,29 +232,34 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
       */}
       <p className="text-xs text-ink-500">{t('requiredHint')}</p>
 
-      <AuthField
-        label={t('fieldEmail')}
-        name="email"
-        type="email"
-        autoComplete="email"
-        required
-        requiredMark={t('fieldRequired')}
-        value={alanlar.email}
-        onChange={alanDegistir('email')}
-        error={hatalar.email}
-      />
+      {/* Madde 112/113: iki alan tek bir anlamlı küme oluşturur. */}
+      <FieldGroup baslik={t('groupCredentials')} gizliBaslik className="space-y-6">
+        <AuthField
+          id={alanId('email')}
+          label={t('fieldEmail')}
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          requiredMark={t('fieldRequired')}
+          value={alanlar.email}
+          onChange={alanDegistir('email')}
+          error={hatalar.email}
+        />
 
-      <AuthField
-        label={t('fieldPassword')}
-        name="password"
-        type="password"
-        autoComplete="current-password"
-        required
-        requiredMark={t('fieldRequired')}
-        value={alanlar.password}
-        onChange={alanDegistir('password')}
-        error={hatalar.password}
-      />
+        <AuthField
+          id={alanId('password')}
+          label={t('fieldPassword')}
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          requiredMark={t('fieldRequired')}
+          value={alanlar.password}
+          onChange={alanDegistir('password')}
+          error={hatalar.password}
+        />
+      </FieldGroup>
 
       <button type="submit" disabled={durum === 'gonderiliyor'} className={AUTH_BUTTON}>
         {durum === 'gonderiliyor' ? t('loginSending') : t('loginSubmit')}
@@ -243,7 +275,7 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
         <p>
           <Link
             href={authHref('forgotPassword', locale)}
-            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
           >
             {t('toForgot')}
           </Link>
@@ -251,7 +283,7 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
         <p>
           <Link
             href={authHref('register', locale)}
-            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
           >
             {t('toRegister')}
           </Link>

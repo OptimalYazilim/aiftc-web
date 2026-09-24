@@ -124,14 +124,14 @@ export default async function GalleryPage({ params }: Props) {
                       key={String(doc.id)}
                       className={`group relative flex flex-col ${link ? 'cursor-pointer' : ''}`}
                     >
-                      <div className="relative aspect-[4/3] w-full overflow-hidden border border-line-soft bg-surface-alt transition-colors duration-500 group-hover:border-shell-900">
+                      <div className="relative aspect-[4/3] w-full overflow-hidden border border-line-soft bg-surface-alt transition-colors duration-500 group-hover:border-shell-900 group-focus-within:border-shell-900">
                         {cover ? (
                           <Image
                             src={cover.url}
                             alt=""
                             fill
                             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                            className="object-cover transition-transform duration-700 ease-editorial group-hover:scale-[1.04]"
+                            className="object-cover transition-transform duration-700 ease-editorial group-hover:scale-[1.04] group-focus-within:scale-[1.04]"
                           />
                         ) : (
                           /* Kapak girilmemiş: nötr pano + albüm işareti. */
@@ -172,7 +172,7 @@ export default async function GalleryPage({ params }: Props) {
                         {link ? (
                           <Link
                             href={link}
-                            className="transition-colors duration-500 after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800"
+                            className="transition-colors duration-500 after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800 focus-visible:text-brand-800 group-focus-within:text-brand-800"
                           >
                             {doc.title}
                           </Link>

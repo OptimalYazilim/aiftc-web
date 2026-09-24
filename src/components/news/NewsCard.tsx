@@ -92,7 +92,7 @@ export const NewsCard: React.FC<Props> = ({
         hover'da o çizginin koyulaşmasıyla kuruluyor; hareketi FOTOĞRAF
         taşıyor (aşağıda `scale-[1.04]`). Kartın kendisi sabit durur.
       */
-      className={`group ease-editorial relative flex cursor-pointer flex-col overflow-hidden rounded-card border border-line bg-surface transition-colors duration-500 hover:border-shell-900 ${className}`}
+      className={`group ease-editorial relative flex cursor-pointer flex-col overflow-hidden rounded-card border border-line bg-surface transition-colors duration-500 hover:border-shell-900 ${className} focus-within:border-shell-900`}
     >
       {/*
         Kapak görseli yoksa boş gri alan değil, nötr kurumsal zemin
@@ -116,7 +116,7 @@ export const NewsCard: React.FC<Props> = ({
                 verir. Sarmalayıcıdaki `overflow-hidden` olmadan büyüme kartın
                 köşe yarıçapını taşardı.
               */
-              className={`ease-editorial w-full object-cover transition-transform duration-700 group-hover:scale-[1.04] ${feature ? `aspect-[21/9]` : `aspect-[3/2]`}`}
+              className={`ease-editorial w-full object-cover transition-transform duration-700 group-hover:scale-[1.04] ${feature ? `aspect-[21/9]` : `aspect-[3/2]`} group-focus-within:scale-[1.04]`}
             />
           </div>
         ) : (
@@ -167,7 +167,7 @@ export const NewsCard: React.FC<Props> = ({
               kalıyordu. Bağlantı kart yüzeyine yayılınca ikisi de düzeldi,
               odak durağı yine TEK.
             */
-            className="text-shell-900 decoration-2 underline-offset-4 transition-colors after:absolute after:inset-0 after:content-[''] hover:text-brand-800 hover:underline focus-visible:underline"
+            className="text-shell-900 decoration-2 underline-offset-4 transition-colors after:absolute after:inset-0 after:content-[''] hover:text-brand-800 hover:underline focus-visible:underline focus-visible:text-brand-800 focus-within:text-brand-800"
           >
             {item.title}
           </Link>
@@ -185,14 +185,14 @@ export const NewsCard: React.FC<Props> = ({
         */}
         <p
           aria-hidden="true"
-          className="ease-editorial mt-auto flex items-center gap-1.5 pt-4 text-sm font-semibold text-brand-800 transition-colors duration-500 group-hover:text-shell-950"
+          className="ease-editorial mt-auto flex items-center gap-1.5 pt-4 text-sm font-semibold text-brand-800 transition-colors duration-500 group-hover:text-shell-950 group-focus-within:text-shell-950"
         >
           {readMoreLabel}
           <svg
             viewBox="0 0 16 16"
             width="1em"
             height="1em"
-            className="ease-editorial transition-transform duration-500 group-hover:translate-x-1"
+            className="ease-editorial transition-transform duration-500 group-hover:translate-x-1 group-focus-within:translate-x-1"
           >
             <path
               fill="none"

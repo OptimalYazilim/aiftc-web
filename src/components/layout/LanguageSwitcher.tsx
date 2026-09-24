@@ -98,10 +98,10 @@ export const LanguageSwitcher: React.FC<Props> = ({ alternates, className, varia
                   ? // Seçili: beyaz dolgu + koyu metin. Ölçüm 17.6:1.
                     'bg-white text-shell-950'
                   : // Seçilmemiş: white/75 → shell-950 üzerinde 10.5:1.
-                    'text-white/75 hover:bg-white/15 hover:text-white'
+                    'text-white/75 hover:bg-white/15 hover:text-white focus-visible:bg-white/15 focus-visible:text-white'
                 : current
                   ? 'bg-brand-100 text-brand-900'
-                  : 'text-ink-600 hover:bg-surface-alt hover:text-brand-800',
+                  : 'text-ink-600 hover:bg-surface-alt hover:text-brand-800 focus-visible:bg-surface-alt focus-visible:text-brand-800',
               isPending ? 'opacity-70' : '',
             ].join(' '),
           }

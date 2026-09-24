@@ -284,7 +284,7 @@ export default async function TrainingDetailPage({ params }: Props) {
                   <li key={String(topic.id)}>
                     <Link
                       href={detailHref('training-topic', locale, topic.slug ?? '')}
-                      className="inline-flex min-h-11 items-center rounded-full border border-line-strong px-4 text-sm text-ink-700 hover:border-brand-700 hover:text-brand-800"
+                      className="inline-flex min-h-11 items-center rounded-full border border-line-strong px-4 text-sm text-ink-700 hover:border-brand-700 hover:text-brand-800 focus-visible:border-brand-700 focus-visible:text-brand-800"
                     >
                       {topic.title}
                     </Link>

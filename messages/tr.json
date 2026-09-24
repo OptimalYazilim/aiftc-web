@@ -315,7 +315,14 @@
     "fieldRelatedTrainingHint": "Başvurmak istediğiniz programı seçin. Listede yoksa mesajınızda belirtin.",
     "fieldCountry": "Ülke",
     "optionNotSpecified": "Belirtilmedi",
-    "eyebrow": "İletişim"
+    "eyebrow": "İletişim",
+    "errorSummaryCount": "Formda {sayi} hata var. Düzeltmek için aşağıdaki bağlantıya tıklayın.",
+    "errorTitlePrefix": "({sayi} hata)",
+    "groupRequest": "Talep türü",
+    "groupContact": "İletişim bilgileri",
+    "groupMessage": "Mesajınız",
+    "groupConsent": "Açık rıza",
+    "fieldConsent": "Açık rıza onayı"
   },
   "search": {
     "metaTitle": "Arama",
@@ -525,7 +532,12 @@
     "resetMissingToken": "Bu sayfaya, e-postadaki bağlantı üzerinden gelmeniz gerekir. Bağlantıdaki doğrulama anahtarı bulunamadı.",
     "resetInvalidTokenTitle": "Bağlantının süresi dolmuş",
     "resetInvalidToken": "Bu sıfırlama bağlantısı artık geçerli değil. Bağlantılar bir saat sonra geçersiz olur; yeni bir tane isteyebilirsiniz.",
-    "resetRequestNew": "Yeni bağlantı iste"
+    "resetRequestNew": "Yeni bağlantı iste",
+    "errorSummaryCount": "Formda {sayi} hata var. Düzeltmek için aşağıdaki bağlantıya tıklayın.",
+    "errorTitlePrefix": "({sayi} hata)",
+    "groupIdentity": "Kimlik ve kurum bilgileri",
+    "groupPassword": "Parola",
+    "groupCredentials": "Giriş bilgileri"
   },
   "subscription": {
     "expiredTitle": "Abonelik süreniz doldu",

@@ -95,7 +95,7 @@ export const TopUtilityBar = async ({
           */}
           <Link
             href={authHref('login', locale)}
-            className="inline-flex min-h-9 items-center gap-2 rounded px-2 py-1 font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+            className="inline-flex min-h-9 items-center gap-2 rounded px-2 py-1 font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
           >
             <svg
               aria-hidden="true"
@@ -126,7 +126,7 @@ export const TopUtilityBar = async ({
           */}
           <Link
             href={href('search', locale)}
-            className="inline-flex min-h-9 items-center gap-2 rounded px-2 py-1 font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+            className="inline-flex min-h-9 items-center gap-2 rounded px-2 py-1 font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
           >
             <svg
               aria-hidden="true"

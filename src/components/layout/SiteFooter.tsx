@@ -52,7 +52,7 @@ type Props = { locale: Locale }
  */
 
 const LINK_CLASS =
-  'inline-block py-1.5 text-white/75 underline-offset-4 transition-colors hover:text-white hover:underline'
+  'inline-block py-1.5 text-white/75 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:text-white focus-visible:underline'
 
 const FooterLink: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
   if (!link.available || !link.href) {
@@ -223,7 +223,7 @@ export const SiteFooter = async ({ locale }: Props) => {
               */}
               <a
                 href={newsletterHref}
-                className="group mt-4 inline-flex min-h-11 items-center gap-2 rounded-sm bg-white px-5 text-sm font-bold text-shell-950 transition-colors hover:bg-brand-50"
+                className="group mt-4 inline-flex min-h-11 items-center gap-2 rounded-sm bg-white px-5 text-sm font-bold text-shell-950 transition-colors hover:bg-brand-50 focus-visible:bg-brand-50"
               >
                 {t('newsletterCta')}
                 <svg
@@ -339,7 +339,7 @@ export const SiteFooter = async ({ locale }: Props) => {
           <p className="mt-4">
             <Link
               href={href('contact', locale)}
-              className="group inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/40 px-4 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/10"
+              className="group inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/40 px-4 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/10 focus-visible:border-white/60 focus-visible:bg-white/10"
             >
               {t('contactPageLink')}
               <svg
@@ -409,7 +409,7 @@ export const SiteFooter = async ({ locale }: Props) => {
                         href={item.url}
                         trackId={`social:${item.platform.toLowerCase()}`}
                         hideIcon
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/40 text-white/75 transition-colors hover:border-white/70 hover:bg-white/10 hover:text-white"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/40 text-white/75 transition-colors hover:border-white/70 hover:bg-white/10 hover:text-white focus-visible:border-white/70 focus-visible:bg-white/10 focus-visible:text-white"
                       >
                         <SocialIcon platform={item.platform} />
                         <span className="sr-only">{item.platform}</span>
@@ -441,7 +441,7 @@ export const SiteFooter = async ({ locale }: Props) => {
             */}
             <a
               href="#main-content"
-              className="group inline-flex min-h-11 items-center gap-2 text-white/70 transition-colors hover:text-white"
+              className="group inline-flex min-h-11 items-center gap-2 text-white/70 transition-colors hover:text-white focus-visible:text-white"
             >
               <svg
                 aria-hidden="true"

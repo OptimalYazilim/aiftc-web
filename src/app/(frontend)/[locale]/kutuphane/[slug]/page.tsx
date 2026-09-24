@@ -427,7 +427,7 @@ export default async function LibraryDetailPage({ params }: Props) {
                             {topic.slug ? (
                               <Link
                                 href={detailHref('training-topic', locale, topic.slug)}
-                                className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                                className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                               >
                                 {topic.title}
                               </Link>
@@ -449,7 +449,7 @@ export default async function LibraryDetailPage({ params }: Props) {
                             {item.slug ? (
                               <Link
                                 href={detailHref('training-program', locale, item.slug)}
-                                className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                                className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                               >
                                 {item.title}
                               </Link>
@@ -471,7 +471,7 @@ export default async function LibraryDetailPage({ params }: Props) {
                             {item.slug ? (
                               <Link
                                 href={detailHref('project', locale, item.slug)}
-                                className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                                className="text-sm font-medium text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                               >
                                 {item.title}
                               </Link>
@@ -490,7 +490,7 @@ export default async function LibraryDetailPage({ params }: Props) {
             <p className="mt-14">
               <Link
                 href={href('library', locale)}
-                className="inline-flex min-h-11 items-center border border-line-strong px-5 text-sm font-semibold text-brand-800 transition-colors duration-300 hover:border-brand-700"
+                className="inline-flex min-h-11 items-center border border-line-strong px-5 text-sm font-semibold text-brand-800 transition-colors duration-300 hover:border-brand-700 focus-visible:border-brand-700"
               >
                 ← {t('backToLibrary')}
               </Link>

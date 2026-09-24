@@ -437,7 +437,7 @@ const CtaSection: React.FC<{
   }
 
   const buton =
-    'inline-flex min-h-12 items-center gap-2 rounded-sm bg-brand-700 px-6 text-sm font-bold text-white transition-colors duration-300 hover:bg-brand-800'
+    'inline-flex min-h-12 items-center gap-2 rounded-sm bg-brand-700 px-6 text-sm font-bold text-white transition-colors duration-300 hover:bg-brand-800 focus-visible:bg-brand-800'
 
   return (
     <section className={`${SECTION} border-y border-line bg-surface-alt`}>
@@ -499,7 +499,7 @@ const FaqSection: React.FC<{
       <div className={block.heading?.trim() ? 'mt-4' : ''}>
         {faqs.map((faq) => (
           <details key={String(faq.id)} className="group border-t border-line-soft py-1">
-            <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-4 py-2 text-base font-semibold text-shell-900 transition-colors duration-300 hover:text-brand-800">
+            <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-4 py-2 text-base font-semibold text-shell-900 transition-colors duration-300 hover:text-brand-800 focus-visible:text-brand-800">
               {faq.question}
               <svg
                 aria-hidden="true"
@@ -574,7 +574,7 @@ const ContactSection: React.FC<{
                   {row.key === 'email' ? (
                     <a
                       href={`mailto:${row.value}`}
-                      className="text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+                      className="text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
                     >
                       {row.value}
                     </a>
@@ -600,7 +600,7 @@ const ContactSection: React.FC<{
             <p className="mt-6">
               <Link
                 href={routeHref('contact', locale)}
-                className="inline-flex min-h-11 items-center border border-line-strong px-5 text-sm font-semibold text-brand-800 transition-colors duration-300 hover:border-brand-700"
+                className="inline-flex min-h-11 items-center border border-line-strong px-5 text-sm font-semibold text-brand-800 transition-colors duration-300 hover:border-brand-700 focus-visible:border-brand-700"
               >
                 {labels.contactPage} →
               </Link>

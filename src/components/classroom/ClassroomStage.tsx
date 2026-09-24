@@ -121,7 +121,7 @@ export const ClassroomStage = async ({
         <input type="hidden" name="roomId" value={roomId} />
         <button
           type="submit"
-          className="inline-flex min-h-11 items-center rounded border border-line-strong px-5 font-medium text-ink-700 hover:border-brand-700 hover:text-brand-800"
+          className="inline-flex min-h-11 items-center rounded border border-line-strong px-5 font-medium text-ink-700 hover:border-brand-700 hover:text-brand-800 focus-visible:border-brand-700 focus-visible:text-brand-800"
         >
           {t('leaveRoom')}
         </button>

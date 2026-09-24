@@ -135,8 +135,8 @@ export const FilterPill: React.FC<{
     className={`ease-editorial inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm transition-colors duration-300 ${
       active
         ? 'border-shell-950 bg-shell-950 font-semibold text-white'
-        : 'border-line-strong bg-transparent font-medium text-ink-700 hover:border-shell-950 hover:text-shell-950'
-    }`}
+        : 'border-line-strong bg-transparent font-medium text-ink-700 hover:border-shell-950 hover:text-shell-950 focus-visible:border-shell-950 focus-visible:text-shell-950'
+    } focus-visible:border-shell-950 focus-visible:text-shell-950`}
   >
     {active ? <CheckIcon /> : null}
     {label}
@@ -186,7 +186,7 @@ export const ResultBar: React.FC<{
       <button
         type="button"
         onClick={onClear}
-        className="ease-editorial inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-ink-700 underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:text-shell-900 hover:decoration-shell-900"
+        className="ease-editorial inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-ink-700 underline decoration-line-strong underline-offset-4 transition-colors duration-300 hover:text-shell-900 hover:decoration-shell-900 focus-visible:text-shell-900 focus-visible:decoration-shell-900"
       >
         {clearLabel}
       </button>

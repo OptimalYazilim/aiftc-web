@@ -106,7 +106,7 @@ export const VirtualClassroomCta = async ({ locale, trainingId, status }: Props)
 
       <Link
         href={classroomHref(locale, room.id)}
-        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded bg-brand-800 px-5 text-center font-semibold text-white hover:bg-brand-900"
+        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded bg-brand-800 px-5 text-center font-semibold text-white hover:bg-brand-900 focus-visible:bg-brand-900"
       >
         {t('joinButton')}
       </Link>

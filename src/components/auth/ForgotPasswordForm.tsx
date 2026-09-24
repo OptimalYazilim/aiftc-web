@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
 
 import type { Locale } from '@/i18n/locales'
 import { authHref } from '@/i18n/routes'
+
+import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 
@@ -39,6 +41,9 @@ import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 
 export const ForgotPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
   const t = useTranslations('auth')
+
+  /* Sabit alan kimligi — hata ozeti `#id` ile baglanir (Madde 105/107). */
+  const epostaId = `${useId()}-email`
 
   const [eposta, setEposta] = useState('')
   const [hata, setHata] = useState<string | null>(null)
@@ -102,7 +107,7 @@ export const ForgotPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => 
         <p className="text-sm">
           <Link
             href={authHref('login', locale)}
-            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
           >
             {t('toLogin')}
           </Link>
@@ -113,6 +118,13 @@ export const ForgotPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => 
 
   return (
     <form onSubmit={gonder} noValidate className="space-y-6">
+      {/* Hata ozeti — Madde 103/105/106/107. */}
+      <FormErrorSummary
+        hatalar={hata ? [{ alanId: epostaId, mesaj: `${t('fieldEmail')}: ${hata}` }] : []}
+        baslik={t('errorSummaryCount', { sayi: 1 })}
+        belgeBasligiSablonu={String(t.raw('errorTitlePrefix'))}
+      />
+
       {sonuc ? (
         <AuthNotice ton="hata" baslik={t('errorSummary')} rol="alert">
           {sonuc === 'ag'
@@ -126,6 +138,7 @@ export const ForgotPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => 
       <p className="text-xs text-ink-500">{t('requiredHint')}</p>
 
       <AuthField
+        id={epostaId}
         label={t('fieldEmail')}
         name="email"
         type="email"
@@ -148,7 +161,7 @@ export const ForgotPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => 
       <p className="border-t border-line-soft pt-5 text-sm text-ink-600">
         <Link
           href={authHref('login', locale)}
-          className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+          className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
         >
           {t('toLogin')}
         </Link>

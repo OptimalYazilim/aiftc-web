@@ -260,7 +260,7 @@ export default async function TrainingTopicPage({ params }: Props) {
             <p className="mt-14">
               <Link
                 href={href('training-topics', locale)}
-                className="inline-flex min-h-11 items-center border border-line-strong px-5 text-sm font-semibold text-brand-800 transition-colors duration-300 hover:border-brand-700"
+                className="inline-flex min-h-11 items-center border border-line-strong px-5 text-sm font-semibold text-brand-800 transition-colors duration-300 hover:border-brand-700 focus-visible:border-brand-700"
               >
                 ← {t('backToList')}
               </Link>

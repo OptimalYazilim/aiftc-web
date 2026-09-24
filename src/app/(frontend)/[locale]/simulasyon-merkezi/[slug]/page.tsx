@@ -284,7 +284,7 @@ export default async function SimulationSystemPage({ params }: Props) {
                       <p className="font-semibold leading-snug">
                         <Link
                           href={detailHref('training-program', locale, item.slug ?? '')}
-                          className="text-shell-900 decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline"
+                          className="text-shell-900 decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline focus-visible:text-brand-800"
                         >
                           {item.title}
                         </Link>

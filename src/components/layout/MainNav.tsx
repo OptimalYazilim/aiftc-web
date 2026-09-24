@@ -114,10 +114,10 @@ export const MainNav: React.FC<Props> = ({ items, variant = 'desktop', onNavigat
           // zaten mobil panele düşüyor.
           'whitespace-nowrap px-3 py-2 text-[0.9375rem] font-semibold tracking-tight',
       highlight
-        ? 'bg-brand-700 text-white hover:bg-brand-800'
+        ? 'bg-brand-700 text-white hover:bg-brand-800 focus-visible:bg-brand-800'
         : active
           ? 'bg-brand-50 text-brand-800 underline decoration-brand-700 decoration-2 underline-offset-8'
-          : 'text-shell-900 hover:bg-surface-alt hover:text-brand-800',
+          : 'text-shell-900 hover:bg-surface-alt hover:text-brand-800 focus-visible:bg-surface-alt focus-visible:text-brand-800',
     ].join(' ')
 
   const renderLeaf = (link: ResolvedNavLink, active: boolean) => {

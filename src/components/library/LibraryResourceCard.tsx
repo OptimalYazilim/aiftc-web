@@ -291,7 +291,7 @@ export const LibraryResourceCard: React.FC<{
   return (
     <li
       className={`group relative flex flex-col gap-5 border-b border-line-soft py-6 transition-colors duration-500 sm:flex-row sm:gap-7 ${
-        recordHref ? 'cursor-pointer hover:border-shell-900' : ''
+        recordHref ? 'cursor-pointer hover:border-shell-900' : ' focus-within:border-shell-900'
       }`}
     >
       {/* --- SOL: kapak veya tür panosu ---------------------------------- */}
@@ -411,7 +411,7 @@ export const LibraryResourceCard: React.FC<{
             */
             <Link
               href={recordHref}
-              className="transition-colors duration-500 after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800"
+              className="transition-colors duration-500 after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800 focus-visible:text-brand-800 group-focus-within:text-brand-800"
             >
               {item.title}
             </Link>
@@ -450,7 +450,7 @@ export const LibraryResourceCard: React.FC<{
               strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="transition-transform duration-500 ease-editorial group-hover:translate-x-1"
+              className="transition-transform duration-500 ease-editorial group-hover:translate-x-1 group-focus-within:translate-x-1"
             >
               <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" />
             </svg>

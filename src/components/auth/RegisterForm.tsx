@@ -2,12 +2,15 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
 
 import type { Locale } from '@/i18n/locales'
 import { authHref } from '@/i18n/routes'
 
 import { MIN_PAROLA } from '@/lib/passwordPolicy'
+
+import { FieldGroup } from '@/components/ui/FieldGroup'
+import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 import { useTurnstile } from './useTurnstile'
@@ -76,6 +79,15 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
 }) => {
   const t = useTranslations('auth')
 
+  /** Hata özetinde kullanılacak GÖRÜNÜR etiketler — alan adıyla birebir aynı. */
+  const etiketler: Record<keyof Alanlar, string> = {
+    name: t('fieldName'),
+    email: t('fieldEmail'),
+    unit: t('fieldUnit'),
+    password: t('fieldPassword'),
+    passwordConfirm: t('fieldPasswordConfirm'),
+  }
+
   const [alanlar, setAlanlar] = useState<Alanlar>({
     name: '',
     email: '',
@@ -88,6 +100,26 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
   const [sonuc, setSonuc] = useState<'ag' | 'genel' | 'limit' | 'captcha' | null>(null)
 
   const turnstile = useTurnstile(captchaSiteKey, locale)
+
+  /*
+    SABİT ALAN KİMLİKLERİ (Kontrol Listesi 105/107).
+    Hata özeti alanlara `#id` ile bağlanır; kimlikler `useId()` tabanından
+    türetilir ki aynı sayfada iki form bulunsa bile çakışmasın.
+  */
+  const taban = useId()
+  const alanId = (ad: keyof Alanlar) => `${taban}-${ad}`
+
+  /*
+    Hata özeti, alanların GÖRÜNÜR etiketleriyle konuşur (Madde 89: erişilebilir
+    isim görünür etiketle başlar). "Bu alan gereklidir" tek başına hangi alan
+    olduğunu söylemezdi.
+  */
+  const hataListesi = (Object.keys(hatalar) as (keyof Alanlar)[])
+    .filter((ad) => Boolean(hatalar[ad]))
+    .map((ad) => ({
+      alanId: alanId(ad),
+      mesaj: `${etiketler[ad]}: ${hatalar[ad]}`,
+    }))
 
   const alanDegistir = (ad: keyof Alanlar) => (deger: string) => {
     setAlanlar((onceki) => ({ ...onceki, [ad]: deger }))
@@ -214,7 +246,7 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
         <p className="text-sm">
           <Link
             href={authHref('login', locale)}
-            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
           >
             {t('toLogin')}
           </Link>
@@ -237,67 +269,93 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
         </AuthNotice>
       ) : null}
 
+      {/*
+        HATA ÖZETİ — formun başında, alanlardan ÖNCE (Madde 103/105/106/107).
+        Alan bazlı mesajlar yerinde kalır; bu liste onların yerine geçmez,
+        kaç hata olduğunu ve nerede olduklarını tek bakışta verir.
+      */}
+      <FormErrorSummary
+        hatalar={hataListesi}
+        baslik={t('errorSummaryCount', { sayi: hataListesi.length })}
+        belgeBasligiSablonu={String(t.raw('errorTitlePrefix'))}
+      />
+
       {/* Zorunluluk notu form başına bir kez — gerekçe LoginForm içinde. */}
       <p className="text-xs text-ink-500">{t('requiredHint')}</p>
 
-      <AuthField
-        label={t('fieldName')}
-        name="name"
-        autoComplete="name"
-        required
-        requiredMark={t('fieldRequired')}
-        value={alanlar.name}
-        onChange={alanDegistir('name')}
-        error={hatalar.name}
-      />
+      {/*
+        BENZER ALANLAR GRUPLANDI (Madde 112/113). İki küme vardır ve ayrımları
+        anlamlıdır: kimlik bilgileri kurumla paylaşılacak verilerdir, parola
+        yalnızca hesabın kendisine aittir. Görsel düzen değişmez — `fieldset`
+        kenarlıksız ve dolgusuzdur.
+      */}
+      <FieldGroup baslik={t('groupIdentity')} className="space-y-6">
+        <AuthField
+          id={alanId('name')}
+          label={t('fieldName')}
+          name="name"
+          autoComplete="name"
+          required
+          requiredMark={t('fieldRequired')}
+          value={alanlar.name}
+          onChange={alanDegistir('name')}
+          error={hatalar.name}
+        />
 
-      <AuthField
-        label={t('fieldEmail')}
-        name="email"
-        type="email"
-        autoComplete="email"
-        required
-        requiredMark={t('fieldRequired')}
-        value={alanlar.email}
-        onChange={alanDegistir('email')}
-        error={hatalar.email}
-      />
+        <AuthField
+          id={alanId('email')}
+          label={t('fieldEmail')}
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          requiredMark={t('fieldRequired')}
+          value={alanlar.email}
+          onChange={alanDegistir('email')}
+          error={hatalar.email}
+        />
 
-      <AuthField
-        label={t('fieldUnit')}
-        name="unit"
-        autoComplete="organization"
-        hint={t('fieldUnitHint')}
-        requiredMark=""
-        value={alanlar.unit}
-        onChange={alanDegistir('unit')}
-        error={hatalar.unit}
-      />
+        <AuthField
+          id={alanId('unit')}
+          label={t('fieldUnit')}
+          name="unit"
+          autoComplete="organization"
+          hint={t('fieldUnitHint')}
+          requiredMark=""
+          value={alanlar.unit}
+          onChange={alanDegistir('unit')}
+          error={hatalar.unit}
+        />
+      </FieldGroup>
 
-      <AuthField
-        label={t('fieldPassword')}
-        name="password"
-        type="password"
-        autoComplete="new-password"
-        required
-        requiredMark={t('fieldRequired')}
-        hint={t('passwordHint', { min: MIN_PAROLA })}
-        value={alanlar.password}
-        onChange={alanDegistir('password')}
-        error={hatalar.password}
-      />
+      <FieldGroup baslik={t('groupPassword')} className="space-y-6">
+        <AuthField
+          id={alanId('password')}
+          label={t('fieldPassword')}
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          required
+          requiredMark={t('fieldRequired')}
+          hint={t('passwordHint', { min: MIN_PAROLA })}
+          value={alanlar.password}
+          onChange={alanDegistir('password')}
+          error={hatalar.password}
+        />
 
-      <AuthField
-        label={t('fieldPasswordConfirm')}
-        name="passwordConfirm"
-        type="password"
-        autoComplete="new-password"
-        required
-        requiredMark={t('fieldRequired')}
-        value={alanlar.passwordConfirm}
-        onChange={alanDegistir('passwordConfirm')}
-        error={hatalar.passwordConfirm}
-      />
+        <AuthField
+          id={alanId('passwordConfirm')}
+          label={t('fieldPasswordConfirm')}
+          name="passwordConfirm"
+          type="password"
+          autoComplete="new-password"
+          required
+          requiredMark={t('fieldRequired')}
+          value={alanlar.passwordConfirm}
+          onChange={alanDegistir('passwordConfirm')}
+          error={hatalar.passwordConfirm}
+        />
+      </FieldGroup>
 
       {/*
         Kayıt SONUCU önceden söylenir: hesap onay bekleyecektir. Bunu gönderim
@@ -341,7 +399,7 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
       <p className="border-t border-line-soft pt-5 text-sm text-ink-600">
         <Link
           href={authHref('login', locale)}
-          className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700"
+          className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
         >
           {t('toLogin')}
         </Link>

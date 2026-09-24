@@ -86,7 +86,7 @@ export const Pagination: React.FC<Props> = ({
             <Link
               href={hrefFor(currentPage - 1)}
               rel="prev"
-              className={`${linkBase} border-line-strong text-ink-700 hover:border-brand-700 hover:text-brand-800`}
+              className={`${linkBase} border-line-strong text-ink-700 hover:border-brand-700 hover:text-brand-800 focus-visible:border-brand-700 focus-visible:text-brand-800`}
             >
               <span aria-hidden="true">←</span>
               <span className="ms-2">{labels.previous}</span>
@@ -117,7 +117,7 @@ export const Pagination: React.FC<Props> = ({
                 <Link
                   href={hrefFor(page)}
                   aria-label={labels.page(page)}
-                  className={`${linkBase} border-line-strong text-ink-700 hover:border-brand-700 hover:text-brand-800`}
+                  className={`${linkBase} border-line-strong text-ink-700 hover:border-brand-700 hover:text-brand-800 focus-visible:border-brand-700 focus-visible:text-brand-800`}
                 >
                   {page}
                 </Link>
@@ -131,7 +131,7 @@ export const Pagination: React.FC<Props> = ({
             <Link
               href={hrefFor(currentPage + 1)}
               rel="next"
-              className={`${linkBase} border-line-strong text-ink-700 hover:border-brand-700 hover:text-brand-800`}
+              className={`${linkBase} border-line-strong text-ink-700 hover:border-brand-700 hover:text-brand-800 focus-visible:border-brand-700 focus-visible:text-brand-800`}
             >
               <span className="me-2">{labels.next}</span>
               <span aria-hidden="true">→</span>

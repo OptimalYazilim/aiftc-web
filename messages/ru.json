@@ -315,7 +315,14 @@
     "fieldRelatedTrainingHint": "Выберите программу, на которую хотите подать заявку. Если её нет в списке, укажите в сообщении.",
     "fieldCountry": "Страна",
     "optionNotSpecified": "Не указано",
-    "eyebrow": "Контакты"
+    "eyebrow": "Контакты",
+    "errorSummaryCount": "В форме ошибок: {sayi}. Выберите ссылку ниже, чтобы исправить.",
+    "errorTitlePrefix": "(ошибок: {sayi})",
+    "groupRequest": "Тип обращения",
+    "groupContact": "Контактные данные",
+    "groupMessage": "Ваше сообщение",
+    "groupConsent": "Согласие",
+    "fieldConsent": "Подтверждение согласия"
   },
   "search": {
     "metaTitle": "Поиск",
@@ -525,7 +532,12 @@
     "resetMissingToken": "На эту страницу нужно переходить по ссылке из письма. В адресе отсутствует ключ подтверждения.",
     "resetInvalidTokenTitle": "Срок действия ссылки истёк",
     "resetInvalidToken": "Эта ссылка для сброса больше не действительна. Ссылки истекают через час; вы можете запросить новую.",
-    "resetRequestNew": "Запросить новую ссылку"
+    "resetRequestNew": "Запросить новую ссылку",
+    "errorSummaryCount": "В форме ошибок: {sayi}. Выберите ссылку ниже, чтобы исправить.",
+    "errorTitlePrefix": "(ошибок: {sayi})",
+    "groupIdentity": "Личные и организационные данные",
+    "groupPassword": "Пароль",
+    "groupCredentials": "Данные для входа"
   },
   "subscription": {
     "expiredTitle": "Срок вашей подписки истёк",

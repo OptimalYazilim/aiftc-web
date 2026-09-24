@@ -264,7 +264,7 @@ export default async function SimulationCentrePage({ params }: Props) {
                     /* `scroll-mt`: eğitim sayfasından çıpayla gelindiğinde
                        yapışkan başlık kartı örtmesin. */
                     id={system.slug ?? undefined}
-                    className="ease-editorial scroll-mt-24 overflow-hidden rounded-card border border-line bg-surface transition-colors duration-500 hover:border-shell-900"
+                    className="ease-editorial scroll-mt-24 overflow-hidden rounded-card border border-line bg-surface transition-colors duration-500 hover:border-shell-900 focus-within:border-shell-900"
                   >
                     <div className="grid gap-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
                       {/* Görsel */}
@@ -294,7 +294,7 @@ export default async function SimulationCentrePage({ params }: Props) {
                           {system.slug ? (
                             <Link
                               href={detailHref('simulation-system', locale, system.slug)}
-                              className="decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline"
+                              className="decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline focus-visible:text-brand-800 focus-within:text-brand-800"
                             >
                               {system.title}
                             </Link>
@@ -396,7 +396,7 @@ export default async function SimulationCentrePage({ params }: Props) {
                           <p className="mt-6">
                             <Link
                               href={detailHref('simulation-system', locale, system.slug)}
-                              className="group inline-flex min-h-11 items-center gap-2 rounded-sm border border-line-strong px-4 text-sm font-semibold text-shell-900 transition-colors hover:border-brand-700 hover:bg-brand-50/60 hover:text-brand-800"
+                              className="group inline-flex min-h-11 items-center gap-2 rounded-sm border border-line-strong px-4 text-sm font-semibold text-shell-900 transition-colors hover:border-brand-700 hover:bg-brand-50/60 hover:text-brand-800 focus-visible:border-brand-700 focus-visible:bg-brand-50/60 focus-visible:text-brand-800 focus-within:border-brand-700 focus-within:bg-brand-50/60 focus-within:text-brand-800"
                             >
                               {t('systemDetails')}
                               <span className="sr-only"> — {system.title}</span>
@@ -406,7 +406,7 @@ export default async function SimulationCentrePage({ params }: Props) {
                                 viewBox="0 0 16 16"
                                 width="1em"
                                 height="1em"
-                                className="transition-transform duration-300 group-hover:translate-x-1"
+                                className="transition-transform duration-300 group-hover:translate-x-1 group-focus-within:translate-x-1"
                               >
                                 <path
                                   fill="none"

@@ -132,7 +132,7 @@ export default async function ProjectsPage({ params }: Props) {
                     <li
                       key={String(doc.id)}
                       className={`group relative border-b border-line-soft py-7 transition-colors duration-500 ${
-                        link ? 'cursor-pointer hover:border-shell-900' : ''
+                        link ? 'cursor-pointer hover:border-shell-900' : ' focus-within:border-shell-900'
                       }`}
                     >
                       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold uppercase tracking-wider text-ink-600">
@@ -148,7 +148,7 @@ export default async function ProjectsPage({ params }: Props) {
                         {link ? (
                           <Link
                             href={link}
-                            className="transition-colors duration-500 after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800"
+                            className="transition-colors duration-500 after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800 focus-visible:text-brand-800 group-focus-within:text-brand-800"
                           >
                             {doc.title}
                           </Link>

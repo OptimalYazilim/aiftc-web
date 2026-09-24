@@ -159,7 +159,7 @@ export const LocationMap: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setLoaded(true)}
-                className="inline-flex min-h-11 items-center rounded bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800"
+                className="inline-flex min-h-11 items-center rounded bg-brand-700 px-5 font-semibold text-white hover:bg-brand-800 focus-visible:bg-brand-800"
               >
                 {t('mapLoad')}
               </button>
