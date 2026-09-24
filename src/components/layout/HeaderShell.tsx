@@ -56,6 +56,8 @@ export const HeaderShell: React.FC<Props> = ({ brand, nav, mobileNav, topBar, mo
     setOpen(false)
   }, [pathname])
 
+  const panelRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     if (!open) return
 
@@ -70,9 +72,36 @@ export const HeaderShell: React.FC<Props> = ({ brand, nav, mobileNav, topBar, mo
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
+    /*
+      ODAK PANELE ALINIR  (Kontrol Listesi 57 · 62)
+      Panel açıldığında odak ilk bağlantıya taşınır. Alınmasaydı klavye
+      kullanıcısı menüyü AÇAR ama odak düğmede kalırdı; Tab'a bastığında
+      panelin içine girer — bu çalışır ama ekran okuyucu "menü açıldı"
+      bilgisini içeriğe bağlayamaz.
+
+      `preventScroll`: panel zaten başlığın hemen altındadır; kaydırma isteği
+      sayfayı oynatır ve kullanıcı menüyü açar açmaz yerini kaybeder.
+    */
+    const ilkBaglanti = panelRef.current?.querySelector<HTMLElement>(
+      'a[href], button:not([disabled])',
+    )
+    ilkBaglanti?.focus({ preventScroll: true })
+
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
+
+      /*
+        ODAK GERİ VERİLİR — YALNIZCA PANELİN İÇİNDEYSE.
+        Panel `hidden` olunca içindeki odaklı öğe erişilemez hâle gelir ve
+        tarayıcı odağı `<body>`ye düşürür: Tab'a basan kullanıcı sayfanın en
+        başına döner. Koşul önemlidir — kullanıcı paneli kapatmadan önce
+        sayfadaki başka bir yere tıkladıysa odağı ondan ÇALMAMALIYIZ.
+      */
+      const odak = document.activeElement
+      if (odak && panelRef.current?.contains(odak)) {
+        triggerRef.current?.focus({ preventScroll: true })
+      }
     }
   }, [open])
 
@@ -130,6 +159,7 @@ export const HeaderShell: React.FC<Props> = ({ brand, nav, mobileNav, topBar, mo
 
       {/* --- Mobil menü paneli -------------------------------------------- */}
       <div
+        ref={panelRef}
         id={panelId}
         hidden={!open}
         className="max-h-[calc(100dvh-6rem)] overflow-y-auto border-t border-line bg-surface lg:hidden"

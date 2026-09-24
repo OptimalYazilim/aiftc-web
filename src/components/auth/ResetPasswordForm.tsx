@@ -11,6 +11,7 @@ import { MIN_PAROLA } from '@/lib/passwordPolicy'
 
 import { FieldGroup } from '@/components/ui/FieldGroup'
 import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
+import { LiveRegion } from '@/components/ui/LiveRegion'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 
@@ -181,6 +182,20 @@ export const ResetPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => {
 
   return (
     <form onSubmit={gonder} noValidate className="space-y-6">
+      <LiveRegion
+        mesaj={
+          sonuc === 'jetonGecersiz'
+            ? t('resetInvalidToken')
+            : sonuc === 'ag'
+              ? t('errorNetwork')
+              : sonuc === 'limit'
+                ? t('errorRateLimited')
+                : sonuc
+                  ? t('errorGeneric')
+                  : ''
+        }
+      />
+
       {/* Hata ozeti — Madde 103/105/106/107. */}
       <FormErrorSummary
         hatalar={[

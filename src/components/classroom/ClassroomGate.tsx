@@ -86,6 +86,9 @@ export const ClassroomGate: React.FC<Props> = ({ locale, roomId, instructions })
           <p
             id={errorId}
             role="alert"
+            /* Madde 103/104: hata aninda ve tam metin olarak duyurulur. */
+            aria-live="assertive"
+            aria-atomic="true"
             className="rounded border border-danger-700 bg-surface p-3 font-medium text-danger-700"
           >
             {state.message}

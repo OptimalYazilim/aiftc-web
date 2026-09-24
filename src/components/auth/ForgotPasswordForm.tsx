@@ -8,6 +8,7 @@ import type { Locale } from '@/i18n/locales'
 import { authHref } from '@/i18n/routes'
 
 import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
+import { LiveRegion } from '@/components/ui/LiveRegion'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 
@@ -118,6 +119,18 @@ export const ForgotPasswordForm: React.FC<{ locale: Locale }> = ({ locale }) => 
 
   return (
     <form onSubmit={gonder} noValidate className="space-y-6">
+      <LiveRegion
+        mesaj={
+          sonuc === 'ag'
+            ? t('errorNetwork')
+            : sonuc === 'limit'
+              ? t('errorRateLimited')
+              : sonuc
+                ? t('errorGeneric')
+                : ''
+        }
+      />
+
       {/* Hata ozeti — Madde 103/105/106/107. */}
       <FormErrorSummary
         hatalar={hata ? [{ alanId: epostaId, mesaj: `${t('fieldEmail')}: ${hata}` }] : []}

@@ -77,11 +77,32 @@ export const MainNav: React.FC<Props> = ({ items, variant = 'desktop', onNavigat
       if (!containerRef.current?.contains(event.target as Node)) close()
     }
 
+    /*
+      ODAK PANELDEN ÇIKARSA PANEL KAPANIR  (Kontrol Listesi 62 · 63)
+      Klavye kullanıcısı alt menünün son bağlantısından Tab'a bastığında panel
+      açık KALIYOR ve odak arkasındaki içeriğe geçiyordu: görünürde açık bir
+      menü, ama odak başka yerde. `focusout` ile panel kendi kendine kapanır.
+
+      `relatedTarget` yeni odaklanan öğedir; hâlâ menünün içindeyse (alt menü
+      bağlantıları arasında geziniyor) kapatılmaz. `null` gelirse (odak
+      pencereden çıktı) da kapatılmaz — sekme değiştiren kullanıcı geri
+      döndüğünde menüsünü kapanmış bulmamalıdır.
+    */
+    const onFocusOut = (event: FocusEvent) => {
+      const yeni = event.relatedTarget as Node | null
+      if (!yeni) return
+      if (!containerRef.current?.contains(yeni)) close()
+    }
+
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('pointerdown', onPointerDown)
+    containerRef.current?.addEventListener('focusout', onFocusOut)
+
+    const kapsayici = containerRef.current
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('pointerdown', onPointerDown)
+      kapsayici?.removeEventListener('focusout', onFocusOut)
     }
   }, [openIndex, close])
 

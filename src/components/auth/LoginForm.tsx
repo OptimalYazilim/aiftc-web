@@ -8,6 +8,7 @@ import type { Locale } from '@/i18n/locales'
 import { authHref, href as routeHref } from '@/i18n/routes'
 
 import { FieldGroup } from '@/components/ui/FieldGroup'
+import { LiveRegion } from '@/components/ui/LiveRegion'
 import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
@@ -134,12 +135,25 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
       if (cevap.ok) {
         setDurum('basarili')
         /*
-          Girişin AÇTIĞI yere götürülür: kısıtlı kayıtların bulunduğu
-          kütüphane. `router.push` yerine tam sayfa geçişi kullanılır —
-          sunucu bileşenleri yeni oturumu ancak yeni bir istekte görür,
-          istemci tarafı gezinme önbellekteki anonim HTML'i gösterirdi.
+          BAĞLAM DEĞİŞİKLİĞİ ÖNCE DUYURULUR  (Kontrol Listesi 96)
+          ------------------------------------------------------------------
+          Önceki sürümde `setDurum('basarili')` ile `window.location.assign`
+          aynı tick içindeydi: React'in başarı bildirimini BOYAMASINA fırsat
+          kalmadan gezinme başlıyordu. Kullanıcı için sonuç, hiçbir açıklama
+          olmadan başka bir sayfada uyanmaktı; ekran okuyucu ise duyuracak bir
+          şey bulamıyordu.
+
+          Kısa bir gecikme, bildirimin hem BOYANMASINA hem de canlı bölgeden
+          OKUNMASINA yetiyor. Süre bilinçli olarak kısa: bu bir onay ekranı
+          değil, geçişin fark edilmesini sağlayan bir soluk.
+
+          Gezinme `router.push` ile değil tam sayfa geçişiyle yapılır — sunucu
+          bileşenleri yeni oturumu ancak yeni bir istekte görür, istemci
+          tarafı gezinme önbellekteki anonim HTML'i gösterirdi.
         */
-        window.location.assign(routeHref('library', locale))
+        window.setTimeout(() => {
+          window.location.assign(routeHref('library', locale))
+        }, 1200)
         return
       }
 
@@ -179,14 +193,42 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
 
   if (durum === 'basarili') {
     return (
-      <AuthNotice ton="basari" baslik={t('loginSuccessTitle')} rol="alert">
-        {t('loginSuccess')}
-      </AuthNotice>
+      <>
+        {/* Gorsel bildirim degismedi; bu onun SESLI karsiligidir (Madde 96). */}
+        <LiveRegion mesaj={`${t('loginSuccessTitle')}. ${t('loginSuccess')}`} />
+        <AuthNotice ton="basari" baslik={t('loginSuccessTitle')} rol="status">
+          {t('loginSuccess')}
+        </AuthNotice>
+      </>
     )
   }
 
   return (
     <form onSubmit={gonder} noValidate className="space-y-6">
+      {/*
+        KALICI CANLI BOLGE (Madde 103/109). Form ilk cizildiginde BOS olarak
+        DOM'a girer; sonuc geldiginde yalnizca METNI degisir ve ekran okuyucu
+        degisikligi yakalar. Bildirim kutusuyla birlikte DOM'a giren bir
+        bolge bu garantiyi vermez — gerekce LiveRegion icinde.
+      */}
+      <LiveRegion
+        mesaj={
+          sonuc?.tur === 'durum'
+            ? sonuc.kod === 'account_suspended'
+              ? t('statusSuspended')
+              : t('statusPending')
+            : sonuc?.tur === 'gecersiz'
+              ? t('errorInvalidCredentials')
+              : sonuc?.tur === 'limit'
+                ? t('errorRateLimited')
+                : sonuc?.tur === 'ag'
+                  ? t('errorNetwork')
+                  : sonuc
+                    ? t('errorGeneric')
+                    : ''
+        }
+      />
+
       {/* Hata ozeti — Madde 103/105/106/107. */}
       <FormErrorSummary
         hatalar={hataListesi}

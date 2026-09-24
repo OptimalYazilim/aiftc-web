@@ -11,6 +11,7 @@ import { MIN_PAROLA } from '@/lib/passwordPolicy'
 
 import { FieldGroup } from '@/components/ui/FieldGroup'
 import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
+import { LiveRegion } from '@/components/ui/LiveRegion'
 
 import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 import { useTurnstile } from './useTurnstile'
@@ -231,7 +232,9 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
   if (durum === 'basarili') {
     return (
       <div className="space-y-5">
-        <AuthNotice ton="basari" baslik={t('registerSuccessTitle')} rol="alert">
+        {/* Gorsel bildirim degismedi; sesli karsiligi (Madde 109). */}
+        <LiveRegion mesaj={`${t('registerSuccessTitle')}. ${t('registerSuccess')}`} />
+        <AuthNotice ton="basari" baslik={t('registerSuccessTitle')} rol="status">
           {t('registerSuccess')}
         </AuthNotice>
 
@@ -257,6 +260,22 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
 
   return (
     <form onSubmit={gonder} noValidate className="space-y-6">
+      {/* Form cizildigi anda BOS olarak DOM'a girer; sonuc geldiginde metni
+          degisir ve okuyucu degisikligi yakalar (bkz. LiveRegion). */}
+      <LiveRegion
+        mesaj={
+          sonuc === 'ag'
+            ? t('errorNetwork')
+            : sonuc === 'limit'
+              ? t('errorRateLimited')
+              : sonuc === 'captcha'
+                ? t('errorCaptcha')
+                : sonuc
+                  ? t('errorGeneric')
+                  : ''
+        }
+      />
+
       {sonuc ? (
         <AuthNotice ton="hata" baslik={t('errorSummary')} rol="alert">
           {sonuc === 'ag'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 
 /**
  * MODAL <dialog> KANCASI — TEK KAYNAK
@@ -65,6 +65,32 @@ import { useEffect, type RefObject } from 'react'
  * `dialog.close()` temizlikte ÇAĞRILMAZ: eleman DOM'dan çıktığında tarayıcı
  * pencereyi zaten kapatır.
  *
+ * ---------------------------------------------------------------------------
+ * DÜZELTME 3 — ODAK AÇANA GERİ DÖNMÜYORDU  (Kontrol Listesi 57 · 62 · 63)
+ * ---------------------------------------------------------------------------
+ * `<dialog>` kapanırken odağı KENDİSİ açan öğeye döndürür — ama bunu yalnızca
+ * `dialog.close()` çağrıldığında yapar. Bu kurulumda pencere React tarafından
+ * DOM'DAN SÖKÜLEREK kapanıyor; söküldüğünde odaklı öğe de yok oluyor ve odak
+ * `<body>`ye düşüyor.
+ *
+ * Kullanıcı için sonucu şudur: videoyu Escape ile kapatan klavye kullanıcısı,
+ * Tab'a bastığında kaldığı yere değil SAYFANIN EN BAŞINA döner ve listeyi
+ * baştan geçmek zorunda kalır. Uzun bir kütüphane listesinde bu, pencereyi
+ * kapatmayı cezalandırır.
+ *
+ * Bu yüzden açan öğe açılışta saklanır, kapanışta odak ona geri verilir.
+ * Öğe bu arada DOM'dan çıkmış olabilir (liste yeniden çizilmişse):
+ * `isConnected` ile bakılır, yoksa odak zorlanmaz.
+ *
+ * ---------------------------------------------------------------------------
+ * DÜZELTME 4 — AÇILIŞTA ODAK PENCERENİN İÇİNE ALINIR
+ * ---------------------------------------------------------------------------
+ * `showModal()` odağı pencerenin ilk odaklanabilir öğesine taşır; o öğe
+ * pencerenin SONUNDAKİ bir bağlantıysa (indirme bağlantısı gibi) ekran
+ * okuyucu içeriği ortadan okumaya başlar. Odak açıkça pencerenin KENDİSİNE
+ * alınır — `tabIndex={-1}` taşıyan kabuk, başlıktan itibaren okunmasını
+ * sağlar ve Tab sırası yine baştan işler.
+ *
  * KULLANIM
  * ---------------------------------------------------------------------------
  * Bileşen YALNIZCA açıkken DOM'a girmelidir (ebeveyn koşullu render eder);
@@ -75,11 +101,46 @@ export const useModalDialog = (
   ref: RefObject<HTMLDialogElement | null>,
   onClose: () => void,
 ): void => {
+  /*
+    AÇAN ÖĞE EFEKTİN İÇİNDE DEĞİL, REF'TE TUTULUR — ÖLÇÜLMÜŞ BİR GEREKÇE.
+
+    İlk sürüm `document.activeElement`i efektin içinde yerel bir değişkene
+    alıyordu. StrictMode geliştirmede efekti iki kez çalıştırır ve sıra şudur:
+
+        efekt1  → dialog.focus()          odak PENCEREDE
+        temizlik1 → acan.focus()          odak tetikleyicide (doğru)
+        efekt2  → acan = activeElement    ← bu anda yakalanan değer kararsız
+
+    Ölçüm (2026-09-24, kütüphane künye sayfası): `focus` çağrıları izlendi;
+    temizlik1'de TETİK'e dönüş görüldü, ama gerçek kapanışta (Escape) HİÇBİR
+    `focus` çağrısı yapılmadı — ikinci efektin yakaladığı değer artık
+    tetikleyici değildi ve `isConnected` kapısına takıldı. Kullanıcı için
+    sonuç: Escape sonrası odak `<body>`ye düşüyordu.
+
+    `useRef` bileşenin ömrü boyunca TEK KEZ doldurulur; StrictMode'un ikinci
+    çalıştırması onu değiştiremez.
+  */
+  const acanRef = useRef<HTMLElement | null>(null)
+  if (acanRef.current === null && typeof document !== 'undefined') {
+    const aday = document.activeElement as HTMLElement | null
+    /* `<body>` bir tetikleyici değildir; onu saklamak odağı hiçbir yere
+       döndürmez ve gerçek tetikleyicinin yerini de kapatırdı. */
+    if (aday && aday !== document.body) acanRef.current = aday
+  }
+
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
 
     if (!dialog.open) dialog.showModal()
+
+    /*
+      Odak pencerenin kabuğuna alınır (DÜZELTME 4). `preventScroll`:
+      `<dialog>` zaten üst katmanda ve tam ekrandır; kaydırma isteği arka
+      plandaki gövdeyi oynatır ve pencere kapanınca kullanıcı başka bir yerde
+      bulur kendini.
+    */
+    dialog.focus({ preventScroll: true })
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -105,6 +166,15 @@ export const useModalDialog = (
       dialog.removeEventListener('close', requestClose)
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
+
+      /*
+        ODAK AÇAN ÖĞEYE GERİ (DÜZELTME 3).
+        `isConnected`: liste bu arada yeniden çizilmiş olabilir; kopmuş bir
+        öğeye odak vermek sessizce başarısız olur ve odak yine `<body>`de
+        kalırdı. Bağlıysa geri verilir, değilse zorlanmaz.
+      */
+      const acanOge = acanRef.current
+      if (acanOge?.isConnected) acanOge.focus({ preventScroll: true })
     }
     // `ref` ve `onClose` çağıran tarafta kararlıdır; efekt yalnızca
     // mount/unmount'ta çalışmalıdır (bkz. yukarıdaki not).

@@ -164,6 +164,13 @@ export const GalleryLightbox: React.FC<Props> = ({
       ref={ref}
       aria-label={title}
       /*
+        `tabIndex={-1}`: `<dialog>` varsayılan olarak ODAKLANAMAZ. Kanca açılışta
+        odağı kabuğa alır (Kontrol Listesi 57/62) — bu öznitelik olmadan o çağrı
+        sessizce başarısız olur ve odak pencerenin ortasındaki rastgele bir
+        bağlantıya düşer.
+      */
+      tabIndex={-1}
+      /*
         Escape ve kapanış olayları KANCADA ele alınır (bkz. useModalDialog —
         `close` olayı her ortamda gelmiyor). Burada yalnızca ARKA PLANA
         tıklama kalır.

@@ -129,6 +129,13 @@ export const MediaDialog: React.FC<Props> = ({
       ref={ref}
       aria-label={title}
       /*
+        `tabIndex={-1}`: `<dialog>` varsayılan olarak ODAKLANAMAZ. Kanca açılışta
+        odağı kabuğa alır (Kontrol Listesi 57/62) — bu öznitelik olmadan o çağrı
+        sessizce başarısız olur ve odak pencerenin ortasındaki rastgele bir
+        bağlantıya düşer.
+      */
+      tabIndex={-1}
+      /*
         Escape ve kapanış olayları KANCADA ele alınır (bkz. useModalDialog —
         `close` olayı her ortamda yayılmıyor, ölçüldü). Burada yalnızca ARKA
         PLANA tıklama kalır.
@@ -190,6 +197,15 @@ export const MediaDialog: React.FC<Props> = ({
           {playbackFailed ? (
             <p
               role="status"
+              /*
+                Madde 95/96: oynatma başarısız olduğunda pencere KAPANMAZ,
+                sayfa değişmez — bağlam yerinde kalır, yalnızca bir bildirim
+                belirir. Ekran okuyucunun bunu yakalaması için `aria-live`
+                açıkça yazıldı; `aria-atomic` metnin tamamının okunmasını
+                sağlar (yalnızca değişen kelime değil).
+              */
+              aria-live="polite"
+              aria-atomic="true"
               className="flex flex-col items-start gap-3 px-5 py-8 text-sm text-white/85 sm:flex-row sm:items-center"
             >
               <svg

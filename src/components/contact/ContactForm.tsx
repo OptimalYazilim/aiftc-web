@@ -6,6 +6,7 @@ import React, { useActionState, useId, useState } from 'react'
 import { FOCUS_COUNTRIES, SUBMISSION_TYPES } from '@/fields/options'
 import { FieldGroup } from '@/components/ui/FieldGroup'
 import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
+import { LiveRegion } from '@/components/ui/LiveRegion'
 import type { Locale } from '@/i18n/locales'
 import { optionLabel } from '@/lib/optionLabel'
 
@@ -235,6 +236,14 @@ export const ContactForm: React.FC<ContactFormProps> = ({
       */
       <div
         role="status"
+        /*
+          Madde 109: veri girisi basariyla tamamlandiginda kullanici basari
+          mesaji alir. `aria-live` + `aria-atomic` ACIKCA yazildi — `role`
+          ortuk olarak zaten veriyor, ama bu bildirim FORMUN TAMAMININ yerine
+          geçiyor ve duyurunun atlanması en pahalı olduğu yer burası.
+        */
+        aria-live="polite"
+        aria-atomic="true"
         className="flex gap-4 rounded-card border-2 border-success-800 bg-brand-50 p-6 text-ink-900"
       >
         <svg
@@ -280,9 +289,14 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         />
       </div>
 
+      {/* Form ilk cizildiginde BOS girer; sunucu yaniti gelince metni degisir. */}
+      <LiveRegion mesaj={state.status === 'error' ? (state.message ?? '') : ''} />
+
       {state.status === 'error' && state.message ? (
         <p
           role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
           className="rounded-card border border-danger-700 bg-surface p-4 font-medium text-danger-700"
         >
           {state.message}
