@@ -72,6 +72,7 @@ export default async function HomePage({ params }: Props) {
 
   const t = await getTranslations('home')
   const tc = await getTranslations('common')
+  const tn = await getTranslations('nav')
 
   const payload = await payloadClient()
   const [{ services, navigation }, homepage] = await Promise.all([
@@ -235,7 +236,13 @@ export default async function HomePage({ params }: Props) {
         <SectionHeading
           id="latest-news"
           title={t('latestNews')}
-          action={<ArrowLink href={href('news', locale)}>{tc('viewAll')}</ArrowLink>}
+          /* Bkz. FeaturedTrainingsBento: iki "Tümünü gör" ayrışmalı. */
+          action={
+            <ArrowLink href={href('news', locale)}>
+              {tc('viewAll')}
+              <span className="sr-only">: {tn('news')}</span>
+            </ArrowLink>
+          }
         />
 
         {latestNews.docs.length === 0 ? (

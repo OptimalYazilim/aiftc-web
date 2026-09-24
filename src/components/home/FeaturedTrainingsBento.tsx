@@ -104,6 +104,7 @@ export const FeaturedTrainingsBento = async ({
   const t = await getTranslations('home')
   const tc = await getTranslations('common')
   const tt = await getTranslations('training')
+  const tn = await getTranslations('nav')
 
   const pattern = BENTO_PATTERNS[Math.min(items.length, 6)] ?? BENTO_PATTERNS[6]
 
@@ -121,7 +122,23 @@ export const FeaturedTrainingsBento = async ({
         id="featured-trainings"
         title={title?.trim() || t('featuredTrainings')}
         intro={intro?.trim() || null}
-        action={<ArrowLink href={href('training-programs', locale)}>{tc('viewAll')}</ArrowLink>}
+        /*
+          AYNI İSİMLİ BAĞLANTILAR  (Kontrol Listesi 84 · WCAG 2.4.4/2.4.9)
+          Ana sayfada iki ayrı "Tümünü gör" bağlantısı var ve ikisi farklı
+          yere gidiyor. Ekran okuyucunun bağlantı listesinde ikisi de aynı
+          adla görünüyordu; kullanıcı hangisinin nereye gittiğini seçemezdi.
+
+          Görünür metin DEĞİŞMEZ. Erişilebilir isim görünür etiketle BAŞLAR
+          ve hedefi ekler (Madde 89): "Tümünü gör: Eğitim Programları".
+          `sr-only` mutlak konumlandırılmıştır; flex düzenine girmez, görsel
+          hiçbir şey kaymaz.
+        */
+        action={
+          <ArrowLink href={href('training-programs', locale)}>
+            {tc('viewAll')}
+            <span className="sr-only">: {tn('trainingPrograms')}</span>
+          </ArrowLink>
+        }
       />
 
       {items.length === 0 ? (
@@ -159,7 +176,38 @@ export const FeaturedTrainingsBento = async ({
               return (
                 <li
                   key={String(item.id)}
-                  className={`${pattern[index] ?? ''} relative isolate flex min-h-72 flex-col justify-end overflow-hidden rounded-card`}
+                  /*
+                    `bg-shell-950` — GÖRÜNÜRDE HİÇBİR ŞEY DEĞİŞTİRMEZ.
+                    ====================================================
+                    Kartın yüzeyini zaten fotoğraf (`fill` + `object-cover`)
+                    ya da `MediaFallback` (`absolute inset-0`) tamamen
+                    kaplıyor; bu düz renk hiçbir zaman görünmez.
+
+                    NEDEN VAR: otomatik kontrast denetçileri (Lighthouse,
+                    axe) degrade ve katman bileşimini HESAPLAYAMAZ. Metnin
+                    ardındaki gerçek zemini bulamayınca en yakın DÜZ RENKLİ
+                    ataya düşüyorlar — burada bölümün `bg-surface-warm`i
+                    (#f9f9f6). Sonuç, beyaz metin için 1.05:1 diye raporlanan
+                    bir "hata"ydı.
+
+                    ÖLÇÜLEN GERÇEK KONTRAST (beyaz metin):
+                      media-frame-dark, radyal parlamanın en açık noktası
+                        → 9.12:1
+                      media-frame-dark, degrade durakları
+                        → 12.78:1 · 15.74:1 · 17.11:1
+                      CARD_OVERLAY, bembeyaz fotoğraf varsayımıyla (en kötü)
+                        → 10.86:1
+                    Hepsi AA sınırının (4.5:1) çok üstünde.
+
+                    Bu satır bir erişilebilirlik DÜZELTMESİ değildir; denetim
+                    aracına doğru zemini gösterir. `isolate` bir yığınlama
+                    bağlamı kurduğu için bu arka plan, negatif z-index'li
+                    katmanların ALTINDA boyanır.
+
+                    Yan fayda: şeffaf ya da yüklenemeyen bir görselde kart
+                    beyaz kalmaz, beyaz metin okunur kalır.
+                  */
+                  className={`${pattern[index] ?? ''} relative isolate flex min-h-72 flex-col justify-end overflow-hidden rounded-card bg-shell-950`}
                 >
                   {cover?.url ? (
                     <>

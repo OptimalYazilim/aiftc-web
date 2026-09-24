@@ -146,7 +146,20 @@ export const SiteHeader = async ({ locale, localeAlternates }: Props) => {
           <Link
             href={href('home', locale)}
             className="flex min-w-0 items-center gap-3 rounded py-1"
-            aria-label={`${siteName} — ${t('home')}`}
+            /*
+              ERİŞİLEBİLİR İSİM GÖRÜNÜR ETİKETLE BAŞLAR  (Madde 89 · WCAG 2.5.3)
+              Görünür metin kısa adla ("AIFTC") başlıyor, `aria-label` ise tam
+              unvanla. Sesli komut kullanan biri "AIFTC"ye tıkla dediğinde
+              eşleşme bulunamıyordu.
+
+              Değerler CMS'ten gelir, sabit yazılmaz: kurum unvanını panelden
+              değiştirdiğinde etiket kendiliğinden doğru kalır.
+            */
+            aria-label={
+              siteShortName
+                ? `${siteShortName} ${siteName} — ${t('home')}`
+                : `${siteName} — ${t('home')}`
+            }
           >
             {/*
               YALNIZCA YÜKLENMİŞ KURUM LOGOSU BASILIR.
