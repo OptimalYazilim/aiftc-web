@@ -21,8 +21,10 @@ import {
  * ERİŞİLEBİLİRLİK — her karar bir WCAG maddesine bağlı:
  *   - Her alanın GÖRÜNÜR `<label>`ı vardır (3.3.2). Yalnızca placeholder
  *     kullanmak yeterli değildir: metin yazılmaya başlayınca kaybolur.
- *   - Zorunlu alanlar hem `required` hem görünür bir "(zorunlu)" metni taşır;
- *     yıldız işareti tek başına ekran okuyucuda anlam taşımaz (1.4.1).
+ *   - Zorunlu alanlar hem `required`/`aria-required` hem görünür bir "(zorunlu)"
+ *     metni taşır; yıldız işareti tek başına ekran okuyucuda anlam taşımaz
+ *     (1.4.1). Görünür metin `aria-hidden`dır — erişilebilir isme karışıp
+ *     "Konu(zorunlu)" biçiminde birleşiyordu (gerekçe etiketin yanında).
  *   - Hata mesajları alana `aria-describedby` ile BAĞLANIR ve `aria-invalid`
  *     işaretlenir (3.3.1). Özet mesaj `role="alert"` ile duyurulur.
  *   - `autoComplete` değerleri tarayıcının otomatik doldurmasını sağlar
@@ -78,6 +80,14 @@ const Field: React.FC<FieldProps> = ({
     required,
     maxLength,
     autoComplete,
+    /*
+      Görünür "(zorunlu)" metni artık `aria-hidden` olduğu için zorunluluk
+      yardımcı teknolojiye YALNIZCA programatik olarak ulaşır. `required`
+      özniteliği bunu zaten örtük biçimde bildirir; `aria-required` onu açık
+      hâle getirir ve `AuthField` ile aynı garantiyi verir — iki form bileşeni
+      arasındaki sessiz bir davranış farkı olmasın.
+    */
+    'aria-required': required || undefined,
     'aria-invalid': error ? true : undefined,
     'aria-describedby': describedBy || undefined,
     className: `mt-2 w-full rounded-card border bg-surface px-4 py-2.5 text-ink-900 placeholder:text-ink-500 ${
@@ -90,7 +100,17 @@ const Field: React.FC<FieldProps> = ({
       <label htmlFor={id} className="block font-medium text-ink-700">
         {label}
         {required ? (
-          <span className="ms-1 font-normal text-ink-600">({requiredHint})</span>
+          /*
+            `aria-hidden` — gerekçe `auth/AuthField.tsx` içinde ayrıntılı.
+            Kısaca: işaret etiketin içinde olduğu için erişilebilir isme de
+            giriyordu ve isim hesaplaması satır içi öğeler arasına boşluk
+            koymadığı için ad "Konu(zorunlu)" biçiminde birleşiyordu. Metin
+            ekranda aynen kalır (Kontrol Listesi 117); zorunluluk yardımcı
+            teknolojiye `required` + `aria-required` ile bildirilir.
+          */
+          <span aria-hidden="true" className="ms-1 font-normal text-ink-600">
+            ({requiredHint})
+          </span>
         ) : null}
       </label>
 

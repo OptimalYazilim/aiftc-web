@@ -24,7 +24,9 @@ import React, { useId } from 'react'
  *   - Hata, alana `aria-describedby` ile BAĞLANIR ve `aria-invalid`
  *     işaretlenir (3.3.1).
  *   - Zorunluluk yıldızla DEĞİL, metinle de belirtilir: yıldız tek başına
- *     ekran okuyucuda anlam taşımaz. `required` özniteliği ayrıca durur.
+ *     ekran okuyucuda anlam taşımaz. Görünür metin GÖREN kullanıcı içindir ve
+ *     `aria-hidden` taşır (gerekçe etiketin yanında); yardımcı teknolojiye
+ *     zorunluluk `required` + `aria-required` ile bildirilir.
  *   - `focus:outline-none` KULLANILMAZ — genel `:focus-visible` halkası
  *     WCAG 2.4.11/2.4.13 gereğidir ve ezilmemelidir.
  *   - Hedefler ≥44px (2.5.8).
@@ -73,7 +75,29 @@ export const AuthField: React.FC<{
       <label htmlFor={id} className="block text-sm font-semibold text-shell-900">
         {label}
         {required ? (
-          <span className="ms-1 font-normal text-ink-600">{requiredMark}</span>
+          /*
+            `aria-hidden` — ÖLÇÜLMÜŞ BİR OKUMA KUSURU.
+            İşaret etiketin İÇİNDE durduğu için erişilebilir isme de giriyordu
+            ve isim hesaplaması satır içi öğeler arasına boşluk KOYMAZ (CSS
+            `ms-1` yalnızca görsel bir boşluktur). Sonuç, E2E anlık
+            görüntüsünde şöyle ölçüldü:
+
+                textbox "E-posta adresi(zorunlu)"
+
+            Ekran okuyucu alanın adını "E-posta adresizorunlu" olarak
+            birleştiriyordu. Bilgi kaybı YOK: zorunluluk hem `required` hem
+            `aria-required` ile yardımcı teknolojiye ZATEN bildiriliyor
+            (aşağıya bakınız), yani işaretin görevi yalnızca GÖREN kullanıcıya
+            hitap etmektir — Kontrol Listesi 117 bunu ister ve metin ekranda
+            aynen kalır.
+
+            Alternatifler neden seçilmedi:
+              · araya boşluk koymak  → ismi düzeltir ama etiketi ~4px kaydırır
+              · işareti kaldırmak    → Madde 117'yi ihlal eder
+          */
+          <span aria-hidden="true" className="ms-1 font-normal text-ink-600">
+            {requiredMark}
+          </span>
         ) : null}
       </label>
 
@@ -85,9 +109,10 @@ export const AuthField: React.FC<{
         required={required}
         /*
           Kontrol Listesi 117: zorunluluk METİNLE de belirtilir (yukarıdaki
-          `requiredMark`). `aria-required` onu yardımcı teknolojiye ayrıca
-          bildirir; `required` özniteliği tarayıcı doğrulamasıdır, ikisi
-          birbirinin yerine geçmez.
+          `requiredMark`). O metin `aria-hidden` olduğu için — gerekçe
+          yukarıda — zorunluluğu yardımcı teknolojiye taşıyan TEK yol burasıdır:
+          `aria-required` durumu bildirir, `required` tarayıcı doğrulamasını
+          açar. İkisi birbirinin yerine geçmez ve ikisi de KALDIRILMAMALIDIR.
         */
         aria-required={required || undefined}
         autoComplete={autoComplete}

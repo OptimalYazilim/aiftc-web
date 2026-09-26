@@ -21,17 +21,37 @@ import { TEST_PAROLASI } from './tohum'
 /**
  * KİMLİK ALANLARI — SEÇİCİLER TEK YERDE
  * ---------------------------------------------------------------------------
- * ÖLÇÜLMÜŞ TUZAK: erişilebilir isim `E-posta adresi(zorunlu)`dır, çünkü
- * `AuthField` zorunluluk işaretini etiketin İÇİNE koyar. `exact: true` ile
- * arayan ilk sürüm hiçbir alanı bulamadı ve giriş kullanan yedi test birden
- * zaman aşımına düştü — sebebi tek bir seçiciydi.
+ * `getByLabel` DEĞİL `getByRole` — ÖLÇÜLMÜŞ VE ÖNEMLİ BİR FARK
+ * ---------------------------------------------------------------------------
+ * Bu seçiciler iki kez kırıldı ve ikisi de aynı yanlış varsayımdan geliyordu.
  *
- * Başa çapalanmış düzenli ifade kullanılır: işaretin metni değişse bile
- * (örn. "(gerekli)") seçici ayakta kalır, ama alanın GÖRÜNÜR etiketi
- * değişirse — yani gerçek bir gerileme olursa — kırılır.
+ * 1. İlk sürüm `getByLabel('E-posta adresi', { exact: true })` idi ve hiçbir
+ *    alanı bulamadı: `AuthField` zorunluluk işaretini etiketin İÇİNE koyuyordu,
+ *    yani etiket metni `E-posta adresi(zorunlu)` idi. Giriş kullanan yedi test
+ *    birden zaman aşımına düştü; sebebi tek bir seçiciydi.
+ *
+ * 2. Ardından o birleşme gerçek bir erişilebilirlik kusuru olarak düzeltildi:
+ *    işaret `aria-hidden="true"` aldı. Ama `getByLabel` YİNE bulamadı.
+ *
+ * İkinci kırılmanın dersi şu: `getByLabel` `<label>` öğesinin DOM METNİNE
+ * bakar ve `aria-hidden`ı DİKKATE ALMAZ; `getByRole(..., { name })` ise
+ * tarayıcının HESAPLADIĞI erişilebilir ismi kullanır. Aynı sayfada ölçüldü:
+ *
+ *     generic : "E-posta adresi(zorunlu)"   ← `getByLabel`in gördüğü
+ *     textbox : "E-posta adresi"            ← `getByRole`un gördüğü
+ *
+ * Testlerin sınamak istediği şey ikincisidir — ekran okuyucunun duyduğu ad.
+ * Bu yüzden kimlik alanları rol üzerinden aranır.
+ *
+ * `type="password"` da `textbox` olarak açığa çıkar (ölçüldü); ayrı bir rol
+ * aramak gerekmez. `exact: true` ŞART: kayıt formunda "Parola (tekrar)" alanı
+ * da vardır ve gevşek eşleşme iki alana çarpar.
  */
-export const epostaAlani = (page: Page) => page.getByLabel(/^E-posta adresi/)
-export const parolaAlani = (page: Page) => page.getByLabel(/^Parola\(/)
+export const epostaAlani = (page: Page) =>
+  page.getByRole('textbox', { name: 'E-posta adresi', exact: true })
+
+export const parolaAlani = (page: Page) =>
+  page.getByRole('textbox', { name: 'Parola', exact: true })
 
 export const girisYap = async (
   page: Page,

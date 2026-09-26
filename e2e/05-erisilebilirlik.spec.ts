@@ -27,6 +27,61 @@ import { ADLAR } from './yardimcilar/tohum'
  */
 
 test.describe('Erişilebilirlik değişmezleri', () => {
+  test('zorunlu alanın erişilebilir ismi temizdir, zorunluluk PROGRAMATİK gelir', async ({
+    page,
+  }) => {
+    await page.goto('/tr/giris')
+
+    /*
+      ÖLÇÜLMÜŞ KUSURUN NÖBETÇİSİ.
+      Zorunluluk işareti etiketin içinde ve `aria-hidden` olmadan durduğu
+      sürece erişilebilir isme karışıyordu; isim hesaplaması satır içi öğeler
+      arasına boşluk koymadığı için ekran okuyucu şunu duyuyordu:
+
+          textbox "E-posta adresi(zorunlu)"
+
+      İşaret `aria-hidden="true"` yapıldı. Bu test iki şeyi BİRLİKTE sabitler
+      — biri olmadan öteki bir gerilemeyi gizler:
+
+        1. isim temiz olmalı        → işaret isme geri sızarsa kırılır
+        2. zorunluluk bildirilmeli  → işaret TÜMDEN kaldırılırsa kırılır
+                                      (o zaman bilgi hiçbir yoldan ulaşmazdı)
+    */
+    const eposta = page.getByRole('textbox', { name: 'E-posta adresi', exact: true })
+    await expect(eposta).toBeVisible()
+
+    await expect(eposta).toHaveAttribute('aria-required', 'true')
+    await expect(eposta).toHaveAttribute('required', '')
+
+    /* Görünür metin GÖREN kullanıcı için ekranda KALMALI (Madde 117). */
+    await expect(page.getByText('(zorunlu)').first()).toBeVisible()
+  })
+
+  test('aynı değişmez iletişim formunda da geçerlidir', async ({ page }) => {
+    /*
+      İKİ BİLEŞEN, AYNI KUSUR.
+      İşaret iki yerde üretiliyor: `auth/AuthField` ve `contact/ContactForm`.
+      Yalnızca birini sınamak, ötekinin sessizce gerilemesine izin verirdi —
+      ikisi ayrı dosyalar olduğu için birini düzeltip ötekini atlamak kolaydır.
+    */
+    await page.goto('/tr/iletisim')
+
+    const konu = page.getByRole('textbox', { name: 'Konu', exact: true })
+    await expect(konu).toBeVisible()
+    await expect(konu).toHaveAttribute('aria-required', 'true')
+
+    /*
+      Açılır listeler AYRI bir yol izler ve ZATEN doğruydu: yıldız
+      `aria-hidden`, zorunluluk ise `sr-only` bir metinle — başında BOŞLUKLA —
+      isme ekleniyor. Yani adı "… (zorunlu)" olarak biter ve birleşme yaşanmaz.
+      Bu satır o farkın bilinçli olduğunu kayda geçirir.
+
+      Ölçülen ad: combobox "Talep türü (zorunlu)". Etiketteki "türü" KÜÇÜK
+      harfle başlar; bu yüzden düzenli ifade harf duyarsızdır.
+    */
+    await expect(page.getByRole('combobox', { name: /^Talep türü \(zorunlu\)$/i })).toBeVisible()
+  })
+
   test('form hatasında odak, hata özetine taşınır', async ({ page }) => {
     await page.goto('/tr/giris')
 
