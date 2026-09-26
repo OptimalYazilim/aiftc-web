@@ -77,6 +77,13 @@ coverage
 playwright-report
 test-results
 
+# E2E kosusunun ayri derleme dizini (bkz. next.config.mjs -> NEXT_DIST_DIR)
+.next-test
+
+# Next uretir ve `distDir`e gore yeniden yazar (create-next-app da yoksayar).
+# Surumlenirse her test kosusu depoda fark birakir.
+next-env.d.ts
+
 # ---------------------------------------------------------------------------
 # Günlükler ve işletim sistemi artıkları
 # ---------------------------------------------------------------------------

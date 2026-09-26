@@ -86,7 +86,16 @@ export default defineConfig({
       test ortam değişkenleriyle çalıştırmak, adresi yanlış gömülü bir
       uygulama üretirdi.
     */
-    command: 'pnpm exec next build && pnpm exec next start -p 3100',
+    /*
+      DERLEME DİZİNİ HER KOŞUDA SIFIRDAN KURULUR — ÖLÇÜLMÜŞ ZORUNLULUK.
+      Var olan bir derleme dizininin üzerine yeniden derlemek Windows'ta
+      "Cannot find module for page" (ENOENT) hatalarıyla çöküyor; aynı derleme
+      temiz dizinde her seferinde başarılı oluyor. Silinen dizin `.next-test`
+      olduğu için geliştirme sunucusunun `.next`i etkilenmez
+      (bkz. next.config.mjs -> NEXT_DIST_DIR).
+    */
+    command:
+      'node e2e/derleme-temizle.mjs && pnpm exec next build && pnpm exec next start -p 3100',
     url: TABAN_ADRES,
     /* Derleme uzun sürer; yerelde ayakta duran sunucu yeniden kullanılır. */
     reuseExistingServer: !process.env.CI,

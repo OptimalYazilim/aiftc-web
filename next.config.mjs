@@ -28,9 +28,34 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
  */
 const standaloneDisabled = process.env.NEXT_BUILD_NO_STANDALONE === 'true'
 
+/**
+ * DERLEME DİZİNİ — E2E TESTLERİ İÇİN AYRILABİLİR
+ * ============================================================================
+ * Değişken SET EDİLMEZSE hiçbir şey değişmez: Next varsayılan `.next`i
+ * kullanır. Üretim ve Docker derlemeleri bu değişkeni set etmez.
+ *
+ * NEDEN VAR
+ * ---------------------------------------------------------------------------
+ * İKİ ÖLÇÜLMÜŞ SORUN (2026-09-26, Windows):
+ *
+ *  1. Var olan bir `.next` üzerine yeniden derlemek "Cannot find module for
+ *     page" (ENOENT) hatalarıyla çöküyor; temiz dizine derlemek her seferinde
+ *     başarılı oluyor. E2E koşusu bu yüzden dizini önce silmek zorundadır.
+ *
+ *  2. Testler `.next`i silseydi geliştirme sunucusunun derlemesi de her
+ *     koşuda yok olur, `pnpm dev` baştan derlemek zorunda kalırdı.
+ *
+ * Testler `.env.test` ile `NEXT_DIST_DIR=.next-test` verir; `next build` ve
+ * `next start` aynı yapılandırmayı okuduğu için ikisi de o dizini kullanır ve
+ * `.next` hiç ellenmez.
+ * ============================================================================
+ */
+const distDir = process.env.NEXT_DIST_DIR
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   ...(standaloneDisabled ? {} : { output: 'standalone' }),
+  ...(distDir ? { distDir } : {}),
   reactStrictMode: true,
   poweredByHeader: false,
 

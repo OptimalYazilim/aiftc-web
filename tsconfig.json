@@ -19,6 +19,15 @@
       "@payload-config": ["./src/payload.config.ts"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    // E2E koşusu ayrı bir derleme dizini kullanır (next.config.mjs -> NEXT_DIST_DIR).
+    // Yol BURADA DURUR ki `next build` dosyayı her test koşusunda yeniden
+    // yazmasın — aksi halde depoda sürekli bir fark oluşur.
+    ".next-test/types/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
