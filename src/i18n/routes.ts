@@ -104,6 +104,24 @@ export const AUTH_ROUTES = {
    * tutuldugu icin bu davranis kendiliginden saglanir.
    */
   profile: { tr: '/profil', en: '/profile', ru: '/profil' },
+  /**
+   * e-DEVLET KUM HAVUZU EKRANI — YALNIZCA YEREL GELİŞTİRMEDE ÇALIŞIR
+   * -------------------------------------------------------------------------
+   * Gerçek e-Devlet Kapısı yerel adreste çalışmadığı için akış, geliştirme
+   * sırasında bu sahte ekranla tamamlanır. Sayfa `mockModuAktif()` false
+   * olduğunda 404 döner (bkz. lib/edevlet.ts); yani üretimde adres vardır ama
+   * içerik YOKTUR.
+   *
+   * Burada — `AUTH_ROUTES` içinde — durmasının sebebi: bu kümedeki rotalar
+   * `ROUTE_KEYS` dışıdır, dolayısıyla site haritasına GİRMEZ ve arama
+   * motoruna duyurulmaz. Bir test ekranının dizine girmesi kurumsal aramada
+   * en istenmeyecek sonuçtur.
+   */
+  edevletMock: {
+    tr: '/edevlet-mock',
+    en: '/edevlet-mock',
+    ru: '/edevlet-mock',
+  },
 } as const satisfies Record<string, Record<Locale, string>>
 
 export type AuthRouteKey = keyof typeof AUTH_ROUTES

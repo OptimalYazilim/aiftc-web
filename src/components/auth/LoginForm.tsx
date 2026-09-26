@@ -55,6 +55,32 @@ import { AUTH_BUTTON, AuthField, AuthNotice } from './AuthField'
 type Alanlar = { email: string; password: string }
 type Hatalar = Partial<Record<keyof Alanlar, string>>
 
+/**
+ * NÖTR KİMLİK KARTI İKONU — RESMÎ AMBLEM DEĞİL.
+ * Gerekçe aşağıdaki e-Devlet bloğunun docblock'unda: kamu kimlik sisteminin
+ * amblemini kullanmak, kurumun resmî işaretini bu kodun içine gömmek olur.
+ * Marka varlıkları, entegrasyon kurulduğunda kurumun kendi yönergesine göre
+ * eklenmelidir.
+ */
+const EdevletIkonu = () => (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    viewBox="0 0 20 20"
+    width="1.15em"
+    height="1.15em"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2" y="4" width="16" height="12" rx="2" />
+    <circle cx="7" cy="9.5" r="1.8" />
+    <path d="M4.2 13.6c.5-1.3 1.6-2 2.8-2s2.3.7 2.8 2M12 8.5h4M12 11.5h3" />
+  </svg>
+)
+
 /** Sunucudan dönen hatanın makine kodu — varsa. */
 const hataKodu = (govde: unknown): string | null => {
   const hatalar = (govde as { errors?: { data?: { code?: unknown } }[] } | null)?.errors
@@ -62,7 +88,24 @@ const hataKodu = (govde: unknown): string | null => {
   return typeof kod === 'string' ? kod : null
 }
 
-export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
+export const LoginForm: React.FC<{
+  locale: Locale
+  /**
+   * e-Devlet akışı kullanılabilir mi? KARAR SUNUCUDA VERİLİR ve prop olarak
+   * geçilir — bu bileşen bir istemci bileşenidir ve gerçek kapı
+   * yapılandırması (`EDEVLET_CLIENT_SECRET` vb.) istemci paketine
+   * GİRMEMELİDİR. `NEXT_PUBLIC_*` olmayan değişkenler burada okunamaz;
+   * okunabilse de okunmamalıydı.
+   */
+  edevletAktif?: boolean
+  /**
+   * Başarısız bir e-Devlet akışından dönen hata kodu (`?edevlet_hata=`).
+   * Sunucu tarafında sorgu dizesinden okunur; bu bileşen `useSearchParams`
+   * KULLANMAZ — o kanca, Suspense sınırı olmadan üretim derlemesini kırıyor
+   * (bu projede bir kez ölçüldü ve siteyi derlenemez hâle getirmişti).
+   */
+  edevletHata?: string | null
+}> = ({ locale, edevletAktif = false, edevletHata = null }) => {
   const t = useTranslations('auth')
   const tn = useTranslations('nav')
 
@@ -354,38 +397,66 @@ export const LoginForm: React.FC<{ locale: Locale }> = ({ locale }) => {
           <span aria-hidden="true" className="h-px flex-1 bg-line" />
         </p>
 
-        <button
-          type="button"
-          aria-disabled="true"
-          aria-describedby={edevletNotId}
-          className="inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-sm border border-dashed border-line-strong bg-surface px-6 text-sm font-bold text-ink-500"
-        >
-          <svg
-            aria-hidden="true"
-            focusable="false"
-            viewBox="0 0 20 20"
-            width="1.15em"
-            height="1.15em"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {/*
+          e-Devlet akışından dönen hata. `role="alert"` ile duyurulur: kullanıcı
+          bu sayfaya YENİDEN YÜKLENEREK döner, yani ekranda sessizce belirmiş
+          bir metni fark etmeyebilir.
+
+          Mesaj koda göre seçilir; bilinmeyen kod jenerik metne düşer — sunucu
+          ileride yeni bir kod eklerse kullanıcı boş bir kutu değil, anlaşılır
+          bir cümle görür.
+        */}
+        {edevletHata ? (
+          <AuthNotice ton="hata" baslik={t('edevletErrorTitle')} rol="alert">
+            <p>
+              {edevletHata === 'eposta_kullanimda'
+                ? t('edevletErrorEmailTaken')
+                : edevletHata === 'hesap_askida'
+                  ? t('statusSuspended')
+                  : edevletHata === 'gercek_kapi_kurulmadi'
+                    ? t('edevletErrorNotConfigured')
+                    : t('edevletErrorGeneric')}
+            </p>
+          </AuthNotice>
+        ) : null}
+
+        {/*
+          İKİ HÂL, TEK GÖRSEL DİL.
+          Akış açıkken düğme bir BAĞLANTIDIR (`<a>`), çünkü yaptığı şey başka
+          bir adrese GİTMEKTİR — form göndermek değil. Sunucu yönlendirmesiyle
+          çalışır; bu yüzden JavaScript kapalı olsa bile işler.
+
+          Akış kapalıyken eski yer tutucu aynen durur: `aria-disabled` ile
+          keşfedilebilir kalır ve gerekçesi `aria-describedby` ile bağlanır
+          (gerekçe aşağıdaki docblock'ta).
+        */}
+        {edevletAktif ? (
+          <a
+            href={`/api/auth/edevlet/login?locale=${locale}`}
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-sm border border-line-strong bg-surface px-6 text-sm font-bold text-shell-900 transition-colors hover:bg-surface-alt focus-visible:bg-surface-alt"
           >
-            <rect x="2" y="4" width="16" height="12" rx="2" />
-            <circle cx="7" cy="9.5" r="1.8" />
-            <path d="M4.2 13.6c.5-1.3 1.6-2 2.8-2s2.3.7 2.8 2M12 8.5h4M12 11.5h3" />
-          </svg>
+            <EdevletIkonu />
+            {t('edevletSubmit')}
+          </a>
+        ) : (
+          <button
+            type="button"
+            aria-disabled="true"
+            aria-describedby={edevletNotId}
+            className="inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-sm border border-dashed border-line-strong bg-surface px-6 text-sm font-bold text-ink-500"
+          >
+            <EdevletIkonu />
 
-          {t('edevletSubmit')}
+            {t('edevletSubmit')}
 
-          <span className="rounded-sm bg-surface-alt px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-ink-600">
-            {tn('comingSoonBadge')}
-          </span>
-        </button>
+            <span className="rounded-sm bg-surface-alt px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-ink-600">
+              {tn('comingSoonBadge')}
+            </span>
+          </button>
+        )}
 
         <p id={edevletNotId} className="text-xs leading-relaxed text-ink-500">
-          {t('edevletNotice')}
+          {edevletAktif ? t('edevletSandboxNotice') : t('edevletNotice')}
         </p>
       </div>
 

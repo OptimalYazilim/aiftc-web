@@ -226,6 +226,46 @@ export const Users: CollectionConfig = {
 
     /*
       ======================================================================
+      e-DEVLET EŞLEŞTİRME ANAHTARI
+      ======================================================================
+      e-Devlet Kapısı ile giren kullanıcıyı DÖNÜŞÜNDE tanımak için kullanılır.
+
+      KİMLİK NUMARASI BURADA DURMAZ. Değer, tuzlanmış SHA-256 özetidir
+      (`lib/edevlet.ts -> kimlikOzeti`). Gerekçe orada ayrıntılı yazılıdır;
+      kısaca: dönen kullanıcıyı tanımak için numaranın KENDİSİ gerekmez,
+      değişmeyen bir anahtar yeterlidir — ve veritabanı ele geçse bile
+      özetten numara çıkarılamaz.
+
+      ALAN DIŞARIYA HİÇ VERİLMEZ (`read: () => false`).
+      Özet, kimlik numarasının doğrudan türevidir: aynı tuzla üretilmiş bir
+      sözlük, 11 haneli uzayda özeti numaraya geri çevirebilir. Bu yüzden
+      alan API yanıtlarında HİÇ görünmez; yalnızca sunucudaki eşleştirme
+      sorgusu (`overrideAccess`) onu okur. Panelde de gizlidir — bir editörün
+      onu görmesi hiçbir işe yaramaz, sızma yüzeyi olmaktan başka.
+
+      `unique: true` ZORUNLU: aynı kişi iki hesaba bağlanamamalı. Bu kısıt
+      olmadan, eşleştirme sorgusu bir yarış durumunda iki kayıt üretebilir ve
+      kullanıcı her girişte farklı bir hesaba düşerdi.
+    */
+    {
+      name: 'edevletSubject',
+      type: 'text',
+      unique: true,
+      index: true,
+      label: { tr: 'e-Devlet Eşleştirme Anahtarı', en: 'e-Devlet subject', ru: 'Ключ e-Devlet' },
+      access: {
+        read: () => false,
+        create: () => false,
+        update: () => false,
+      },
+      admin: {
+        hidden: true,
+        readOnly: true,
+      },
+    },
+
+    /*
+      ======================================================================
       B2B ABONELIK  (Commerce)
       ======================================================================
       Hangi kurumsal paketin bu hesaba TANIMLI oldugunu ve ne zamana kadar

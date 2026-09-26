@@ -1670,6 +1670,7 @@ export interface User {
    */
   accountStatus: 'pending' | 'approved' | 'suspended';
   unit?: string | null;
+  edevletSubject?: string | null;
   /**
    * The plan granted to this account. Only administrators and staff can change it.
    */
@@ -2909,6 +2910,7 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   accountStatus?: T;
   unit?: T;
+  edevletSubject?: T;
   subscriptionPlan?: T;
   subscriptionEndsAt?: T;
   preferredAdminLanguage?: T;

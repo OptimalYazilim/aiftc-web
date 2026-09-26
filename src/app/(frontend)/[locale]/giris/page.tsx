@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { LoginForm } from '@/components/auth/LoginForm'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { AUTH_ROUTES } from '@/i18n/routes'
+import { edevletKullanilabilir } from '@/lib/edevlet'
 import { buildMetadata } from '@/lib/metadata'
 
 /**
@@ -35,7 +36,25 @@ import { buildMetadata } from '@/lib/metadata'
  * ============================================================================
  */
 
-type Props = { params: Promise<{ locale: Locale }> }
+/**
+ * ---------------------------------------------------------------------------
+ * `searchParams` NEDEN OKUNUYOR — VE NEDEN SUNUCUDA
+ * ---------------------------------------------------------------------------
+ * Başarısız bir e-Devlet akışı kullanıcıyı buraya `?edevlet_hata=<kod>` ile
+ * geri gönderir. Kodun okunması ZORUNLUDUR: yoksa kullanıcı hiçbir açıklama
+ * görmeden giriş ekranına döner ve neyin olmadığını anlamaz.
+ *
+ * Okuma SUNUCUDA yapılır, istemcide `useSearchParams()` ile DEĞİL. O kanca,
+ * Suspense sınırı olmadan kullanıldığında üretim derlemesini kırıyor — bu
+ * projede bir kez ölçüldü ve siteyi tümden derlenemez hâle getirmişti
+ * (`/[locale]/egitim-programlari`). Aynı hataya ikinci kez düşülmemesi için
+ * değer burada okunup prop olarak geçiliyor.
+ * ---------------------------------------------------------------------------
+ */
+type Props = {
+  params: Promise<{ locale: Locale }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
 
 export function generateStaticParams() {
   return LOCALE_CODES.map((locale) => ({ locale }))
@@ -62,13 +81,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function LoginPage({ params }: Props) {
+export default async function LoginPage({ params, searchParams }: Props) {
   const { locale } = await params
   if (!isLocale(locale)) notFound()
 
   setRequestLocale(locale)
 
   const t = await getTranslations('auth')
+
+  const ham = (await searchParams).edevlet_hata
+  const edevletHata = (Array.isArray(ham) ? ham[0] : ham) ?? null
+
+  /*
+    KARAR SUNUCUDA. `edevletKullanilabilir()` gerçek kapı ayarlarını da okur;
+    o değişkenler `NEXT_PUBLIC_*` DEĞİLDİR ve istemciye gitmemelidir. Form
+    yalnızca sonucu (bir boolean) alır.
+  */
+  const edevletAktif = edevletKullanilabilir()
 
   return (
     <>
@@ -88,7 +117,7 @@ export default async function LoginPage({ params }: Props) {
           taranabildiği genişlik.
         */}
         <div className="max-w-md">
-          <LoginForm locale={locale} />
+          <LoginForm locale={locale} edevletAktif={edevletAktif} edevletHata={edevletHata} />
         </div>
       </div>
     </>

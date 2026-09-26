@@ -1,0 +1,383 @@
+import { createLocalReq, getFieldsToSign, jwtSign } from 'payload'
+import { addSessionToUser, generatePayloadCookie } from 'payload/shared'
+import { NextResponse, type NextRequest } from 'next/server'
+
+import { isLocale, type Locale } from '@/i18n/locales'
+import { authHref, href as routeHref } from '@/i18n/routes'
+import {
+  EDEVLET_STATE_COOKIE,
+  edevletKullanilabilir,
+  kimlikOzeti,
+  mockModuAktif,
+  rastgeleParola,
+  stateEslesiyor,
+  tcknBicimiGecerli,
+} from '@/lib/edevlet'
+import { payloadClient } from '@/lib/queries'
+import { hizSinirinaBak, limitYaniti } from '@/lib/rateLimit'
+
+/**
+ * e-DEVLET DÖNÜŞÜ — OTURUM AÇAN UÇ
+ * ============================================================================
+ * Kimlik kapısından (kum havuzunda sahte ekrandan) dönen veriyi alır, Payload
+ * `users` koleksiyonunda eşleştirir ve OTURUM AÇAR.
+ *
+ * Projedeki en hassas uç noktadır: parola sormadan çerez veren tek yerdir.
+ * Aşağıdaki her kontrol o yüzden vardır ve hiçbiri "fazlalık" değildir.
+ *
+ * ============================================================================
+ * SAVUNMA KATMANLARI
+ * ============================================================================
+ *  1. AKIŞ KAPALIYSA 404. `edevletKullanilabilir()` false ise uç nokta yok.
+ *     Kum havuzu ayrıca YEREL ADRES şartına bağlıdır (bkz. lib/edevlet.ts) —
+ *     üretimde bayrak açık kalsa bile bu uç oturum açtırmaz.
+ *
+ *  2. HIZ SINIRI. `login` sınıfı kullanılır: bu uç de bir giriş ucudur ve aynı
+ *     bütçeyi paylaşması doğrudur.
+ *
+ *  3. `state` DOĞRULAMASI. Çerezdeki değerle gelen değer sabit süreli
+ *     karşılaştırmayla eşleşmezse istek reddedilir. Böylece uç nokta yalnızca
+ *     BU TARAYICIDA başlamış bir akışı tamamlayabilir.
+ *
+ *  4. BİÇİM DENETİMİ. Kimlik numarası resmî algoritmayla, e-posta basit bir
+ *     desenle denetlenir. Bu bir KİMLİK DOĞRULAMASI DEĞİLDİR (kum havuzunda
+ *     öyle bir merci yok); amaç, veritabanına anlamsız kayıt yazmamak.
+ *
+ *  5. E-POSTA ÇAKIŞMASINDA BİRLEŞTİRME YOK — en önemli karar, aşağıda.
+ *
+ * ============================================================================
+ * NEDEN E-POSTAYLA HESAP BİRLEŞTİRİLMİYOR
+ * ============================================================================
+ * "Bu e-postayla bir hesap var, o hâlde aynı kişidir" varsayımı bir HESAP
+ * DEVRALMA yoludur: e-Devlet'ten dönen e-posta, e-Devlet tarafından
+ * DOĞRULANMIŞ değildir (kum havuzunda kullanıcı onu kendi yazar; gerçek kipte
+ * de kapı e-posta doğrulamaz). Saldırgan, hedefin e-postasını girerek onun
+ * parolalı hesabına oturum açabilirdi.
+ *
+ * Bu yüzden eşleşme YALNIZCA `edevletSubject` üzerinden yapılır. E-posta
+ * başka bir hesapta kullanılıyorsa istek REDDEDİLİR ve kullanıcı parolasıyla
+ * girmeye yönlendirilir. Hesap birleştirme, oturum AÇTIKTAN SONRA ve kullanıcı
+ * onayıyla yapılacak ayrı bir iştir.
+ *
+ * ============================================================================
+ * OTURUM NASIL AÇILIYOR — `payload.login()` KULLANILAMAZ
+ * ============================================================================
+ * `payload.login()` PAROLA ister; e-Devlet akışında parola yoktur. Kullanıcının
+ * parolasını geçici bir değere çevirip giriş yapmak düşünülebilirdi ama bu,
+ * kendi parolasıyla da giren bir kullanıcının parolasını SESSİZCE bozardı.
+ *
+ * Bunun yerine Payload'ın giriş işleminin yaptığı adımlar aynen tekrarlanır
+ * (bkz. payload/dist/auth/operations/login.js):
+ *
+ *   addSessionToUser()  → oturum satırı ve `sid`
+ *   getFieldsToSign()   → JWT içeriği (`saveToJWT` alanlarıyla)
+ *   jwtSign()           → imzalı jeton
+ *   generatePayloadCookie() → `aiftc-token` çerezi
+ *
+ * `sid` ZORUNLUDUR: koleksiyonda `auth.useSessions` varsayılan olarak açıktır
+ * ve JWT stratejisi, jetondaki `sid` ile kullanıcının `sessions` dizisinde
+ * eşleşen bir kayıt arar; bulamazsa jetonu REDDEDER (ölçüldü). Yani yalnızca
+ * jeton imzalamak yetmez.
+ *
+ * Bu yaklaşımın getirisi: açılan oturum sıradan bir Payload oturumudur.
+ * `/api/users/me`, `/api/users/refresh-token` ve `/api/users/logout` — yani
+ * başlık, oturum zaman aşımı uyarısı ve çıkış düğmesi — hiçbir değişiklik
+ * gerektirmeden çalışır.
+ * ============================================================================
+ */
+
+type Kimlik = {
+  tckn: string
+  ad: string
+  soyad: string
+  eposta: string
+}
+
+const EPOSTA_DESENI = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const dilOku = (deger: string | null): Locale => (deger && isLocale(deger) ? deger : 'tr')
+
+/**
+ * `state` çerezini geçersizleştiren ham başlık.
+ *
+ * `NextResponse.cookies.delete()` DEĞİL — bilinçli. Bu dosyada aynı yanıta
+ * ikinci bir çerez (oturum çerezi) HAM BAŞLIK olarak yazılıyor ve iki
+ * mekanizmayı karıştırmak ölçülmüş bir veri kaybına yol açıyor: `cookies` API'si
+ * `Set-Cookie` başlığını kendi listesinden yeniden üretip ham değeri siliyor
+ * (ayrıntı aşağıda, oturum çerezinin yazıldığı yerde). Karıştırma riskini
+ * tümden kaldırmak için bu dosya `cookies` API'sini HİÇ kullanmaz.
+ */
+const STATE_SIL = `${EDEVLET_STATE_COOKIE}=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax`
+
+/** Hata durumunda giriş sayfasına, sebebi sorgu dizesinde taşıyarak döner. */
+const hataylaDon = (request: NextRequest, locale: Locale, kod: string) => {
+  const hedef = new URL(authHref('login', locale), request.nextUrl.origin)
+  hedef.searchParams.set('edevlet_hata', kod)
+
+  const yanit = NextResponse.redirect(hedef)
+  /* Başarısız akışın `state`i yeniden kullanılamaz. */
+  yanit.headers.append('Set-Cookie', STATE_SIL)
+  return yanit
+}
+
+/**
+ * Gelen veriyi okur. GET ve POST'un ikisi de desteklenir: kum havuzu formu
+ * POST gönderir, gerçek kapıların çoğu ise dönüşü GET ile yapar. İkisini tek
+ * yerde toplamak, gerçek kip açıldığında bu dosyanın yeniden yazılmasını
+ * önler.
+ */
+const veriOku = async (
+  request: NextRequest,
+): Promise<{ state?: string; locale: Locale; kimlik: Partial<Kimlik> }> => {
+  const q = request.nextUrl.searchParams
+
+  if (request.method === 'POST') {
+    const govde = await request.formData().catch(() => null)
+    const al = (ad: string) => {
+      const deger = govde?.get(ad)
+      return typeof deger === 'string' ? deger.trim() : undefined
+    }
+
+    return {
+      state: al('state') ?? q.get('state') ?? undefined,
+      locale: dilOku(al('locale') ?? q.get('locale')),
+      kimlik: {
+        tckn: al('tckn'),
+        ad: al('ad'),
+        soyad: al('soyad'),
+        eposta: al('eposta')?.toLowerCase(),
+      },
+    }
+  }
+
+  return {
+    state: q.get('state') ?? undefined,
+    locale: dilOku(q.get('locale')),
+    kimlik: {
+      tckn: q.get('tckn')?.trim(),
+      ad: q.get('ad')?.trim(),
+      soyad: q.get('soyad')?.trim(),
+      eposta: q.get('eposta')?.trim().toLowerCase(),
+    },
+  }
+}
+
+const isle = async (request: NextRequest) => {
+  if (!edevletKullanilabilir()) {
+    return new NextResponse(null, { status: 404 })
+  }
+
+  const limit = hizSinirinaBak(request, 'login')
+  if (limit.asildi) return limitYaniti(limit.sonraDeneSaniye)
+
+  const { state, locale, kimlik } = await veriOku(request)
+
+  /* --- 3. katman: `state` ------------------------------------------------ */
+  const cerez = request.cookies.get(EDEVLET_STATE_COOKIE)?.value
+  if (!stateEslesiyor(state, cerez)) {
+    return hataylaDon(request, locale, 'state')
+  }
+
+  /*
+    --- Gerçek kip henüz yok ---------------------------------------------
+    Kum havuzu kapalıysa buraya ancak gerçek kapıdan dönülebilir; o akış
+    kurulmadığı için (bkz. login rotası) veri biçimi de bilinmiyor.
+  */
+  if (!mockModuAktif()) {
+    return hataylaDon(request, locale, 'gercek_kapi_kurulmadi')
+  }
+
+  /* --- 4. katman: biçim -------------------------------------------------- */
+  const { tckn, ad, soyad, eposta } = kimlik
+  if (!tckn || !tcknBicimiGecerli(tckn)) return hataylaDon(request, locale, 'tckn')
+  if (!ad || !soyad) return hataylaDon(request, locale, 'isim')
+  if (!eposta || !EPOSTA_DESENI.test(eposta)) return hataylaDon(request, locale, 'eposta')
+
+  const payload = await payloadClient()
+  const ozet = kimlikOzeti(tckn)
+
+  /* --- Eşleştirme -------------------------------------------------------- */
+  const mevcut = await payload.find({
+    collection: 'users',
+    where: { edevletSubject: { equals: ozet } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  })
+
+  let kullanici = mevcut.docs[0] as unknown as
+    | { id: number | string; email: string; accountStatus?: string }
+    | undefined
+
+  if (kullanici) {
+    /*
+      Askıya alınmış hesap e-Devlet'ten de giremez. Aksi hâlde e-Devlet, kurumun
+      kendi yaptırımını atlatan bir arka kapı olurdu.
+    */
+    if (kullanici.accountStatus === 'suspended') {
+      return hataylaDon(request, locale, 'hesap_askida')
+    }
+
+    if (kullanici.accountStatus !== 'approved') {
+      /*
+        Kimliği e-Devlet doğruladığı için onay bekleyen bir eşleşme onaylanır.
+        Bu duruma normalde düşülmez; yalnızca aşağıdaki iki adımlı oluşturmanın
+        ikinci adımı bir kez başarısız olduysa oluşur.
+      */
+      await payload.update({
+        collection: 'users',
+        id: kullanici.id,
+        data: { accountStatus: 'approved' } as never,
+        overrideAccess: true,
+        context: { skipRevalidate: true },
+      })
+    }
+  } else {
+    /* --- 5. katman: e-posta çakışması -> BİRLEŞTİRME YOK ---------------- */
+    const epostaSahibi = await payload.find({
+      collection: 'users',
+      where: { email: { equals: eposta } },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    if (epostaSahibi.totalDocs > 0) {
+      return hataylaDon(request, locale, 'eposta_kullanimda')
+    }
+
+    /*
+      İKİ ADIMLI OLUŞTURMA — ÖLÇÜLMÜŞ ZORUNLULUK
+      ---------------------------------------------------------------------
+      `Users.beforeValidate` kancası, istekte KULLANICI YOKSA kaydı "dışarıdan
+      gelen başvuru" sayar ve `accountStatus`u ZORLA `pending` yapar. Kanca
+      `req.user`a bakar, `overrideAccess`e DEĞİL — bu oturumda ölçüldü:
+
+          create({ overrideAccess: true, data: { accountStatus: 'approved' }})
+          -> okunan: accountStatus = "pending"
+
+      Sentetik bir yönetici kullanıcısı geçmek de işe yarardı ama o, güvenlik
+      için var olan bir kancaya kod içinden atlanabilen bir kapı açmak olurdu.
+      Bunun yerine kayıt kancanın kendi varsayılanıyla doğar ve AYRI bir
+      güncellemeyle onaylanır: kanca yalnızca `create` işleminde sıyırır.
+
+      Not: `role` ve `roles` için ayrıca bir şey yapmak GEREKMEZ — kancanın
+      zorladığı değerler (`trainee`, `[]`) burada istenen değerlerin aynısıdır.
+      Yani e-Devlet'le gelen kullanıcı panel yetkisi olmayan, aboneliği
+      bulunmayan sıradan bir katılımcıdır ve yalnızca herkese açık kütüphane
+      içeriğini görür.
+    */
+    const olusan = await payload.create({
+      collection: 'users',
+      overrideAccess: true,
+      context: { skipRevalidate: true },
+      data: {
+        name: `${ad} ${soyad}`.replace(/\s+/g, ' ').trim(),
+        email: eposta,
+        /* Tahmin edilemez ve hiçbir yerde saklanmayan parola (bkz. lib/edevlet). */
+        password: rastgeleParola(),
+        edevletSubject: ozet,
+      } as never,
+    })
+
+    const onaylanan = await payload.update({
+      collection: 'users',
+      id: olusan.id,
+      data: { accountStatus: 'approved' } as never,
+      overrideAccess: true,
+      context: { skipRevalidate: true },
+    })
+
+    kullanici = onaylanan as unknown as { id: number | string; email: string }
+  }
+
+  /* --- Oturum ----------------------------------------------------------- */
+  const collection = payload.collections['users']
+  if (!collection) {
+    /* Yapılandırma bozuksa sessizce oturum açmaktan iyidir. */
+    return hataylaDon(request, locale, 'genel')
+  }
+
+  const req = await createLocalReq({ context: { skipRevalidate: true } }, payload)
+
+  /*
+    Oturum satırı yazılabilmesi için kullanıcının TAM kaydı gerekir
+    (`sessions` dizisi dahil); yukarıdaki sorgular `depth: 0` ile geldi ama
+    alan seçimi yapılmadı, yine de güvenli olması için kayıt yeniden okunur.
+  */
+  const tamKayit = await payload.findByID({
+    collection: 'users',
+    id: kullanici.id,
+    overrideAccess: true,
+    depth: 0,
+  })
+
+  const { sid } = await addSessionToUser({
+    collectionConfig: collection.config,
+    payload,
+    req,
+    user: tamKayit as never,
+  })
+
+  const fieldsToSign = getFieldsToSign({
+    collectionConfig: collection.config,
+    email: String((tamKayit as { email?: string }).email ?? kullanici.email),
+    sid,
+    user: tamKayit as never,
+  })
+
+  const { token } = await jwtSign({
+    fieldsToSign,
+    secret: payload.secret,
+    tokenExpiration: collection.config.auth.tokenExpiration,
+  })
+
+  const cerezMetni = generatePayloadCookie({
+    collectionAuthConfig: collection.config.auth,
+    cookiePrefix: payload.config.cookiePrefix,
+    token,
+  })
+
+  /*
+    Giriş sonrası hedef, parolayla girişle AYNIDIR: kütüphane. İki yolun
+    farklı yerlere düşmesi, kullanıcıya girişin farklı bir şey yaptığını
+    düşündürürdü (bkz. LoginForm).
+  */
+  const yanit = NextResponse.redirect(
+    new URL(routeHref('library', locale), request.nextUrl.origin),
+  )
+
+  /*
+    ======================================================================
+    İKİ ÇEREZ, TEK MEKANİZMA — ÖLÇÜLMÜŞ VE SESSİZ BİR TUZAK
+    ======================================================================
+    İlk sürüm şöyleydi:
+
+        yanit.headers.append('Set-Cookie', cerezMetni)   // oturum çerezi
+        yanit.cookies.delete(EDEVLET_STATE_COOKIE)       // state'i temizle
+
+    Sonuç ÖLÇÜLDÜ (2026-09-26, akış HTTP katmanında tekrarlandı):
+
+        set-cookie: aiftc-edevlet-state=; Path=/; Expires=Thu, 01 Jan 1970…
+
+    Oturum çerezi YANITTAN KAYBOLMUŞTU. `NextResponse.cookies`, `Set-Cookie`
+    başlığını KENDİ iç listesinden yeniden üretir; ham `append` ile eklenmiş
+    bir değeri tanımaz ve üzerine yazar.
+
+    Bu kusurun görünen yüzü çok yanıltıcıydı: yönlendirme doğru çalışıyor,
+    kullanıcı kütüphaneye düşüyor, veritabanında hesap ve oturum satırı
+    oluşuyordu — ama tarayıcıda oturum YOKTU. "Giriş çalışıyor" diye
+    bakılırsa fark edilmez; ancak `/api/users/me` sorulursa görülür.
+
+    Bu yüzden iki çerez de AYNI mekanizmayla, ham başlık olarak yazılır.
+    `payload` çerezinin metnini Payload'ın kendi üreticisi verir; `state`
+    çerezi ise geçmiş bir tarihle geçersizleştirilir (silmenin standart yolu).
+  */
+  yanit.headers.append('Set-Cookie', cerezMetni)
+  yanit.headers.append('Set-Cookie', STATE_SIL)
+
+  return yanit
+}
+
+export const GET = isle
+export const POST = isle

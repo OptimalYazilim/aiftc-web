@@ -549,7 +549,12 @@
     "groupCredentials": "Sign-in details",
     "orDivider": "or",
     "edevletSubmit": "Sign in with e-Devlet",
-    "edevletNotice": "Sign-in through the e-Devlet gateway is not active yet. The option will open here once it is ready; for now, please use your e-mail address and password."
+    "edevletNotice": "Sign-in through the e-Devlet gateway is not active yet. The option will open here once it is ready; for now, please use your e-mail address and password.",
+    "edevletSandboxNotice": "DEVELOPMENT MODE: e-Devlet sign-in currently runs through a sandbox flow and does not connect to the real e-Devlet gateway. This option appears only in a local development environment.",
+    "edevletErrorTitle": "e-Devlet sign-in could not be completed",
+    "edevletErrorEmailTaken": "This e-mail address already belongs to an account. For security reasons accounts are not merged automatically by e-mail: please sign in with your e-mail address and password.",
+    "edevletErrorNotConfigured": "The e-Devlet gateway is not configured in this environment. Please sign in with your e-mail address and password.",
+    "edevletErrorGeneric": "Sign-in could not be completed. Please try again; if the problem persists, sign in with your e-mail address and password."
   },
   "subscription": {
     "expiredTitle": "Your subscription has expired",
@@ -594,5 +599,16 @@
     "trainingsNotTracked": "Attendance records are not kept in this system yet. The centre can tell you which programmes you attended.",
     "certificatesHeading": "My certificates",
     "certificatesNotTracked": "Individual certificates and attendance documents are not kept in this system yet. Contact the centre for your document."
+  },
+  "edevletMock": {
+    "sandboxWarning": "THIS PAGE IS A TEST HARNESS. It is NOT the real e-Devlet gateway, it contacts no civil registry, and the details you enter are not verified. It works only in a local development environment.",
+    "title": "Test identity verification",
+    "intro": "The real e-Devlet gateway does not work on local addresses, so the sign-in flow is completed on this screen. When you confirm the details below, the system receives an identity payload as if it had returned from e-Devlet.",
+    "fieldTckn": "Test identity number",
+    "hintTckn": "Only the format is checked (11 digits, official checksum). Do not enter a real person’s number; an example value is pre-filled.",
+    "fieldFirstName": "First name",
+    "fieldLastName": "Last name",
+    "hintEmail": "The account is created with this address. If the address already belongs to another account the sign-in is refused — accounts are not merged automatically by e-mail.",
+    "submit": "Confirm sign-in"
   }
 }

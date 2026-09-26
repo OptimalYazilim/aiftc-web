@@ -549,7 +549,12 @@
     "groupCredentials": "Giriş bilgileri",
     "orDivider": "veya",
     "edevletSubmit": "e-Devlet ile Giriş Yap",
-    "edevletNotice": "e-Devlet Kapısı ile giriş henüz etkin değildir. Bu seçenek hazır olduğunda burada açılacaktır; şimdilik e-posta ve parolanızla giriş yapın."
+    "edevletNotice": "e-Devlet Kapısı ile giriş henüz etkin değildir. Bu seçenek hazır olduğunda burada açılacaktır; şimdilik e-posta ve parolanızla giriş yapın.",
+    "edevletSandboxNotice": "GELİŞTİRME KİPİ: e-Devlet girişi şu an bir test (kum havuzu) akışıyla çalışır ve gerçek e-Devlet Kapısı’na bağlanmaz. Bu seçenek yalnızca yerel geliştirme ortamında görünür.",
+    "edevletErrorTitle": "e-Devlet ile giriş tamamlanamadı",
+    "edevletErrorEmailTaken": "Bu e-posta adresi zaten bir hesapta kullanılıyor. Güvenlik gereği hesaplar e-posta üzerinden otomatik birleştirilmez: lütfen e-posta ve parolanızla giriş yapın.",
+    "edevletErrorNotConfigured": "e-Devlet Kapısı bağlantısı bu ortamda tanımlı değil. Lütfen e-posta ve parolanızla giriş yapın.",
+    "edevletErrorGeneric": "Giriş tamamlanamadı. Lütfen tekrar deneyin; sorun sürerse e-posta ve parolanızla giriş yapın."
   },
   "subscription": {
     "expiredTitle": "Abonelik süreniz doldu",
@@ -594,5 +599,16 @@
     "trainingsNotTracked": "Katılım kayıtları bu sistemde henüz tutulmuyor. Hangi eğitimlere katıldığınız bilgisini merkezden öğrenebilirsiniz.",
     "certificatesHeading": "Sertifikalarım",
     "certificatesNotTracked": "Kişiye özel sertifika ve katılım belgesi kayıtları bu sistemde henüz tutulmuyor. Belgeniz için merkezle iletişime geçin."
+  },
+  "edevletMock": {
+    "sandboxWarning": "BU SAYFA BİR TEST ARACIDIR. Gerçek e-Devlet Kapısı DEĞİLDİR, hiçbir nüfus kaydına bağlanmaz ve girdiğiniz bilgiler doğrulanmaz. Yalnızca yerel geliştirme ortamında çalışır.",
+    "title": "Test kimlik doğrulaması",
+    "intro": "Gerçek e-Devlet Kapısı yerel adreslerde çalışmadığı için giriş akışı bu ekranla tamamlanır. Aşağıdaki bilgileri girip onayladığınızda sisteme, e-Devlet’ten dönmüş gibi bir kimlik bilgisi iletilir.",
+    "fieldTckn": "Test kimlik numarası",
+    "hintTckn": "Yalnızca biçim denetlenir (11 hane, resmî sağlama algoritması). Gerçek bir kişinin numarasını girmeyin; örnek değer hazır gelir.",
+    "fieldFirstName": "Ad",
+    "fieldLastName": "Soyad",
+    "hintEmail": "Hesap bu adresle açılır. Adres başka bir hesapta kullanılıyorsa giriş reddedilir — hesaplar e-posta üzerinden otomatik birleştirilmez.",
+    "submit": "Girişi Onayla"
   }
 }
