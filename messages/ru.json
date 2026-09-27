@@ -331,7 +331,8 @@
     "groupContact": "Контактные данные",
     "groupMessage": "Ваше сообщение",
     "groupConsent": "Согласие",
-    "fieldConsent": "Подтверждение согласия"
+    "fieldConsent": "Подтверждение согласия",
+    "contactPageLink": "Страница контактов и форма →"
   },
   "search": {
     "metaTitle": "Поиск",

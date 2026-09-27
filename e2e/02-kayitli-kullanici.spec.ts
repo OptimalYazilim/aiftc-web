@@ -112,5 +112,23 @@ test.describe('Kayıtlı kullanıcı akışı', () => {
     await expect(
       page.getByText('Bu adresle gönderilmiş bir başvuru bulunamadı.'),
     ).toHaveCount(0)
+
+    /*
+      ÇÖZÜLMEMİŞ ÇEVİRİ ANAHTARI NÖBETÇİSİ — ÖLÇÜLMÜŞ BİR KUSUR.
+      Bu sayfa `contactPageLink` anahtarını `contact` isim alanından
+      okuyordu; anahtar ise `footer` altındaydı. next-intl eksik anahtarı
+      HATA OLARAK GÖRMEZ: günlüğe yazar ve ekrana anahtar yolunu basar. Yani
+      kullanıcı bağlantı metni yerine "contact.contactPageLink" görüyordu ve
+      hiçbir test kırılmıyordu.
+
+      Bulunuşu da bunu anlatıyor: kusur, CI iş akışını doğrularken sunucu
+      günlüğünde `MISSING_MESSAGE: contact.contactPageLink (tr)` satırı
+      geçtiği için görüldü — arayüze bakan hiçbir iddia onu yakalamamıştı.
+
+      Aşağıdaki iki satır birlikte çalışır: metnin DOĞRU hâli görünmeli VE
+      anahtar yolu ekranda hiç geçmemeli.
+    */
+    await expect(page.getByRole('link', { name: 'İletişim sayfası ve form →' }).first()).toBeVisible()
+    await expect(page.getByText(/contact.contactPageLink/)).toHaveCount(0)
   })
 })

@@ -331,7 +331,8 @@
     "groupContact": "Contact details",
     "groupMessage": "Your message",
     "groupConsent": "Consent",
-    "fieldConsent": "Consent confirmation"
+    "fieldConsent": "Consent confirmation",
+    "contactPageLink": "Contact page and form →"
   },
   "search": {
     "metaTitle": "Search",

@@ -331,7 +331,8 @@
     "groupContact": "İletişim bilgileri",
     "groupMessage": "Mesajınız",
     "groupConsent": "Açık rıza",
-    "fieldConsent": "Açık rıza onayı"
+    "fieldConsent": "Açık rıza onayı",
+    "contactPageLink": "İletişim sayfası ve form →"
   },
   "search": {
     "metaTitle": "Arama",
