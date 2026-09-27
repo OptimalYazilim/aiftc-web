@@ -34,6 +34,15 @@ dotenv.config({ path: '.env.test', override: true })
 
 const TABAN_ADRES = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3100'
 
+/**
+ * Derleme, Playwright yerine ÇAĞIRAN tarafta mı yapıldı?
+ *
+ * Yalnızca CI iş akışı bunu verir (.github/workflows/e2e.yml). Yerelde
+ * tanımsızdır ve `webServer` eskisi gibi kendisi derler — tek komutla koşu
+ * kolaylığı korunur. Gerekçe aşağıda, `command` alanının yanında.
+ */
+const derlemeyiAtla = process.env.PLAYWRIGHT_SKIP_BUILD === 'true'
+
 export default defineConfig({
   testDir: './e2e',
 
@@ -94,8 +103,24 @@ export default defineConfig({
       olduğu için geliştirme sunucusunun `.next`i etkilenmez
       (bkz. next.config.mjs -> NEXT_DIST_DIR).
     */
-    command:
-      'node e2e/derleme-temizle.mjs && pnpm exec next build && pnpm exec next start -p 3100',
+    /*
+      DERLEMEYİ ATLAMA — CI İÇİN
+      ------------------------------------------------------------------------
+      GitHub Actions iş akışı derlemeyi KENDİ adımında yapar. Sebep dürüstçe
+      şudur: `webServer` çıktısı Playwright tarafından `[WebServer]` önekiyle
+      test günlüğüne karıştırılır ve bir derleme hatası orada kaybolur — bu
+      oturumda tam olarak yaşandı, hatayı bulmak için günlükte "Build error"
+      aramak gerekti. Ayrı bir adım, hatayı kendi başlığı altında gösterir ve
+      tarayıcı kurulumundan ÖNCE başarısız olur.
+      Ayrıca `next build` tip denetimi de yapar; boşa tarayıcı indirmemek için
+      sıra böyle kurulur.
+
+      Bayrak verilmediğinde davranış AYNEN ESKİSİ GİBİDİR: yerelde tek komutla
+      (`pnpm test:e2e`) derleme + koşu yapılır.
+    */
+    command: derlemeyiAtla
+      ? 'pnpm exec next start -p 3100'
+      : 'node e2e/derleme-temizle.mjs && pnpm exec next build && pnpm exec next start -p 3100',
     url: TABAN_ADRES,
     /* Derleme uzun sürer; yerelde ayakta duran sunucu yeniden kullanılır. */
     reuseExistingServer: !process.env.CI,

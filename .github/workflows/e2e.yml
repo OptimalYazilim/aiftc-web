@@ -1,0 +1,204 @@
+# =============================================================================
+# UÇTAN UCA TESTLER  (Playwright · 21 test · 5 senaryo)
+# =============================================================================
+# Bu iş akışı, yerelde çalışan koşunun AYNISINI çalıştırır. "CI'ya özel" bir
+# yapılandırma yoktur; tek fark derlemenin ayrı bir adımda yapılması ve ortam
+# değişkenlerinin `.env.test` yerine buradan gelmesidir (o dosya `.gitignore`
+# içindedir ve depoda bulunmaz).
+#
+# -----------------------------------------------------------------------------
+# ÖNCE KURULMASI GEREKENLER — BUNLAR OLMADAN KOŞU BAŞLAMAZ
+# -----------------------------------------------------------------------------
+# GitHub → Settings → Secrets and variables → Actions:
+#
+#   DATABASE_URI    İZOLE test veritabanının bağlantı adresi.
+#                   ⚠ ADI `aiftc_test` İÇERMEK ZORUNDADIR. `e2e/genel-kurulum.ts`
+#                     içindeki güvenlik kilidi buna bakar ve içermiyorsa koşuyu
+#                     HİÇ BAŞLATMAZ. Sebebi: testler tohumlama öncesi/sonrası
+#                     veri SİLER; yanlış veritabanına bağlanmak geri alınamaz.
+#                   ⚠ Geliştirme ya da üretim veritabanı VERİLMEZ.
+#
+#   PAYLOAD_SECRET  Test ortamı için rastgele bir değer. Üretim sırrıyla AYNI
+#                   OLMAMALIDIR: bu değer test jetonlarını imzalar ve CI
+#                   günlüklerine yakın bir yerde yaşar.
+#
+# Diğer değişkenlerin hiçbiri sır değildir ve aşağıda açıkça durur — CAPTCHA
+# anahtarları Cloudflare'in KAMUYA AÇIK test anahtarlarıdır, hız sınırları
+# bilinçli olarak gevşetilmiştir.
+#
+# -----------------------------------------------------------------------------
+# NEDEN GÖÇLER (MIGRATIONS) AYRI BİR ADIM
+# -----------------------------------------------------------------------------
+# Test ortamı `NODE_ENV=production` ile koşar (üretim DAVRANIŞINI sınamak için)
+# ve Payload'ın şema itmesi (`push`) yalnızca üretim dışında açıktır
+# (payload.config.ts). Yani test veritabanının şeması KENDİLİĞİNDEN oluşmaz.
+# `e2e/genel-kurulum.ts` de yalnızca tohumlar, göç çalıştırmaz. Bu adım
+# atlanırsa koşu "ilişki yok" hatalarıyla çöker.
+# =============================================================================
+name: E2E
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+# -----------------------------------------------------------------------------
+# KOŞULAR SIRAYA GİRER — PAYLAŞILAN TEK VERİTABANI
+# -----------------------------------------------------------------------------
+# Tohumlama her koşunun başında `e2e` önekli TÜM kayıtları siler. İki koşu aynı
+# anda çalışsaydı biri diğerinin verisini silip açıklanamaz hatalar üretirdi;
+# `workers: 1` yalnızca koşu İÇİNDEKİ paralelliği engeller, koşular arasını
+# engellemez.
+#
+# `cancel-in-progress: false` BİLİNÇLİ: süren bir koşuyu ortadan kesmek,
+# veritabanında yarım tohum verisi bırakır. Yeni koşu sıraya girer, öndekini
+# iptal etmez. Bedeli: yoğun anlarda PR'lar birbirini bekler. Paralelleştirmek
+# gerekirse her koşuya AYRI veritabanı vermek gerekir.
+concurrency:
+  group: e2e-paylasilan-test-veritabani
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: Playwright (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      # Yalnızca kod okunur. İş akışı hiçbir şey yazmaz, yorum atmaz.
+      contents: read
+
+    env:
+      # --- Sırlar ------------------------------------------------------------
+      DATABASE_URI: ${{ secrets.DATABASE_URI }}
+      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+
+      # --- Ortam -------------------------------------------------------------
+      # `production`: testler üretim davranışını sınar (`force-dynamic`
+      # gerçekten dinamik mi, ISR gerçekten önbelleğe alıyor mu).
+      NODE_ENV: production
+      # Neon SSL ister.
+      DATABASE_SSL: 'true'
+
+      # --- Adres -------------------------------------------------------------
+      # `NEXT_PUBLIC_*` değişkenleri DERLEME ANINDA gömülür. Bu yüzden derleme
+      # ve koşu adımları AYNI değerleri görmek zorundadır — ikisi de bu iş
+      # düzeyi bloktan okur. Ayrı ayrı verilseydi, adresi yanlış gömülü bir
+      # uygulama test edilirdi.
+      NEXT_PUBLIC_SERVER_URL: http://localhost:3100
+      ALLOWED_ORIGINS: http://localhost:3100
+
+      # --- Depolama ----------------------------------------------------------
+      # Yerel disk: testler S3'e bağlanmaz, bağlanması da istenmez.
+      MEDIA_STORAGE_ADAPTER: local
+
+      # --- CAPTCHA -----------------------------------------------------------
+      # Cloudflare Turnstile'ın RESMÎ test anahtarları (kamuya açık, sır değil).
+      # `1x…` her zaman BAŞARILI döner. Koruma akışı devre dışı bırakılmaz —
+      # jeton üretilir ve sunucu onu gerçekten doğrular; yalnızca sonuç bilinir.
+      CAPTCHA_SITE_KEY: 1x00000000000000000000AA
+      CAPTCHA_SECRET_KEY: 1x0000000000000000000000000000000AA
+
+      # --- Hız sınırları -----------------------------------------------------
+      # Gevşetilir: takım tek IP'den çok sayıda giriş/kayıt denemesi yapar ve
+      # üretim sınırlarıyla kendi kendini kilitlerdi. Sınırlayıcının KENDİSİ
+      # devre dışı değildir, yalnızca eşiği yüksektir.
+      RATE_LIMIT_REGISTER_MAX: '1000'
+      RATE_LIMIT_REGISTER_WINDOW_MIN: '60'
+      RATE_LIMIT_LOGIN_MAX: '1000'
+      RATE_LIMIT_LOGIN_WINDOW_MIN: '10'
+      RATE_LIMIT_RESET_MAX: '1000'
+      RATE_LIMIT_RESET_WINDOW_MIN: '60'
+
+      # --- Posta -------------------------------------------------------------
+      # Boş: test koşusu kimseye e-posta GÖNDERMEMELİDİR. Payload adaptör
+      # bulamayınca iletileri konsola yazar.
+      SMTP_HOST: ''
+      REVALIDATION_SECRET: test-revalidation
+
+      # --- Derleme çıktısı ---------------------------------------------------
+      # `.next-test`: geliştiricinin `.next`i ile çakışmaması için ayrılmıştır
+      # (next.config.mjs -> NEXT_DIST_DIR). CI'da temiz bir çalışma alanı var,
+      # ama değişkenin burada da durması gerekir: derleme ve `next start` aynı
+      # dizini kullanmak zorundadır.
+      NEXT_DIST_DIR: .next-test
+      # Standalone çıktı testler için gereksiz iş; ÜRETİM derlemesi bu
+      # değişkeni set ETMEZ ve standalone üretmeye devam eder.
+      NEXT_BUILD_NO_STANDALONE: 'true'
+      # Derlemeyi Playwright değil aşağıdaki adım yapar (gerekçe:
+      # playwright.config.ts -> derlemeyiAtla).
+      PLAYWRIGHT_SKIP_BUILD: 'true'
+
+      # --- e-Devlet kum havuzu -----------------------------------------------
+      # Adres `localhost` olduğu için koddaki YEREL ADRES kilidi de sağlanır;
+      # bayrak tek başına yeterli değildir (src/lib/edevlet.ts).
+      NEXT_PUBLIC_EDEVLET_MOCK_MODE: 'true'
+      # Sabit tuz: aynı kimlik numarası her koşuda aynı hesaba düşsün.
+      EDEVLET_SUBJECT_SALT: e2e-edevlet-tuzu
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      # `pnpm` Node'dan ÖNCE kurulur: `actions/setup-node` önbelleği
+      # `pnpm-lock.yaml` üzerinden çözerken `pnpm` çalıştırılabilir olmalıdır.
+      # Ters sırada "Unable to locate executable file: pnpm" alınır.
+      - name: pnpm kur
+        uses: pnpm/action-setup@v4
+        with:
+          # Yerelde kullanılan sürüm. `package.json` içinde `packageManager`
+          # alanı olmadığı için burada açıkça verilir.
+          version: 11.25.0
+
+      - name: Node.js 20 kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      # `npm ci`nin pnpm karşılığı: kilit dosyası DEĞİŞTİRİLEMEZ. Kilit ile
+      # `package.json` uyuşmuyorsa koşu başarısız olur — sessizce farklı
+      # sürümlerle test etmekten iyidir.
+      - name: Bağımlılıkları yükle
+        run: pnpm install --frozen-lockfile
+
+      # Şema ilk sırada: veritabanı hazır değilse derlemeyi beklemenin anlamı
+      # yok (derleme de veritabanına sorgu atıyor).
+      - name: Test veritabanına göçleri uygula
+        run: pnpm run test:e2e:migrate
+
+      # Derleme burada, Playwright içinde DEĞİL. Hatası kendi adımında görünür
+      # ve tarayıcı indirmeden önce düşer. `next build` tip denetimi de yapar.
+      - name: Uygulamayı derle
+        run: pnpm exec next build
+
+      # Yalnızca chromium: `playwright.config.ts` tek proje tanımlıyor.
+      # Bütün tarayıcıları indirmek dakikalar yer ve hiçbiri kullanılmaz.
+      - name: Playwright tarayıcısını kur
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E testlerini koştur
+        run: pnpm exec playwright test
+
+      # --- Başarısızlık kanıtı ------------------------------------------------
+      # `trace`, `screenshot` ve `video` ayarları `retain-on-failure`dır; bu
+      # dosyalar olmadan CI'da kırılan bir testi uzaktan teşhis etmek neredeyse
+      # imkânsızdır. `if: failure()` — geçen koşuda yüklenecek bir şey yoktur.
+      - name: HTML raporunu yükle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-raporu
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: İz, ekran görüntüsü ve videoları yükle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-izler
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
