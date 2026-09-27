@@ -601,14 +601,20 @@
     "certificatesNotTracked": "Kişiye özel sertifika ve katılım belgesi kayıtları bu sistemde henüz tutulmuyor. Belgeniz için merkezle iletişime geçin."
   },
   "edevletMock": {
-    "sandboxWarning": "BU SAYFA BİR TEST ARACIDIR. Gerçek e-Devlet Kapısı DEĞİLDİR, hiçbir nüfus kaydına bağlanmaz ve girdiğiniz bilgiler doğrulanmaz. Yalnızca yerel geliştirme ortamında çalışır.",
+    "sandboxHeadline": "Bu bir test (sandbox) ortamıdır — gerçek e-Devlet Kapısı değildir",
+    "sandboxWarning": "Bu ekran AIFTC geliştirme uygulamasının bir parçasıdır. e-Devlet Kapısı’na ait değildir, onunla hiçbir bağlantısı yoktur ve resmî hiçbir kurumu temsil etmez. Yalnızca yerel geliştirme ortamında çalışır.",
+    "sandboxNoVerification": "Girdiğiniz bilgiler DOĞRULANMAZ: hiçbir nüfus kaydına, kimlik sistemine veya dış servise bağlanılmaz. Yalnızca kimlik numarasının hane sağlaması hesaplanır. Gerçek bir kişinin bilgilerini girmeyin.",
     "title": "Test kimlik doğrulaması",
     "intro": "Gerçek e-Devlet Kapısı yerel adreslerde çalışmadığı için giriş akışı bu ekranla tamamlanır. Aşağıdaki bilgileri girip onayladığınızda sisteme, e-Devlet’ten dönmüş gibi bir kimlik bilgisi iletilir.",
     "fieldTckn": "Test kimlik numarası",
     "hintTckn": "Yalnızca biçim denetlenir (11 hane, resmî sağlama algoritması). Gerçek bir kişinin numarasını girmeyin; örnek değer hazır gelir.",
     "fieldFirstName": "Ad",
     "fieldLastName": "Soyad",
-    "hintEmail": "Hesap bu adresle açılır. Adres başka bir hesapta kullanılıyorsa giriş reddedilir — hesaplar e-posta üzerinden otomatik birleştirilmez.",
+    "hintEmail": "İsteğe bağlıdır. Boş bırakırsanız hesap, posta gönderilemeyen teknik bir adresle açılır ve parola sıfırlama kullanılamaz; sonradan buradan gerçek bir adres girerseniz güncellenir.",
+    "errorTckn": "Kimlik numarası 11 haneli olmalı ve resmî hane sağlamasını tutmalıdır. Hazır gelen örnek değeri kullanabilirsiniz.",
+    "errorName": "Ad ve soyad boş bırakılamaz.",
+    "errorEmailTaken": "Bu e-posta adresi başka bir hesapta kullanılıyor. Başka bir adres girin ya da alanı boş bırakın.",
+    "serverRejected": "Sunucu gönderimi reddetti",
     "submit": "Girişi Onayla"
   }
 }

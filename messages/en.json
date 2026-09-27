@@ -601,14 +601,20 @@
     "certificatesNotTracked": "Individual certificates and attendance documents are not kept in this system yet. Contact the centre for your document."
   },
   "edevletMock": {
-    "sandboxWarning": "THIS PAGE IS A TEST HARNESS. It is NOT the real e-Devlet gateway, it contacts no civil registry, and the details you enter are not verified. It works only in a local development environment.",
+    "sandboxHeadline": "This is a test (sandbox) environment — not the real e-Devlet gateway",
+    "sandboxWarning": "This screen is part of the AIFTC development application. It does not belong to the e-Devlet gateway, has no connection to it, and represents no official body. It works only in a local development environment.",
+    "sandboxNoVerification": "The details you enter are NOT verified: nothing is sent to any civil registry, identity system or external service. Only the checksum of the identity number is computed. Do not enter a real person’s details.",
     "title": "Test identity verification",
     "intro": "The real e-Devlet gateway does not work on local addresses, so the sign-in flow is completed on this screen. When you confirm the details below, the system receives an identity payload as if it had returned from e-Devlet.",
     "fieldTckn": "Test identity number",
     "hintTckn": "Only the format is checked (11 digits, official checksum). Do not enter a real person’s number; an example value is pre-filled.",
     "fieldFirstName": "First name",
     "fieldLastName": "Last name",
-    "hintEmail": "The account is created with this address. If the address already belongs to another account the sign-in is refused — accounts are not merged automatically by e-mail.",
+    "hintEmail": "Optional. If you leave it empty the account is created with a technical address that cannot receive mail, so password reset will not work; entering a real address here later updates it.",
+    "errorTckn": "The identity number must be 11 digits and satisfy the official checksum. You can use the pre-filled example value.",
+    "errorName": "First name and surname cannot be empty.",
+    "errorEmailTaken": "This e-mail address belongs to another account. Enter a different address or leave the field empty.",
+    "serverRejected": "The server refused the submission",
     "submit": "Confirm sign-in"
   }
 }

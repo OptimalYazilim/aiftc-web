@@ -173,29 +173,19 @@ export const kimlikOzeti = (tckn: string): string =>
   createHash('sha256').update(`${tuz()}:${tckn}`).digest('hex')
 
 /**
- * T.C. KİMLİK NUMARASI BİÇİM DENETİMİ
- * ---------------------------------------------------------------------------
- * Bu bir DOĞRULAMA DEĞİLDİR, yalnızca biçim denetimidir: numaranın gerçek bir
- * kişiye ait olduğunu söyleyen tek merci e-Devlet/KPS'dir. Denetim, kum
- * havuzunda anlamsız girdileri ayıklamak ve gerçek kipte kapıdan gelen değeri
- * kullanmadan önce beklenen şekilde olduğunu görmek içindir.
+ * T.C. kimlik numarası biçim denetimi.
  *
- * Algoritma resmîdir ve kamuya açıktır: 11 hane, ilk hane sıfır olamaz,
- * 10. hane ilk on hanenin ağırlıklı toplamından, 11. hane ilk on hanenin
- * toplamının mod 10'undan türer.
+ * Gövdesi `lib/tckn.ts` içindedir ve buradan yeniden ihraç edilir. Sebep:
+ * fonksiyon İSTEMCİDE de çalışmalı (formda anında geri bildirim), ama bu dosya
+ * `node:crypto` içe aktardığı için istemci paketine giremez. Tek kopya iki
+ * tarafta çalışsın diye ayrıldı — gerekçesi o dosyada.
+ *
+ * ÖLÇÜLMÜŞ BİR HATA ORADA DÜZELTİLDİ: bu fonksiyonun ilk sürümü negatif
+ * kalanı normalize etmiyordu (`(x) % 10`, `((x % 10) + 10) % 10` değil) ve
+ * 200.000 geçerli numaradan 19'unu (≈%0,01) YANLIŞLIKLA reddediyordu. O
+ * kişiler e-Devlet ile hiç giriş yapamazdı.
  */
-export const tcknBicimiGecerli = (deger: string): boolean => {
-  if (!/^[1-9][0-9]{10}$/.test(deger)) return false
-
-  const h = deger.split('').map(Number)
-  const tekler = h[0]! + h[2]! + h[4]! + h[6]! + h[8]!
-  const ciftler = h[1]! + h[3]! + h[5]! + h[7]!
-
-  if ((tekler * 7 - ciftler) % 10 !== h[9]) return false
-
-  const ilkOn = h.slice(0, 10).reduce((toplam, basamak) => toplam + basamak, 0)
-  return ilkOn % 10 === h[10]
-}
+export { tcknBicimiGecerli } from './tckn'
 
 /**
  * `state` — CSRF VE İSTEK BÜTÜNLÜĞÜ
@@ -224,8 +214,19 @@ export const EDEVLET_STATE_OMRU_SN = 10 * 60
 
 export const stateUret = (): string => randomBytes(32).toString('base64url')
 
-/** Sabit süreli karşılaştırma — `===` uzunluk/önek sızdırabilir. */
-export const stateEslesiyor = (gelen: string | undefined, cerez: string | undefined): boolean => {
+/**
+ * Sabit süreli karşılaştırma — `===` uzunluk/önek sızdırabilir.
+ *
+ * Dönüş tipi bir TİP KORUYUCUSUDUR (`gelen is string`): eşleşme sağlandığında
+ * `gelen` kesinlikle tanımlıdır ve sonraki kod onu boş olabilir diye ele almak
+ * zorunda kalmaz. Bu, gerçek değişmezi tip sisteminde ifade eder; alternatifi
+ * çağrı yerlerine `state!` ya da `state ?? ''` yazmaktı — ikisi de değişmezi
+ * gizler.
+ */
+export const stateEslesiyor = (
+  gelen: string | undefined,
+  cerez: string | undefined,
+): gelen is string => {
   if (!gelen || !cerez) return false
 
   const a = Buffer.from(gelen)

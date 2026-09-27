@@ -109,7 +109,43 @@ const dilOku = (deger: string | null): Locale => (deger && isLocale(deger) ? deg
  */
 const STATE_SIL = `${EDEVLET_STATE_COOKIE}=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax`
 
-/** Hata durumunda giriş sayfasına, sebebi sorgu dizesinde taşıyarak döner. */
+/**
+ * HATA İKİ AYRI YERE DÖNER — DÜZELTİLEBİLİR Mİ, DEĞİL Mİ
+ * ============================================================================
+ * İlk sürüm her hatayı giriş sayfasına yolluyordu. Biçim hatalarında bu yanlış
+ * bir davranıştı: kullanıcı bir hanesini yanlış yazdığı için kum havuzundan
+ * tümden atılıyor, hangi alanın hatalı olduğunu göremiyor ve akışa baştan
+ * girmek zorunda kalıyordu.
+ *
+ * Artık ayrım şudur:
+ *
+ *   DÜZELTİLEBİLİR (alan hatası)  -> kum havuzu ekranına geri döner, `state`
+ *                                    KORUNUR, kullanıcı düzeltip tekrar
+ *                                    gönderir.
+ *   DÜZELTİLEMEZ (state, hesap    -> giriş sayfasına döner, `state` SİLİNİR.
+ *   durumu, yapılandırma)
+ *
+ * `state`in korunması tek kullanımlılığı zayıflatmaz: değer hâlâ httpOnly
+ * çereze bağlıdır, on dakikada söner ve başarılı akışta silinir. Alan hatasında
+ * hiçbir oturum açılmadığı için tekrar denemenin bir bedeli yoktur.
+ */
+
+/** Düzeltilebilir alan hatası: kum havuzuna geri döner, `state` korunur. */
+const mockaDon = (request: NextRequest, locale: Locale, state: string, kod: string) => {
+  const hedef = new URL(authHref('edevletMock', locale), request.nextUrl.origin)
+  hedef.searchParams.set('state', state)
+  hedef.searchParams.set('hata', kod)
+
+  /*
+    GİRİLEN DEĞERLER GERİ YANSITILMAZ. Yansıtmak için adres satırına
+    konmaları gerekirdi; kimlik numarası ve ad soyad kişisel veridir ve URL
+    tarayıcı geçmişine, sunucu kayıtlarına ve `Referer` başlığına sızar.
+    Hangi alanın hatalı olduğunu söylemek yeterlidir.
+  */
+  return NextResponse.redirect(hedef)
+}
+
+/** Düzeltilemez hata: giriş sayfasına döner ve `state` geçersizleştirilir. */
 const hataylaDon = (request: NextRequest, locale: Locale, kod: string) => {
   const hedef = new URL(authHref('login', locale), request.nextUrl.origin)
   hedef.searchParams.set('edevlet_hata', kod)
@@ -188,13 +224,53 @@ const isle = async (request: NextRequest) => {
   }
 
   /* --- 4. katman: biçim -------------------------------------------------- */
+  /*
+    Bu üç denetim de DÜZELTİLEBİLİR hatadır: kullanıcı kum havuzu ekranına
+    geri döner, hangi alanın yanlış olduğunu görür ve tekrar gönderir.
+
+    Denetim istemcide de yapılıyor (aynı `lib/tckn.ts` fonksiyonu) ama kural
+    BURADADIR: istemci denetimi devtools'la silinebilir ve `curl` onu hiç
+    görmez.
+  */
   const { tckn, ad, soyad, eposta } = kimlik
-  if (!tckn || !tcknBicimiGecerli(tckn)) return hataylaDon(request, locale, 'tckn')
-  if (!ad || !soyad) return hataylaDon(request, locale, 'isim')
-  if (!eposta || !EPOSTA_DESENI.test(eposta)) return hataylaDon(request, locale, 'eposta')
+  if (!tckn || !tcknBicimiGecerli(tckn)) return mockaDon(request, locale, state, 'tckn')
+  if (!ad || !soyad) return mockaDon(request, locale, state, 'isim')
+
+  /*
+    E-POSTA OPSİYONELDİR — ama girildiyse biçimi tutmak ZORUNDADIR.
+    Gerçek e-Devlet Kapısı e-posta döndürmez; alanı zorunlu tutmak, gerçek
+    akışta var olmayan bir veriyi şart koşmak olurdu.
+  */
+  if (eposta && !EPOSTA_DESENI.test(eposta)) {
+    return mockaDon(request, locale, state, 'eposta')
+  }
 
   const payload = await payloadClient()
   const ozet = kimlikOzeti(tckn)
+
+  /**
+   * E-POSTA VERİLMEDİĞİNDE ÜRETİLEN ADRES
+   * ---------------------------------------------------------------------------
+   * Payload'ın kimlik koleksiyonu e-posta ZORUNLU ve TEKİL tutar; oturum
+   * açabilmek için bir adres gerekir. Kullanıcı vermediyse kimlik özetinden
+   * türetilir.
+   *
+   * `.invalid` SEÇİLDİ — RFC 2606 ile "hiçbir zaman çözümlenmeyecek" diye
+   * ayrılmış üst düzey addır. Böylece bu adrese YANLIŞLIKLA posta gönderilmesi
+   * imkânsızdır. `.local` kullanılmadı: o mDNS'e ayrılmıştır ve yerel ağda
+   * gerçekten çözümlenebilir.
+   *
+   * ÖZETTEN TÜRETİLİR, RASTGELE DEĞİL: aynı kişi her girişinde aynı adrese
+   * düşsün. Rastgele olsaydı ikinci girişte tekillik kısıtı ihlal edilir ya da
+   * ikinci bir hesap doğardı.
+   *
+   * DÜRÜST SINIR: böyle bir hesap parola sıfırlama postası ALAMAZ, yani
+   * kullanıcı gerçek bir adres eklemeden parolayla giriş yapamaz. Aşağıdaki
+   * yükseltme (`sonradan gerçek adres`) tam olarak bu köşeyi kapatır. Kurum
+   * üretimde e-postayı zorunlu tutmak isterse bu bilinçli bir seçenektir.
+   */
+  const uretilmisEposta = `edevlet-${ozet.slice(0, 16)}@edevlet.invalid`
+  const URETILMIS_SONEK = '@edevlet.invalid'
 
   /* --- Eşleştirme -------------------------------------------------------- */
   const mevcut = await payload.find({
@@ -232,18 +308,66 @@ const isle = async (request: NextRequest) => {
         context: { skipRevalidate: true },
       })
     }
+
+    /*
+      ÜRETİLMİŞ ADRESİ GERÇEK ADRESLE DEĞİŞTİRME
+      -------------------------------------------------------------------
+      Kullanıcı ilk girişte e-posta vermemiş olabilir; o zaman hesap
+      teslim edilemeyen bir `@edevlet.invalid` adresiyle açıldı ve parola
+      sıfırlama postası ALAMAZ. Sonraki bir girişte gerçek bir adres
+      yazarsa onu kaydetmek, kullanıcıyı o köşeden çıkarır.
+
+      YALNIZCA ÜRETİLMİŞ ADRES ÜZERİNE YAZILIR. Kullanıcının daha önce
+      girdiği gerçek bir adres SESSİZCE değiştirilmez: hesabın iletişim
+      adresini habersiz değiştirmek, parola sıfırlamayı başka bir kutuya
+      yönlendirmek demektir.
+
+      Hedef adres başkasındaysa dokunulmaz ve akış sürer — kullanıcı zaten
+      kendi hesabına giriyor, engellemenin bir faydası olmaz.
+    */
+    if (eposta && kullanici.email?.endsWith(URETILMIS_SONEK) && eposta !== kullanici.email) {
+      const sahipli = await payload.find({
+        collection: 'users',
+        where: { email: { equals: eposta } },
+        limit: 1,
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      if (sahipli.totalDocs === 0) {
+        await payload.update({
+          collection: 'users',
+          id: kullanici.id,
+          data: { email: eposta } as never,
+          overrideAccess: true,
+          context: { skipRevalidate: true },
+        })
+      }
+    }
   } else {
     /* --- 5. katman: e-posta çakışması -> BİRLEŞTİRME YOK ---------------- */
-    const epostaSahibi = await payload.find({
-      collection: 'users',
-      where: { email: { equals: eposta } },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true,
-    })
+    /*
+      Yalnızca kullanıcı bir adres GİRDİYSE anlamlıdır: üretilmiş adres
+      kimlik özetinden türer ve o özet zaten tekildir, dolayısıyla
+      çakışamaz.
+    */
+    if (eposta) {
+      const epostaSahibi = await payload.find({
+        collection: 'users',
+        where: { email: { equals: eposta } },
+        limit: 1,
+        depth: 0,
+        overrideAccess: true,
+      })
 
-    if (epostaSahibi.totalDocs > 0) {
-      return hataylaDon(request, locale, 'eposta_kullanimda')
+      if (epostaSahibi.totalDocs > 0) {
+        /*
+          DÜZELTİLEBİLİR: kullanıcı kum havuzunda başka bir adres yazabilir
+          (ya da alanı boş bırakabilir). Giriş sayfasına atmak, ona bu
+          seçeneği hiç göstermezdi.
+        */
+        return mockaDon(request, locale, state, 'eposta_kullanimda')
+      }
     }
 
     /*
@@ -273,7 +397,8 @@ const isle = async (request: NextRequest) => {
       context: { skipRevalidate: true },
       data: {
         name: `${ad} ${soyad}`.replace(/\s+/g, ' ').trim(),
-        email: eposta,
+        /* Verilmediyse kimlik özetinden türeyen, teslim edilemez adres. */
+        email: eposta || uretilmisEposta,
         /* Tahmin edilemez ve hiçbir yerde saklanmayan parola (bkz. lib/edevlet). */
         password: rastgeleParola(),
         edevletSubject: ozet,
