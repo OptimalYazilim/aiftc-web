@@ -7,6 +7,7 @@ import {
   type CatalogFilterOption,
   type CatalogTraining,
 } from '@/components/training/TrainingCatalog'
+import { PageHero } from '@/components/ui/PageHero'
 import { DELIVERY_MODES, TRAINING_LEVELS, TRAINING_STATUSES } from '@/fields/options'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
 import { ROUTES } from '@/i18n/routes'
@@ -175,13 +176,7 @@ export default async function TrainingCatalogPage({ params, searchParams }: Prop
         kelimelik dul satır bırakmaz. Giriş metni `max-w-2xl` ile ~70 karakterde
         tutulur — okunabilir satır uzunluğu için üst sınır budur.
       */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">{t('title')}</h1>
-          <p className="lede measure mt-5">{t('intro')}</p>
-        </div>
-      </section>
+      <PageHero eyebrow={t('eyebrow')} title={t('title')} intro={t('intro')} />
 
       <section aria-labelledby="catalog-list" className="bg-surface-warm">
         <div className="container-page section-block">

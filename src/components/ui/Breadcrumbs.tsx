@@ -21,34 +21,53 @@ export type Crumb = {
   href?: string
 }
 
-export const Breadcrumbs: React.FC<{ items: Crumb[]; label: string }> = ({ items, label }) => (
-  <nav aria-label={label}>
-    <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-600">
-      {items.map((item, index) => {
-        const isLast = index === items.length - 1
+export const Breadcrumbs: React.FC<{
+  items: Crumb[]
+  label: string
+  /** `dark`: koyu hero (PageHero) üzerinde beyaz tonlar. */
+  tone?: 'light' | 'dark'
+}> = ({ items, label, tone = 'light' }) => {
+  const dark = tone === 'dark'
 
-        return (
-          <li key={`${item.label}-${index}`} className="flex items-center gap-2">
-            {index > 0 ? (
-              <span aria-hidden="true" className="text-ink-500">
-                ›
-              </span>
-            ) : null}
+  return (
+    <nav aria-label={label}>
+      <ol
+        className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-sm ${
+          dark ? 'text-white/75' : 'text-ink-600'
+        }`}
+      >
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1
 
-            {item.href && !isLast ? (
-              <Link href={item.href} className="underline-offset-4 hover:underline">
-                {item.label}
-              </Link>
-            ) : (
-              <span aria-current={isLast ? 'page' : undefined} className="text-ink-700">
-                {item.label}
-              </span>
-            )}
-          </li>
-        )
-      })}
-    </ol>
-  </nav>
-)
+          return (
+            <li key={`${item.label}-${index}`} className="flex items-center gap-2">
+              {index > 0 ? (
+                <span aria-hidden="true" className={dark ? 'text-white/45' : 'text-ink-500'}>
+                  ›
+                </span>
+              ) : null}
+
+              {item.href && !isLast ? (
+                <Link
+                  href={item.href}
+                  className={`underline-offset-4 hover:underline focus-visible:underline ${dark ? 'hover:text-white focus-visible:text-white' : ''}`}
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span
+                  aria-current={isLast ? 'page' : undefined}
+                  className={dark ? 'line-clamp-1 font-medium text-white' : 'text-ink-700'}
+                >
+                  {item.label}
+                </span>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
+  )
+}
 
 export default Breadcrumbs

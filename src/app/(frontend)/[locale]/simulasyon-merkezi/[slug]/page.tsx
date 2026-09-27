@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { PageHero } from '@/components/ui/PageHero'
 import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
 import { DETAIL_ROUTES, detailHref, href } from '@/i18n/routes'
@@ -162,32 +162,27 @@ export default async function SimulationSystemPage({ params }: Props) {
   return (
     <>
       {/* --- Üst alan ----------------------------------------------------- */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: href('home', locale) },
-              { label: t('title'), href: href('simulation-centre', locale) },
-              { label: doc.title ?? slug },
-            ]}
-          />
-
-          {doc.shortCode ? (
-            <p className="mt-4 inline-flex items-center rounded-sm bg-brand-800 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white">
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: href('home', locale) },
+            { label: t('title'), href: href('simulation-centre', locale) },
+            { label: doc.title ?? slug },
+          ],
+        }}
+        eyebrow={t('title')}
+        meta={
+          doc.shortCode ? (
+            <span className="inline-flex items-center rounded-sm bg-brand-800 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white">
               {doc.shortCode}
-            </p>
-          ) : null}
-
-          <h1 className="title-record measure mt-3">
-            {doc.title}
-          </h1>
-
-          {doc.summary ? (
-            <p className="lede measure mt-5">{doc.summary}</p>
-          ) : null}
-        </div>
-      </section>
+            </span>
+          ) : null
+        }
+        title={doc.title}
+        intro={doc.summary || null}
+      />
 
       <div className="container-page section-block grid gap-10 lg:grid-cols-12 lg:gap-12">
         {/* --- Ana kolon --------------------------------------------------- */}
@@ -199,7 +194,7 @@ export default async function SimulationSystemPage({ params }: Props) {
               width={cover.width}
               height={cover.height}
               sizes="(min-width: 1024px) 60vw, 100vw"
-              className="w-full rounded-2xl object-cover"
+              className="w-full rounded-card object-cover"
               priority
             />
           ) : null}

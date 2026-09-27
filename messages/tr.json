@@ -40,14 +40,29 @@
     "quickAccess": "Hızlı erişim",
     "featuredTrainings": "Öne Çıkan Eğitimler",
     "trainingTopics": "Eğitim Konuları",
-    "latestNews": "Haberler ve Duyurular"
+    "latestNews": "Haberler ve Duyurular",
+    "topicsIntro": "Merkezin uzmanlık alanları. Her konu, ilgili eğitim programlarını ve kaynakları bir araya getirir.",
+    "simulationEyebrow": "Uygulamalı eğitim altyapısı",
+    "simulationCta": "Simülasyon Merkezini keşfedin",
+    "featuredEyebrow": "Eğitim takvimi",
+    "upcomingLabel": "Yaklaşan programlar",
+    "calendarLink": "Eğitim takvimini görüntüle",
+    "topicsEyebrow": "Uzmanlık alanları",
+    "programCount": "{count, plural, =0 {Henüz program yok} other {# program}}",
+    "newsEyebrow": "Merkezden haberler",
+    "guideEyebrow": "Uluslararası katılımcılar",
+    "guideTitle": "Antalya’da bir eğitime katılmayı mı planlıyorsunuz?",
+    "guideIntro": "Vize, ulaşım, konaklama ve eğitim dili hakkında bilmeniz gerekenler katılımcı rehberinde. Sorularınız için ekibimize doğrudan ulaşabilirsiniz.",
+    "guideCta": "Katılımcı rehberi",
+    "contactCta": "Bize ulaşın",
+    "countriesLabel": "Odak ülkeler"
   },
   "footer": {
     "contactHeading": "İletişim",
     "legalLinks": "Hukuki bilgiler",
     "projectHeading": "Proje",
     "projectPageLink": "Proje sayfası",
-    "contactPageLink": "İletişim sayfası ve form →",
+    "contactPageLink": "İletişim sayfası ve form",
     "identityHeading": "Kurum",
     "quickLinksHeading": "Hızlı Menü",
     "topicsHeading": "Öne Çıkan Başlıklar",
@@ -130,7 +145,8 @@
     "fieldSource": "Kaynak adres",
     "filteredByTraining": "Yalnızca “{egitim}” eğitimine ait materyaller gösteriliyor.",
     "showAllRecords": "Tüm kayıtları göster",
-    "noMaterialsForTraining": "Bu eğitime bağlı bir materyal henüz eklenmemiş. Kütüphanenin tamamını görmek için süzgeci kaldırabilirsiniz."
+    "noMaterialsForTraining": "Bu eğitime bağlı bir materyal henüz eklenmemiş. Kütüphanenin tamamını görmek için süzgeci kaldırabilirsiniz.",
+    "homeTotalLabel": "kayıt erişime açık"
   },
   "training": {
     "statusLabel": "Eğitim durumu",
@@ -360,7 +376,7 @@
   "simulation": {
     "metaTitle": "Simülasyon Merkezi",
     "title": "Simülasyon Merkezi",
-    "eyebrow": "Şartname 9 — Simülasyon Merkezi",
+    "eyebrow": "Uygulamalı eğitim altyapısı",
     "intro": "Orman yangınlarıyla mücadelede karar verme yetkinliğinin risksiz bir ortamda kazanılmasını sağlayan simülasyon altyapısı.",
     "purpose": "Merkezin Amacı",
     "role": "Yangın Eğitimindeki Rolü",

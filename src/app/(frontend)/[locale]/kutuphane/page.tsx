@@ -9,6 +9,7 @@ import {
   type LibraryFilterOption,
 } from '@/components/library/LibraryCatalog'
 import type { LibraryResourceItem } from '@/components/library/LibraryResourceCard'
+import { PageHero } from '@/components/ui/PageHero'
 import { LIBRARY_ALBUM_TYPE, LIBRARY_RESOURCE_TYPES } from '@/fields/options'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
 import { href, ROUTES } from '@/i18n/routes'
@@ -307,15 +308,7 @@ export default async function LibraryPage({ params, searchParams }: Props) {
   return (
     <>
       {/* --- Üst bölüm: kurumsal başlık + açıklama ----------------------- */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">
-            {t('pageTitle')}
-          </h1>
-          <p className="lede measure mt-5">{t('pageIntro')}</p>
-        </div>
-      </section>
+      <PageHero eyebrow={t('eyebrow')} title={t('pageTitle')} intro={t('pageIntro')} />
 
       {/* --- Arama, filtreler ve liste ------------------------------------ */}
       <section aria-labelledby="library-list" className="bg-surface-warm">

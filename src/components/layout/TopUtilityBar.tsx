@@ -58,8 +58,8 @@ export const TopUtilityBar = async ({
   const t = await getTranslations('nav')
 
   return (
-    <div className="bg-shell-950 text-sm text-white/75">
-      <div className="container-page flex items-center justify-between gap-x-6 py-1">
+    <div className="border-b border-transparent bg-shell-950 text-[0.8125rem] text-white/75 transition-colors duration-300 group-data-[tone=dark]/header:border-white/10 group-data-[tone=dark]/header:bg-transparent">
+      <div className="container-page flex min-h-9 items-center justify-between gap-x-6 py-0.5">
         {/* --- Sol: kardeş portallar (sm ve üzeri) ------------------------ */}
         {portals.length > 0 ? (
           <nav aria-label={t('portalsLabel')} className="hidden items-center gap-x-1 sm:flex">
@@ -68,7 +68,7 @@ export const TopUtilityBar = async ({
               karşılığı görenlere de kümenin ne olduğunu söyler. Dar ekranda
               gizlenir — bağlantılar kendi başlarına anlaşılır.
             */}
-            <span className="hidden pr-2 text-xs font-semibold uppercase tracking-wider text-brand-100 lg:inline">
+            <span className="hidden whitespace-nowrap pr-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-brand-100 xl:inline">
               {t('portalsLabel')}
             </span>
             <PortalLinks items={portals} variant="bar" comingSoonLabel={t('comingSoonBadge')} />
@@ -118,7 +118,7 @@ export const TopUtilityBar = async ({
           */}
           <Link
             href={href('search', locale)}
-            className="inline-flex min-h-9 items-center gap-2 rounded px-2 py-1 font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
+            className="inline-flex min-h-7 items-center gap-1.5 rounded px-2 font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:bg-white/10 focus-visible:text-white"
           >
             <svg
               aria-hidden="true"

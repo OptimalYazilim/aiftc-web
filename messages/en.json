@@ -40,14 +40,29 @@
     "quickAccess": "Quick access",
     "featuredTrainings": "Featured training",
     "trainingTopics": "Training topics",
-    "latestNews": "News and announcements"
+    "latestNews": "News and announcements",
+    "topicsIntro": "The centre’s areas of expertise. Each topic brings together related training programmes and resources.",
+    "simulationEyebrow": "Hands-on training infrastructure",
+    "simulationCta": "Explore the Simulation Centre",
+    "featuredEyebrow": "Training calendar",
+    "upcomingLabel": "Upcoming programmes",
+    "calendarLink": "View the training calendar",
+    "topicsEyebrow": "Areas of expertise",
+    "programCount": "{count, plural, =0 {No programmes yet} one {# programme} other {# programmes}}",
+    "newsEyebrow": "News from the centre",
+    "guideEyebrow": "International participants",
+    "guideTitle": "Planning to join a course in Antalya?",
+    "guideIntro": "The participant guide covers visas, travel, accommodation and language of instruction. Our team is happy to answer any questions.",
+    "guideCta": "Participant guide",
+    "contactCta": "Contact us",
+    "countriesLabel": "Focus countries"
   },
   "footer": {
     "contactHeading": "Contact",
     "legalLinks": "Legal information",
     "projectHeading": "Project",
     "projectPageLink": "Project page",
-    "contactPageLink": "Contact page and form →",
+    "contactPageLink": "Contact page and form",
     "identityHeading": "Institution",
     "quickLinksHeading": "Quick Links",
     "topicsHeading": "Featured Topics",
@@ -130,7 +145,8 @@
     "fieldSource": "Source URL",
     "filteredByTraining": "Showing only materials for “{egitim}”.",
     "showAllRecords": "Show all records",
-    "noMaterialsForTraining": "No material has been linked to this training yet. Clear the filter to see the whole library."
+    "noMaterialsForTraining": "No material has been linked to this training yet. Clear the filter to see the whole library.",
+    "homeTotalLabel": "records available"
   },
   "training": {
     "statusLabel": "Training status",
@@ -360,7 +376,7 @@
   "simulation": {
     "metaTitle": "Simulation Centre",
     "title": "Simulation Centre",
-    "eyebrow": "Spec 9 — Simulation Centre",
+    "eyebrow": "Hands-on training infrastructure",
     "intro": "Simulation infrastructure that lets decision-making skills for wildfire response be built in a risk-free environment.",
     "purpose": "Purpose of the centre",
     "role": "Role in fire training",

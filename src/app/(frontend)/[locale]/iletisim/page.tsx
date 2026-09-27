@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { ContactForm } from '@/components/contact/ContactForm'
 import { LocationMap } from '@/components/contact/LocationMap'
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { PageHero } from '@/components/ui/PageHero'
 import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
 import { ROUTES } from '@/i18n/routes'
@@ -160,17 +160,15 @@ export default async function ContactPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[{ label: tn('home'), href: `/${locale}` }, { label: t('title') }]}
-          />
-          <p className="eyebrow mt-6">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">{t('title')}</h1>
-          <p className="lede measure mt-5">{t('intro')}</p>
-        </div>
-      </section>
+      <PageHero
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [{ label: tn('home'), href: `/${locale}` }, { label: t('title') }],
+        }}
+        eyebrow={t('eyebrow')}
+        title={t('title')}
+        intro={t('intro')}
+      />
 
       <div className="container-page section-block grid gap-12 lg:grid-cols-12">
         {/* --- Sol: kurumsal iletişim bilgileri --------------------------- */}

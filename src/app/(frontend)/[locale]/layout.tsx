@@ -11,6 +11,7 @@ import { SubscriptionBanner } from '@/components/account/SubscriptionBanner'
 import { CookieBanner } from '@/components/layout/CookieBanner'
 import { RouteFocus } from '@/components/layout/RouteFocus'
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { ScrollSquirrel } from '@/components/layout/ScrollSquirrel'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { buildAlternates, getLocaleMeta, isLocale, LOCALE_CODES } from '@/i18n/locales'
 import { href, pageHref } from '@/i18n/routes'
@@ -139,6 +140,9 @@ export default async function LocaleLayout({ children, params }: Props) {
           </main>
 
           <SiteFooter locale={locale} />
+
+          {/* Başa dön — sağ alttaki koşan sincap (tüm sayfalarda). */}
+          <ScrollSquirrel />
 
           {/* DOM'da en sonda: klavye sırasını kesmez (WCAG 2.4.3). */}
           <CookieBanner

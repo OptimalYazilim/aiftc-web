@@ -196,15 +196,15 @@ export const SiteHeader = async ({ locale, localeAlternates }: Props) => {
             <span className="min-w-0">
               {siteShortName ? (
                 <>
-                  <span className="block text-lg font-bold leading-none tracking-tight text-shell-900">
+                  <span className="block text-lg font-bold leading-none tracking-tight text-shell-900 transition-colors group-data-[tone=dark]/header:text-white">
                     {siteShortName}
                   </span>
-                  <span className="mt-1 block truncate text-xs leading-tight text-ink-600 sm:text-sm">
+                  <span className="mt-1 block max-w-[17rem] text-xs leading-snug text-balance text-ink-600 transition-colors sm:text-sm group-data-[tone=dark]/header:text-white/75">
                     {siteName}
                   </span>
                 </>
               ) : (
-                <span className="block text-base font-bold leading-tight text-shell-900 sm:text-lg">
+                <span className="block text-base font-bold leading-tight text-shell-900 transition-colors sm:text-lg group-data-[tone=dark]/header:text-white">
                   {siteName}
                 </span>
               )}
@@ -223,7 +223,7 @@ export const SiteHeader = async ({ locale, localeAlternates }: Props) => {
             <div
               role="group"
               aria-label={t('partnersLabel')}
-              className="hidden items-center gap-4 border-l border-line pl-4 md:flex"
+              className="hidden items-center gap-4 border-l border-line pl-4 md:flex group-data-[tone=dark]/header:border-white/20"
             >
               {partners.map((partner, index) => (
                 <Image

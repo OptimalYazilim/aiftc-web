@@ -52,7 +52,7 @@ type Props = { locale: Locale }
  */
 
 const LINK_CLASS =
-  'inline-block py-1.5 text-white/75 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:text-white focus-visible:underline'
+  'inline-block py-1 text-[0.9375rem] leading-snug text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:text-white focus-visible:underline'
 
 const FooterLink: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
   if (!link.available || !link.href) {
@@ -64,7 +64,7 @@ const FooterLink: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
       (5.94:1) çekildi.
     */
     return (
-      <span aria-disabled="true" className="inline-block py-1.5 text-white/55">
+      <span aria-disabled="true" className="inline-block py-1 text-[0.9375rem] leading-snug text-white/55">
         {link.label}
         {link.notice ? <span className="sr-only">. {link.notice}</span> : null}
       </span>
@@ -83,6 +83,35 @@ const FooterLink: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
 }
 
 /** Sütun başlığı: küçük punto, geniş harf aralığı, altında ince ayırıcı. */
+/** İletişim satırı ikonu — dekoratif; bilgi metinde yazılı. */
+const IletisimIkonu: React.FC<{ tur: 'adres' | 'telefon' | 'eposta' }> = ({ tur }) => (
+  <svg
+    aria-hidden="true"
+    focusable="false"
+    viewBox="0 0 16 16"
+    className="mt-0.5 h-4 w-4 shrink-0 text-brand-100"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {tur === 'adres' ? (
+      <>
+        <path d="M8 14.5s4.5-4.2 4.5-7.8a4.5 4.5 0 1 0-9 0c0 3.6 4.5 7.8 4.5 7.8Z" />
+        <circle cx="8" cy="6.7" r="1.6" />
+      </>
+    ) : tur === 'telefon' ? (
+      <path d="M5.2 2.5 3 3.2c-.5.2-.8.7-.7 1.2.7 4.2 4.1 7.6 8.3 8.3.5.1 1-.2 1.2-.7l.7-2.2-2.6-1.4-1.3 1.2A7 7 0 0 1 5.2 6.2l1.2-1.3Z" />
+    ) : (
+      <>
+        <rect x="2" y="3.5" width="12" height="9" rx="1.5" />
+        <path d="m2.5 4.5 5.5 4.2 5.5-4.2" />
+      </>
+    )}
+  </svg>
+)
+
 const ColumnHeading: React.FC<{ id: string; children: React.ReactNode }> = ({ id, children }) => (
   <h2
     id={id}
@@ -185,73 +214,93 @@ export const SiteFooter = async ({ locale }: Props) => {
   return (
     <footer className="mt-16 bg-shell-950 text-white/75">
       {/* ================= A) Kurumsal başlık şeridi ===================== */}
-      <div className="border-b border-white/10">
-        <div className="container-page grid gap-8 py-10 md:grid-cols-3 md:items-center">
-          {/* sol — kurumun bir cümlelik tanımı */}
-          <p className="max-w-xs text-sm leading-relaxed text-white/60 md:text-left">
-            {site.tagline?.trim() || t('mission')}
-          </p>
+      {/*
+        Solda kurum kimliği (işaret + kısa ad + slogan) TEK blok, sağda bülten
+        çağrısı kart içinde. Önceki üç ayrık parça (slogan · amblem · bülten)
+        birbirinden kopuk duruyordu. Arkadaki eş yükselti çizgileri ana
+        sayfadaki kapanış bandıyla aynı motiftir; dekoratiftir.
+      */}
+      <div className="relative isolate overflow-hidden border-b border-white/10">
+        <svg
+          aria-hidden="true"
+          className="absolute -left-40 -top-48 -z-10 h-[30rem] w-[30rem] text-white/[0.05]"
+          viewBox="0 0 400 400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.2"
+        >
+          {[40, 70, 100, 130, 160, 190, 220].map((r, i) => (
+            <path
+              key={r}
+              d={`M ${200 - r} 200 C ${200 - r} ${200 - r * 0.9 - i * 4}, ${200 + r * 0.8} ${200 - r - i * 6}, ${200 + r} ${200 - i * 3} S ${200 + r * 0.3} ${200 + r * 1.05}, ${200 - r * 0.2} ${200 + r * 0.95} S ${200 - r} ${200 + r * 0.4}, ${200 - r} 200 Z`}
+            />
+          ))}
+        </svg>
 
-          {/* orta — resmî amblem / logo yerleşimi */}
-          <div className="flex flex-col items-center gap-3 text-center">
+        <div className="container-page grid gap-8 py-12 lg:grid-cols-12 lg:items-center">
+          {/* sol — kurum kimliği */}
+          <div className="flex items-center gap-5 lg:col-span-7">
             {darkLogo?.url ? (
               <Image
                 src={darkLogo.url}
                 alt=""
                 width={darkLogo.width ?? 220}
                 height={darkLogo.height ?? 64}
-                className="h-14 w-auto"
+                className="h-14 w-auto shrink-0"
               />
             ) : (
-              <BrandMark className="h-14 w-14 text-white" />
+              <BrandMark className="h-16 w-16 text-white" />
             )}
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-white">
-              {site.siteShortName ?? siteName}
-            </p>
+            <div>
+              <p className="text-lg font-bold tracking-[0.18em] text-white">
+                {site.siteShortName ?? siteName}
+              </p>
+              <p className="mt-1 max-w-md text-balance leading-relaxed text-white/65">
+                {site.tagline?.trim() || t('mission')}
+              </p>
+            </div>
           </div>
 
           {/* sağ — bülten aksiyonu */}
-          <div className="md:justify-self-end md:text-right">
-              <p className="text-sm font-semibold text-white">{t('newsletterHeading')}</p>
-              <p className="mt-1 max-w-xs text-sm leading-relaxed text-white/60 md:ml-auto">
-                {t('newsletterIntro')}
-              </p>
-              {/*
-                `mailto:` bir dış bağlantı değildir — yeni sekme açmaz,
-                izleme gerektirmez. İletişim sayfasına düşüldüğünde de aynı
-                düz <a> kullanılır: hedef site içidir, ön yükleme gerekmez.
-              */}
-              <a
-                href={newsletterHref}
-                className="group mt-4 inline-flex min-h-11 items-center gap-2 rounded-sm bg-white px-5 text-sm font-bold text-shell-950 transition-colors hover:bg-brand-50 focus-visible:bg-brand-50"
+          <div className="rounded-card border border-white/10 bg-white/[0.04] p-6 lg:col-span-5">
+            <p className="font-semibold text-white">{t('newsletterHeading')}</p>
+            <p className="mt-1 text-sm leading-relaxed text-white/65">{t('newsletterIntro')}</p>
+            {/*
+              `mailto:` bir dış bağlantı değildir — yeni sekme açmaz,
+              izleme gerektirmez. İletişim sayfasına düşüldüğünde de aynı
+              düz <a> kullanılır: hedef site içidir, ön yükleme gerekmez.
+            */}
+            <a
+              href={newsletterHref}
+              className="group mt-4 inline-flex min-h-11 items-center gap-2 rounded-md bg-white px-5 text-sm font-bold text-shell-950 transition-colors hover:bg-brand-50 focus-visible:bg-brand-50"
+            >
+              {t('newsletterCta')}
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                viewBox="0 0 16 16"
+                width="1em"
+                height="1em"
+                className="transition-transform duration-300 group-hover:translate-x-1 group-focus-within:translate-x-1"
               >
-                {t('newsletterCta')}
-                <svg
-                  aria-hidden="true"
-                  focusable="false"
-                  viewBox="0 0 16 16"
-                  width="1em"
-                  height="1em"
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                >
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.5 8h11M9.5 4l4 4-4 4"
-                  />
-                </svg>
-              </a>
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M2.5 8h11M9.5 4l4 4-4 4"
+                />
+              </svg>
+            </a>
           </div>
         </div>
       </div>
 
       {/* ================= B) Dört sütunlu ızgara ======================== */}
-      <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+      <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
         {/* --- 1) Kurumsal kimlik ---------------------------------------- */}
-        <section aria-labelledby="footer-identity">
+        <section aria-labelledby="footer-identity" className="lg:col-span-4 lg:pr-8">
           <ColumnHeading id="footer-identity">{t('identityHeading')}</ColumnHeading>
 
           <p className="font-semibold leading-snug text-white">{siteName}</p>
@@ -261,13 +310,13 @@ export const SiteFooter = async ({ locale }: Props) => {
           ) : null}
 
           {/* Misyon özeti: SEO açıklaması girilmişse o, yoksa arayüz metni. */}
-          <p className="mt-4 text-sm leading-relaxed">
+          <p className="mt-4 text-sm leading-relaxed text-white/60">
             {site.defaultDescription?.trim() || t('mission')}
           </p>
         </section>
 
         {/* --- 2) Hızlı menü --------------------------------------------- */}
-        <nav aria-labelledby="footer-quick">
+        <nav aria-labelledby="footer-quick" className="lg:col-span-2">
           <ColumnHeading id="footer-quick">{t('quickLinksHeading')}</ColumnHeading>
           <ul>
             {quickLinks.map((link, index) => (
@@ -280,7 +329,7 @@ export const SiteFooter = async ({ locale }: Props) => {
 
         {/* --- 3) Öne çıkan başlıklar ------------------------------------ */}
         {topics.length > 0 ? (
-          <nav aria-labelledby="footer-topics">
+          <nav aria-labelledby="footer-topics" className="lg:col-span-3">
             <ColumnHeading id="footer-topics">{t('topicsHeading')}</ColumnHeading>
             <ul>
               {topics.map((topic) => (
@@ -302,44 +351,49 @@ export const SiteFooter = async ({ locale }: Props) => {
         ) : null}
 
         {/* --- 4) İletişim ------------------------------------------------ */}
-        <section aria-labelledby="footer-contact">
+        <section aria-labelledby="footer-contact" className="lg:col-span-3">
           <ColumnHeading id="footer-contact">{t('contactHeading')}</ColumnHeading>
 
           <address className="not-italic text-sm leading-relaxed">
-            {contact?.address ? (
-              <span className="block whitespace-pre-line">{contact.address}</span>
-            ) : null}
-
-            {contact?.phone ? (
-              <a
-                href={`tel:${contact.phone.replace(/[^+\d]/g, '')}`}
-                className={`${LINK_CLASS} mt-2`}
-              >
-                {contact.phone}
-              </a>
-            ) : null}
-
-            {contact?.email ? (
-              <a href={`mailto:${contact.email}`} className={`${LINK_CLASS} block break-all`}>
-                {contact.email}
-              </a>
-            ) : null}
-
-            {contact?.trainingEmail ? (
-              <a
-                href={`mailto:${contact.trainingEmail}`}
-                className={`${LINK_CLASS} block break-all`}
-              >
-                {contact.trainingEmail}
-              </a>
-            ) : null}
+            <ul className="space-y-3">
+              {contact?.address ? (
+                <li className="flex gap-3">
+                  <IletisimIkonu tur="adres" />
+                  <span className="whitespace-pre-line">{contact.address}</span>
+                </li>
+              ) : null}
+              {contact?.phone ? (
+                <li className="flex gap-3">
+                  <IletisimIkonu tur="telefon" />
+                  <a
+                    href={`tel:${contact.phone.replace(/[^+\d]/g, '')}`}
+                    className="text-white/75 underline-offset-4 hover:text-white hover:underline focus-visible:text-white focus-visible:underline"
+                  >
+                    {contact.phone}
+                  </a>
+                </li>
+              ) : null}
+              {[contact?.email, contact?.trainingEmail]
+                .filter((posta): posta is string => Boolean(posta))
+                .map((posta) => (
+                  <li key={posta} className="flex gap-3">
+                    <IletisimIkonu tur="eposta" />
+                    <a
+                      href={`mailto:${posta}`}
+                      className="break-all text-white/75 underline-offset-4 hover:text-white hover:underline focus-visible:text-white focus-visible:underline"
+                    >
+                      {posta}
+                    </a>
+                  </li>
+                ))}
+            </ul>
           </address>
 
           {/* Belirgin aksiyon: form ve harita iletişim sayfasındadır. */}
           <p className="mt-4">
             <Link
               href={href('contact', locale)}
-              className="group inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/40 px-4 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/10 focus-visible:border-white/60 focus-visible:bg-white/10"
+              className="group mt-2 inline-flex min-h-11 items-center gap-2 rounded-md border border-white/40 px-4 text-sm font-semibold text-white transition-colors hover:border-white/70 hover:bg-white/10 focus-visible:border-white/70 focus-visible:bg-white/10"
             >
               {t('contactPageLink')}
               <svg

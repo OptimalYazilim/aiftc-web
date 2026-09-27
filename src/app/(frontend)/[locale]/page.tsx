@@ -9,15 +9,12 @@ import {
   type FeaturedTraining,
 } from '@/components/home/FeaturedTrainingsBento'
 import { HomeHero } from '@/components/home/HomeHero'
-import { NewsCard } from '@/components/news/NewsCard'
-import { TopicIcon } from '@/components/training/TopicIcon'
-import { ArrowLink } from '@/components/ui/ArrowLink'
+import { SimulationBand } from '@/components/home/SimulationBand'
+import { InternationalBand } from '@/components/home/InternationalBand'
+import { NewsShowcase } from '@/components/home/NewsShowcase'
+import { TopicShowcase } from '@/components/home/TopicShowcase'
 import { ExternalLink } from '@/components/ui/ExternalLink'
-import { SectionHeading } from '@/components/ui/SectionHeading'
-import { NEWS_CATEGORIES } from '@/fields/options'
 import { buildAlternates, isLocale, type Locale } from '@/i18n/locales'
-import { detailHref, href } from '@/i18n/routes'
-import { optionLabel } from '@/lib/optionLabel'
 import { getHomepage, getLayoutData, payloadClient } from '@/lib/queries'
 import { resolveNavItems } from '@/lib/resolveLink'
 
@@ -71,8 +68,6 @@ export default async function HomePage({ params }: Props) {
   setRequestLocale(locale)
 
   const t = await getTranslations('home')
-  const tc = await getTranslations('common')
-  const tn = await getTranslations('nav')
 
   const payload = await payloadClient()
   const [{ services, navigation }, homepage] = await Promise.all([
@@ -120,7 +115,8 @@ export default async function HomePage({ params }: Props) {
       where: { featured: { equals: true }, _status: { equals: 'published' } },
       sort: 'order',
       limit: 6,
-      depth: 0,
+      // depth 1: kartlardaki kapak görselinin boyut türevleri tek sorguda gelir.
+      depth: 1,
     }),
   ])
 
@@ -196,85 +192,19 @@ export default async function HomePage({ params }: Props) {
       />
 
       {/* --- Eğitim konuları (6.1, 6.3) ----------------------------------- */}
-      {topics.docs.length > 0 ? (
-        <section aria-labelledby="topics" className="container-page py-12">
-          <SectionHeading id="topics" title={t('trainingTopics')} />
-          <ul className="mt-6 flex flex-wrap gap-3">
-            {topics.docs.map((item) => {
-              const doc = item as {
-                id: string | number
-                title?: string
-                slug?: string
-                category?: string
-              }
-              return (
-                <li key={String(doc.id)}>
-                  {/*
-                    Konu etiketi: beyaz zemin, yumuşak kenarlık, konusuna göre
-                    tematik ikon. İkon dekoratiftir — konu adı zaten metinde.
-                    `min-h-11`: dokunma hedefi 44px (WCAG 2.2 — 2.5.8).
-                  */}
-                  <Link
-                    href={detailHref('training-topic', locale, doc.slug ?? '')}
-                    className="ease-editorial inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong px-4 text-sm font-medium text-ink-700 transition-colors duration-300 hover:border-shell-900 hover:text-shell-900 focus-visible:border-shell-900 focus-visible:text-shell-900 focus-within:border-shell-900 focus-within:text-shell-900"
-                  >
-                    <TopicIcon category={doc.category} className="text-brand-700" />
-                    {doc.title}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      ) : null}
+      <TopicShowcase locale={locale} topics={topics.docs as never} />
 
-      {/* --- Dijital kütüphane: EK-2 köprüsü (6.1, 6.6) -------------------- */}
+      {/* --- Simülasyon merkezi (6.1, 6.5, 9) ------------------------------ */}
+      <SimulationBand locale={locale} />
+
+      {/* --- Dijital kütüphane (6.1, 6.6) ---------------------------------- */}
       <LibraryCta locale={locale} />
 
       {/* --- Güncel duyurular (6.1, 6.7) ---------------------------------- */}
-      <section aria-labelledby="latest-news" className="container-page py-12">
-        <SectionHeading
-          id="latest-news"
-          title={t('latestNews')}
-          /* Bkz. FeaturedTrainingsBento: iki "Tümünü gör" ayrışmalı. */
-          action={
-            <ArrowLink href={href('news', locale)}>
-              {tc('viewAll')}
-              <span className="sr-only">: {tn('news')}</span>
-            </ArrowLink>
-          }
-        />
+      <NewsShowcase locale={locale} items={latestNews.docs as never} />
 
-        {latestNews.docs.length === 0 ? (
-          <p className="mt-4 text-ink-600">{tc('noResults')}</p>
-        ) : (
-          /*
-            Haber listesi sayfasıyla AYNI kartı kullanır: kenarlık, gölge,
-            hover mikro esnemesi ve kapak görseli yoksa kurumsal doku
-            (bkz. components/news/NewsCard). Önceden burada ayrı bir
-            "üst çizgili liste" markup'ı vardı; iki yerde iki farklı haber
-            görünümü olması kurumsal tutarlılığı bozuyordu.
-          */
-          <ul className="mt-6 grid auto-rows-fr gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {latestNews.docs.map((doc) => (
-              <NewsCard
-                key={String(doc.id)}
-                locale={locale}
-                item={{
-                  id: doc.id,
-                  title: doc.title,
-                  slug: doc.slug,
-                  summary: doc.summary,
-                  publishedAt: doc.publishedAt,
-                  categoryLabel: optionLabel(NEWS_CATEGORIES, doc.category, locale),
-                  coverImage: doc.coverImage,
-                }}
-                readMoreLabel={tc('readMore')}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
+      {/* --- Uluslararası katılımcılar (6.1, 8) ---------------------------- */}
+      <InternationalBand locale={locale} />
     </>
   )
 }

@@ -8,6 +8,7 @@ import {
   type CalendarTopicOption,
   type TimelineTraining,
 } from '@/components/training/TrainingCalendar'
+import { PageHero } from '@/components/ui/PageHero'
 import { DELIVERY_MODES } from '@/fields/options'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
 import { href, ROUTES } from '@/i18n/routes'
@@ -130,21 +131,18 @@ export default async function TrainingCalendarPage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">{t('title')}</h1>
-          <p className="lede measure mt-5">{t('intro')}</p>
-          <p className="mt-6">
-            <Link
-              href={href('training-programs', locale)}
-              className="inline-flex min-h-11 items-center text-brand-800 underline underline-offset-4"
-            >
-              {t('goToCatalog')}
-            </Link>
-          </p>
-        </div>
-      </section>
+      <PageHero eyebrow={t('eyebrow')} title={t('title')} intro={t('intro')}>
+        <Link
+          href={href('training-programs', locale)}
+          className="group inline-flex min-h-12 items-center gap-2 font-semibold text-white underline decoration-white/50 decoration-2 underline-offset-8 transition-colors hover:decoration-white focus-within:decoration-white"
+        >
+          {/* Çeviride sondaki ok, simgeyle çift ok olmasın diye atılır. */}
+          {t('goToCatalog').replace(/\s*→\s*$/, '')}
+          <svg aria-hidden="true" viewBox="0 0 16 16" width="1em" height="1em" className="transition-transform duration-300 group-hover:translate-x-1 group-focus-within:translate-x-1">
+            <path fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M2.5 8h11M9.5 4l4 4-4 4" />
+          </svg>
+        </Link>
+      </PageHero>
 
       <section aria-labelledby="calendar-timeline" className="container-page section-block">
         <h2 id="calendar-timeline" className="sr-only">

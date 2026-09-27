@@ -11,7 +11,7 @@ import {
   type LibraryActionLabels,
 } from '@/components/library/LibraryDetailActions'
 import { formatOf } from '@/components/library/LibraryResourceCard'
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { PageHero } from '@/components/ui/PageHero'
 import {
   FOCUS_COUNTRIES,
   INSTRUCTION_LANGUAGES,
@@ -322,28 +322,24 @@ export default async function LibraryDetailPage({ params }: Props) {
   return (
     <>
       {/* --- Üst alan ---------------------------------------------------- */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: `/${locale}` },
-              { label: t('title'), href: href('library', locale) },
-              { label: doc.title },
-            ]}
-          />
-
-          {resourceTypeLabel ? <p className="eyebrow mt-6">{resourceTypeLabel}</p> : null}
-
-          <h1 className="title-record measure mt-3">{doc.title}</h1>
-
-          {doc.institution || doc.author ? (
-            <p className="mt-4 text-base text-ink-600">
-              {[doc.institution, doc.author].filter(Boolean).join(' · ')}
-            </p>
-          ) : null}
-        </div>
-      </section>
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: `/${locale}` },
+            { label: t('title'), href: href('library', locale) },
+            { label: doc.title },
+          ],
+        }}
+        eyebrow={resourceTypeLabel || null}
+        title={doc.title}
+        intro={
+          doc.institution || doc.author
+            ? [doc.institution, doc.author].filter(Boolean).join(' · ')
+            : null
+        }
+      />
 
       {/* --- Gövde: sol içerik + sağ künye rayı --------------------------- */}
       <div className="container-page section-block">

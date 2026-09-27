@@ -122,6 +122,7 @@ export const groupByMonth = (items: TimelineTraining[]): YearGroup[] => {
 export const TrainingCalendar: React.FC<Props> = ({ locale, items, topics }) => {
   const t = useTranslations('calendar')
   const tt = useTranslations('training')
+  const th = useTranslations('home')
 
   const [year, setYear] = useState<string | null>(null)
   const [month, setMonth] = useState<string | null>(null)
@@ -273,32 +274,66 @@ export const TrainingCalendar: React.FC<Props> = ({ locale, items, topics }) => 
       />
 
       {groups.length === 0 ? (
-        <p className="mt-8 rounded-card border border-line bg-surface-alt p-6 text-ink-700">
+        <p className="mt-8 rounded-card border border-line bg-surface p-6 text-ink-700">
           {hasFilters ? t('noResults') : t('empty')}
         </p>
       ) : (
-        <div className="mt-8 space-y-14">
+        <div className="mt-12 space-y-20">
           {groups.map((group) => (
             <section key={group.year} aria-labelledby={`yil-${group.year}`}>
-              {/* `scroll-mt`: yapışkan başlık, hedefe atlarken yılı örtmesin. */}
-              <h2
-                id={`yil-${group.year}`}
-                className="scroll-mt-24 border-b-2 border-brand-700 pb-2 text-2xl font-bold sm:text-3xl"
-              >
-                {group.year}
-              </h2>
+              {/*
+                YIL BAŞLIĞI — ana sayfa bölüm başlıklarının dili: kısa çizgili
+                üst etiket + büyük rakam. Sağda o yılın kayıt sayısı.
+                `scroll-mt`: yapışkan başlık, hedefe atlarken yılı örtmesin.
+              */}
+              <div className="flex items-end justify-between gap-6 border-b border-line pb-5">
+                <div>
+                  <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">
+                    <span aria-hidden="true" className="h-px w-8 bg-brand-700" />
+                    {t('eyebrow')}
+                  </p>
+                  <h2
+                    id={`yil-${group.year}`}
+                    className="mt-2 scroll-mt-24 text-5xl font-bold leading-none tracking-[-0.04em] text-shell-900 sm:text-6xl"
+                  >
+                    {group.year}
+                  </h2>
+                </div>
+                <p className="pb-1 text-sm font-semibold text-ink-600">
+                  {th('programCount', {
+                    count: group.months.reduce((sum, m) => sum + m.items.length, 0),
+                  })}
+                </p>
+              </div>
 
-              <div className="mt-8 space-y-10">
+              <div className="mt-10 space-y-12">
                 {group.months.map((monthGroup) => (
-                  <section key={monthGroup.key} aria-labelledby={`ay-${monthGroup.key}`}>
-                    <h3
-                      id={`ay-${monthGroup.key}`}
-                      className="text-lg font-semibold uppercase tracking-wide text-ink-600"
-                    >
-                      {formatMonthKey(locale, monthGroup.key)}
-                    </h3>
+                  <section
+                    key={monthGroup.key}
+                    aria-labelledby={`ay-${monthGroup.key}`}
+                    className="grid gap-5 lg:grid-cols-12 lg:gap-10"
+                  >
+                    {/* Ay başlığı — geniş ekranda liste boyunca yapışık kalır. */}
+                    <div className="lg:col-span-3">
+                      <div className="lg:sticky lg:top-28">
+                        <h3
+                          id={`ay-${monthGroup.key}`}
+                          className="text-2xl font-bold capitalize tracking-tight text-shell-900"
+                        >
+                          {formatMonthKey(locale, monthGroup.key).replace(` ${group.year}`, '')}
+                          <span className="sr-only"> {group.year}</span>
+                        </h3>
+                        <p className="mt-1 text-sm text-ink-600">
+                          {th('programCount', { count: monthGroup.items.length })}
+                        </p>
+                        <span
+                          aria-hidden="true"
+                          className="mt-4 hidden h-0.5 w-10 bg-brand-500 lg:block"
+                        />
+                      </div>
+                    </div>
 
-                    <ul className="mt-4 border-t border-line">
+                    <ul className="flex flex-col gap-4 lg:col-span-9">
                       {monthGroup.items.map((item) => (
                         <CalendarRow
                           key={String(item.id)}
@@ -311,7 +346,6 @@ export const TrainingCalendar: React.FC<Props> = ({ locale, items, topics }) => 
                             venue: tt('venue'),
                             quota: tt('quota'),
                             quotaValue: (count: number) => t('quotaValue', { count }),
-                            details: tt('viewDetails'),
                           }}
                         />
                       ))}
@@ -327,14 +361,27 @@ export const TrainingCalendar: React.FC<Props> = ({ locale, items, topics }) => 
   )
 }
 
+/** Tarih bloğu için gün/ay parçaları — `lib/dates` ile aynı UTC kabulü. */
+const dateParts = (locale: Locale, value: string | null | undefined) => {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return {
+    day: new Intl.DateTimeFormat(locale, { day: 'numeric', timeZone: 'UTC' }).format(date),
+    month: new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(date),
+    weekday: new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(date),
+  }
+}
+
 /**
- * TAKVİM SATIRI
- * Solda gün aralığı, sağda künye ve belirgin bir detay düğmesi.
+ * TAKVİM KARTI
+ * Ana sayfa kartlarının dili: beyaz yüzey, ince kenarlık, hover'da koyu
+ * kenarlık; kartın TAMAMI tıklanabilir, odak durağı TEK (başlık bağlantısı).
+ * Solda koyu orman tonlu tarih bloğu (beyaz metin shell-950 üzerinde 17:1).
  *
  * GEÇMİŞ EĞİTİMLER listeden ÇIKARILMAZ — merkezin geçmiş faaliyeti kurumsal
- * bir kayıttır. Yalnızca görsel olarak soluklaştırılır; durum rozeti
- * ("Tamamlandı") ayrımı metinle zaten taşır, renk tek başına anlam taşımaz
- * (WCAG 2.2 — 1.4.1). `aria-hidden` KULLANILMAZ.
+ * bir kayıttır. Tarih bloğu nötr tona döner; durum rozeti ("Tamamlandı")
+ * ayrımı metinle zaten taşır, renk tek başına anlam taşımaz (WCAG 1.4.1).
  */
 const CalendarRow: React.FC<{
   locale: Locale
@@ -347,142 +394,129 @@ const CalendarRow: React.FC<{
     venue: string
     quota: string
     quotaValue: (count: number) => string
-    details: string
   }
 }> = ({ locale, item, labels }) => {
   const dayRange = formatDayRange(locale, item.startDate, item.endDate)
+  const parts = dateParts(locale, item.startDate)
   const statusText = trainingStatusLabel(item.status, locale)
   const quota = Number(item.quota)
   const hasQuota = Number.isFinite(quota) && quota > 0
 
   /*
-    "Geçmiş" hesabı RENDER ANINDA yapılır, sunucudan gelmez. Sunucuda
-    hesaplansaydı ISR ile önbelleğe alınır ve beş dakika boyunca yanlış
-    kalabilirdi; ayrıca sunucu/istemci arasında farklı "şimdi" değerleri
-    hidrasyon uyuşmazlığı üretirdi. Tarih karşılaştırması gün başına
-    yuvarlanmaz — saat farkı takvimde anlamlı değil, sadece soluklaştırmayı
-    etkiler.
+    "Geçmiş" hesabı RENDER ANINDA yapılır: sunucuda hesaplansaydı ISR ile
+    önbelleğe alınır ve beş dakika boyunca yanlış kalabilirdi.
   */
   const isPast = item.startDate ? new Date(item.startDate) < new Date() : false
 
   return (
-    <li
-      className={`flex flex-col gap-3 border-b border-line py-5 sm:flex-row sm:gap-6 ${
-        isPast ? 'opacity-70' : ''
-      }`}
-    >
-      {/* Sol sütun: gün aralığı */}
-      <p className="shrink-0 sm:w-28">
-        {/*
-          "GEÇMİŞ" YALNIZCA SOLUKLUKLA ANLATILMIYOR  (Kontrol Listesi 44 · 47)
-          --------------------------------------------------------------------
-          Yukarıdaki `opacity-70` bu satırın geçmişte kaldığını söyleyen TEK
-          işaretti. Opaklık ne renk ne metindir: ekran okuyucu kullanıcısı
-          bunu hiç duymaz, düşük görme keskinliğine sahip kullanıcı ise %70
-          ile %100 arasındaki farkı güvenilir biçimde ayırt edemez — takvimde
-          geçmiş ve yaklaşan eğitim birbirine karışır.
-
-          Karşılığı metinle verilir. `sr-only` olduğu için GÖRSEL DÜZEN
-          DEĞİŞMEZ; soluklaştırma da yerinde kalır, artık tek taşıyıcı değil.
-        */}
-        {isPast ? <span className="sr-only">{labels.past}: </span> : null}
-        <time dateTime={item.startDate ?? undefined} className="text-xl font-bold text-brand-800">
-          {dayRange}
-        </time>
-      </p>
-
-      {/* Sağ sütun: içerik */}
-      <div className="min-w-0 flex-1">
-        <h4 className="text-lg font-semibold leading-snug tracking-tight">
-          <Link
-            href={detailHref('training-program', locale, item.slug ?? '')}
-            className="text-shell-900 decoration-2 underline-offset-4 transition-colors hover:text-brand-800 hover:underline focus-visible:text-brand-800"
-          >
-            {item.title}
-          </Link>
-        </h4>
-        {/*
-          Durum rozeti alt bilgiden AYRI durur: o bir etiket, alt bilgi ise
-          etiket/değer listesi. İkisi aynı satıra karıştığında rozet sıradan
-          bir metin gibi okunuyordu.
-        */}
-        {statusText ? (
-          <p className={`mt-2 ${trainingStatusClasses(item.status)}`}>
-            <span className="sr-only">{labels.status}: </span>
-            {statusText}
-          </p>
-        ) : null}
-
-        {/*
-          Alt bilgi kart kataloğuyla AYNI bileşeni kullanır (ui/CardMeta):
-          etiketler artık görünür ve değerler tek hizada başlar. Buradaki
-          kontenjan ikonu kaldırıldı — etiketin kendisi ("Kontenjan") ne
-          olduğunu zaten söylüyordu, ikon üçüncü kez aynı şeyi anlatıyordu.
-        */}
-        <CardMeta
-          className="mt-3"
-          items={[
-            item.deliveryModeLabel
-              ? { key: 'mode', label: labels.deliveryMode, value: item.deliveryModeLabel }
-              : null,
-            item.venue ? { key: 'venue', label: labels.venue, value: item.venue } : null,
-            /*
-              KONTENJAN — sayı tek başına anlamsızdır ("24"), birimiyle basılır.
-              Girilmemiş veya sıfır kontenjan HİÇ BASILMAZ: "0 kişilik kontenjan"
-              eğitimin kapalı olduğu izlenimi verirdi.
-            */
-            hasQuota ? { key: 'quota', label: labels.quota, value: labels.quotaValue(quota) } : null,
-          ]}
-        />
-
-        {item.topicTitles.length > 0 ? (
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {item.topicTitles.map((topic) => (
-              <li
-                key={topic}
-                className="rounded-full bg-surface-alt px-3 py-1 text-sm text-ink-700"
-              >
-                {topic}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {/*
-          DETAY DÜĞMESİ — başlıktan AYRI ikinci bir odak durağıdır.
-          Kart bileşenlerinde bundan kaçınılıyor (aynı hedefe iki durak), ama
-          takvim satırı bir kart değil bir TABLO SATIRI gibi taranıyor: göz
-          tarihe ve duruma bakıp "bunu aç" diyor ve o eylem için belirgin bir
-          hedef arıyor. Ekran okuyucuda ayırt edilebilsin diye düğmenin
-          erişilebilir adına eğitimin başlığı `sr-only` olarak eklenir
-          (WCAG 2.2 — 2.4.4 Bağlantı Amacı).
-        */}
-        <p className="mt-4">
-          <Link
-            href={detailHref('training-program', locale, item.slug ?? '')}
-            className="group inline-flex min-h-11 items-center gap-2 rounded-sm border border-line-strong px-4 text-sm font-semibold text-shell-900 transition-colors hover:border-brand-700 hover:bg-brand-50/60 hover:text-brand-800 focus-visible:border-brand-700 focus-visible:bg-brand-50/60 focus-visible:text-brand-800"
-          >
-            {labels.details}
-            <span className="sr-only"> — {item.title}</span>
-            <svg
-              aria-hidden="true"
-              focusable="false"
-              viewBox="0 0 16 16"
-              width="1em"
-              height="1em"
-              className="transition-transform duration-300 group-hover:translate-x-1"
+    <li className="group ease-editorial relative flex overflow-hidden rounded-card border border-line bg-surface transition-colors duration-500 hover:border-shell-900 focus-within:border-shell-900">
+      {/* Tarih bloğu */}
+      <div
+        className={`flex w-24 shrink-0 flex-col items-center justify-center px-2 py-5 text-center sm:w-32 ${
+          isPast ? 'bg-surface-alt text-ink-700' : 'bg-shell-950 text-white'
+        }`}
+      >
+        {parts ? (
+          <>
+            <span
+              className={`text-xs font-semibold uppercase tracking-[0.14em] ${
+                isPast ? 'text-ink-600' : 'text-brand-100'
+              }`}
             >
-              <path
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.5 8h11M9.5 4l4 4-4 4"
-              />
-            </svg>
-          </Link>
-        </p>
+              {parts.month}
+            </span>
+            <span className="mt-1 text-4xl font-bold leading-none tracking-tight sm:text-5xl">
+              {parts.day}
+            </span>
+            <span className={`mt-2 text-xs ${isPast ? 'text-ink-600' : 'text-white/70'}`}>
+              {parts.weekday}
+            </span>
+          </>
+        ) : null}
+      </div>
+
+      {/* İçerik */}
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {/*
+              "GEÇMİŞ" YALNIZCA RENKLE ANLATILMIYOR  (Kontrol Listesi 44 · 47)
+              Tarih bloğunun soluk zemini ekran okuyucuya hiçbir şey söylemez;
+              karşılığı metinle verilir. `sr-only`: görsel düzen değişmez.
+            */}
+            {isPast ? <span className="sr-only">{labels.past}: </span> : null}
+            {statusText ? (
+              <p className={trainingStatusClasses(item.status)}>
+                <span className="sr-only">{labels.status}: </span>
+                {statusText}
+              </p>
+            ) : null}
+            {dayRange ? (
+              <time
+                dateTime={item.startDate ?? undefined}
+                className="text-xs font-semibold uppercase tracking-wider text-brand-700"
+              >
+                {dayRange} {dayRange.includes(' ') ? null : parts?.month}
+              </time>
+            ) : null}
+          </div>
+
+          <h4 className="mt-2 text-lg font-bold leading-snug tracking-tight sm:text-xl">
+            <Link
+              href={detailHref('training-program', locale, item.slug ?? '')}
+              className="text-shell-900 underline-offset-4 transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800 group-focus-within:text-brand-800"
+            >
+              {item.title}
+            </Link>
+          </h4>
+
+          <CardMeta
+            className="mt-3"
+            items={[
+              item.deliveryModeLabel
+                ? { key: 'mode', label: labels.deliveryMode, value: item.deliveryModeLabel }
+                : null,
+              item.venue ? { key: 'venue', label: labels.venue, value: item.venue } : null,
+              /* Girilmemiş veya sıfır kontenjan basılmaz ("0 kişilik" kapalı izlenimi verir). */
+              hasQuota ? { key: 'quota', label: labels.quota, value: labels.quotaValue(quota) } : null,
+            ]}
+          />
+
+          {item.topicTitles.length > 0 ? (
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {item.topicTitles.map((topic) => (
+                <li
+                  key={topic}
+                  className="rounded-full border border-line bg-canvas px-3 py-0.5 text-xs font-medium text-ink-700"
+                >
+                  {topic}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+
+        {/* Görsel ipucu — bağlantının kendisi başlıktır (tek odak durağı). */}
+        <span
+          aria-hidden="true"
+          className="ease-editorial hidden size-11 shrink-0 items-center justify-center rounded-full border border-line text-shell-900 transition-colors duration-500 group-hover:border-shell-900 group-hover:bg-shell-900 group-hover:text-white group-focus-within:border-shell-900 group-focus-within:bg-shell-900 group-focus-within:text-white sm:inline-flex"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            width="1.1em"
+            height="1.1em"
+            className="ease-editorial transition-transform duration-500 group-hover:translate-x-0.5 group-focus-within:translate-x-0.5"
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M2.5 8h11M9.5 4l4 4-4 4"
+            />
+          </svg>
+        </span>
       </div>
     </li>
   )

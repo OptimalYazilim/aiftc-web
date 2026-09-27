@@ -76,6 +76,7 @@ export const CookieBanner: React.FC<Props> = ({
   return (
     <div
       ref={regionRef}
+      data-cookie-banner
       role="region"
       aria-label={t('regionLabel')}
       // Yüzen katman gölgeyle değil, kalın bir üst çizgiyle ayrılır.

@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import type { Page } from '@/payload-types'
 
 import { PageBlocks } from '@/components/pages/PageBlocks'
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { PageHero } from '@/components/ui/PageHero'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { ROUTES, pageHref } from '@/i18n/routes'
 import { resolveMedia } from '@/lib/media'
@@ -201,40 +200,24 @@ export default async function FreePage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: `/${locale}` },
-              ...(parent?.title && parent.slug
-                ? [{ label: parent.title, href: pageHref(locale, parent.slug) }]
-                : []),
-              { label: doc.title },
-            ]}
-          />
-          <h1 className="title-record measure mt-6">{doc.title}</h1>
-          {doc.subtitle ? (
-            <p className="lede measure mt-5">{doc.subtitle}</p>
-          ) : null}
-        </div>
-      </section>
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: `/${locale}` },
+            ...(parent?.title && parent.slug
+              ? [{ label: parent.title, href: pageHref(locale, parent.slug) }]
+              : []),
+            { label: doc.title },
+          ],
+        }}
+        title={doc.title}
+        intro={doc.subtitle || null}
+        image={cover}
+      />
 
       <div className="section-block">
-        {cover ? (
-          <div className="container-page mb-12">
-            <Image
-              src={cover.url}
-              alt={cover.alt || ''}
-              width={cover.width}
-              height={cover.height}
-              priority
-              sizes="(min-width: 1280px) 1024px, 100vw"
-              className="w-full border border-line-soft object-cover"
-            />
-          </div>
-        ) : null}
-
         <PageBlocks blocks={doc.layout} locale={locale} />
       </div>
     </>

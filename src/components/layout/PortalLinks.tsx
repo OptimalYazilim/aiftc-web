@@ -36,11 +36,11 @@ export const PortalLinks: React.FC<Props> = ({ items, variant, comingSoonLabel }
   const isBar = variant === 'bar'
 
   const linkClass = isBar
-    ? 'inline-flex min-h-9 items-center rounded px-2 py-1 text-white/75 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:text-white focus-visible:underline'
+    ? 'inline-flex min-h-7 items-center rounded px-2 text-white/75 underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:text-white focus-visible:underline'
     : 'inline-flex min-h-11 items-center rounded-md px-3 py-2 font-medium text-ink-700 transition-colors hover:bg-surface-alt hover:text-brand-800 focus-visible:bg-surface-alt focus-visible:text-brand-800'
 
   const disabledClass = isBar
-    ? 'inline-flex min-h-9 items-center gap-2 px-2 py-1 text-white/55'
+    ? 'inline-flex min-h-7 items-center gap-2 px-2 text-white/55'
     : 'inline-flex min-h-11 items-center gap-2 px-3 py-2 text-ink-500'
 
   const badgeClass = isBar

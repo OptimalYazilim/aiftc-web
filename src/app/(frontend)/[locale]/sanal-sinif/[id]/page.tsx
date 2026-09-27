@@ -4,9 +4,9 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { ClassroomGate } from '@/components/classroom/ClassroomGate'
 import { ClassroomStage } from '@/components/classroom/ClassroomStage'
+import { PageHero } from '@/components/ui/PageHero'
 import { isLocale, type Locale } from '@/i18n/locales'
 import { detailHref, href } from '@/i18n/routes'
 import { formatDateRange } from '@/lib/dates'
@@ -184,62 +184,59 @@ export default async function VirtualClassroomPage({ params }: Props) {
   return (
     <>
       {/* --- Üst alan ------------------------------------------------------ */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: `/${locale}` },
-              { label: tn('trainingPrograms'), href: href('training-programs', locale) },
-              ...(training?.slug && training.title
-                ? [
-                    {
-                      label: training.title,
-                      href: detailHref('training-program', locale, training.slug),
-                    },
-                  ]
-                : []),
-              { label: room.title ?? t('pageTitle') },
-            ]}
-          />
-
-          <p className="mt-6 inline-flex items-center rounded-sm bg-brand-800 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white">
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: `/${locale}` },
+            { label: tn('trainingPrograms'), href: href('training-programs', locale) },
+            ...(training?.slug && training.title
+              ? [
+                  {
+                    label: training.title,
+                    href: detailHref('training-program', locale, training.slug),
+                  },
+                ]
+              : []),
+            { label: room.title ?? t('pageTitle') },
+          ],
+        }}
+        meta={
+          <span className="inline-flex items-center rounded-sm bg-brand-800 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-white">
             {t('badge')}
-          </p>
-
-          <h1 className="title-record measure mt-3">
-            {room.title ?? t('pageTitle')}
-          </h1>
-
-          <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-ink-700">
-            {training?.title ? (
-              <div className="flex gap-2">
-                <dt className="text-ink-600">{t('training')}:</dt>
-                <dd>
-                  {training.slug ? (
-                    <Link
-                      href={detailHref('training-program', locale, training.slug)}
-                      className="text-brand-800 underline underline-offset-4"
-                    >
-                      {training.title}
-                    </Link>
-                  ) : (
-                    training.title
-                  )}
-                </dd>
-              </div>
-            ) : null}
-            {schedule ? (
-              <div className="flex gap-2">
-                <dt className="text-ink-600">{t('schedule')}:</dt>
-                <dd>
-                  <time dateTime={room.startsAt ?? undefined}>{schedule}</time>
-                </dd>
-              </div>
-            ) : null}
-          </dl>
-        </div>
-      </section>
+          </span>
+        }
+        title={room.title ?? t('pageTitle')}
+      >
+        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-white/90">
+          {training?.title ? (
+            <div className="flex gap-2">
+              <dt className="text-white/65">{t('training')}:</dt>
+              <dd>
+                {training.slug ? (
+                  <Link
+                    href={detailHref('training-program', locale, training.slug)}
+                    className="font-semibold text-white underline decoration-white/50 underline-offset-4 hover:decoration-white focus-visible:decoration-white"
+                  >
+                    {training.title}
+                  </Link>
+                ) : (
+                  training.title
+                )}
+              </dd>
+            </div>
+          ) : null}
+          {schedule ? (
+            <div className="flex gap-2">
+              <dt className="text-white/65">{t('schedule')}:</dt>
+              <dd>
+                <time dateTime={room.startsAt ?? undefined}>{schedule}</time>
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+      </PageHero>
 
       {/* --- Gövde --------------------------------------------------------- */}
       <div className="container-page max-w-3xl py-10 lg:py-14">

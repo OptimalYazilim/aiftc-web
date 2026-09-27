@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { TopicIcon } from '@/components/training/TopicIcon'
+import { PageHero } from '@/components/ui/PageHero'
 import { TRAINING_LEVELS, TRAINING_TOPIC_CATEGORIES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { ROUTES, detailHref } from '@/i18n/routes'
@@ -86,13 +87,7 @@ export default async function TrainingTopicsPage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">{t('title')}</h1>
-          <p className="lede measure mt-5">{t('intro')}</p>
-        </div>
-      </section>
+      <PageHero eyebrow={t('eyebrow')} title={t('title')} intro={t('intro')} />
 
       <section aria-labelledby="topics-list" className="bg-surface-warm">
         <div className="container-page section-block">

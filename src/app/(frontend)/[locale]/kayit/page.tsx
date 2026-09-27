@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { RegisterForm } from '@/components/auth/RegisterForm'
+import { PageHero } from '@/components/ui/PageHero'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { AUTH_ROUTES } from '@/i18n/routes'
 import { captchaSiteAnahtari } from '@/lib/captcha'
@@ -90,13 +91,7 @@ export default async function RegisterPage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <p className="eyebrow">{t('registerEyebrow')}</p>
-          <h1 className="title-record measure mt-3">{t('registerTitle')}</h1>
-          <p className="lede measure mt-4">{t('registerIntro')}</p>
-        </div>
-      </section>
+      <PageHero variant="record" eyebrow={t('registerEyebrow')} title={t('registerTitle')} intro={t('registerIntro')} />
 
       <div className="container-page section-block">
         <div className="max-w-md">

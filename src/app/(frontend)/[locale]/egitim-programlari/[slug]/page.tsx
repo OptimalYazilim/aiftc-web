@@ -7,7 +7,7 @@ import React from 'react'
 import type { ExternalService, TrainingProgram, TrainingTopic } from '@/payload-types'
 
 import { TrainingSidebar } from '@/components/training/TrainingSidebar'
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { PageHero } from '@/components/ui/PageHero'
 import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { DELIVERY_MODES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -222,53 +222,51 @@ export default async function TrainingDetailPage({ params }: Props) {
   return (
     <>
       {/* --- Üst alan ------------------------------------------------------ */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: `/${locale}` },
-              { label: t('catalogTitle'), href: href('training-programs', locale) },
-              { label: doc.title },
-            ]}
-          />
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {statusText ? (
-              <p className={trainingStatusClasses(doc.status)}>
-                <span className="sr-only">{t('statusLabel')}: </span>
-                {statusText}
-              </p>
-            ) : null}
-            {doc.code ? <span className="text-sm text-ink-600">{doc.code}</span> : null}
-          </div>
-
-          <h1 className="title-record measure mt-3">{doc.title}</h1>
-
-          <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-ink-700">
-            {dateRange ? (
-              <div className="flex gap-2">
-                <dt className="text-ink-600">{t('dates')}:</dt>
-                <dd>
-                  <time dateTime={doc.startDate}>{dateRange}</time>
-                </dd>
-              </div>
-            ) : null}
-            {deliveryMode ? (
-              <div className="flex gap-2">
-                <dt className="text-ink-600">{t('deliveryMode')}:</dt>
-                <dd>{deliveryMode}</dd>
-              </div>
-            ) : null}
-            {doc.venue ? (
-              <div className="flex gap-2">
-                <dt className="text-ink-600">{t('venue')}:</dt>
-                <dd>{doc.venue}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </div>
-      </section>
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: `/${locale}` },
+            { label: t('catalogTitle'), href: href('training-programs', locale) },
+            { label: doc.title },
+          ],
+        }}
+        eyebrow={doc.code || null}
+        meta={
+          statusText ? (
+            <p className={trainingStatusClasses(doc.status)}>
+              <span className="sr-only">{t('statusLabel')}: </span>
+              {statusText}
+            </p>
+          ) : null
+        }
+        title={doc.title}
+        image={resolveMedia(doc.coverImage, 'hero')}
+      >
+        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-white/90">
+          {dateRange ? (
+            <div className="flex gap-2">
+              <dt className="text-white/65">{t('dates')}:</dt>
+              <dd>
+                <time dateTime={doc.startDate}>{dateRange}</time>
+              </dd>
+            </div>
+          ) : null}
+          {deliveryMode ? (
+            <div className="flex gap-2">
+              <dt className="text-white/65">{t('deliveryMode')}:</dt>
+              <dd>{deliveryMode}</dd>
+            </div>
+          ) : null}
+          {doc.venue ? (
+            <div className="flex gap-2">
+              <dt className="text-white/65">{t('venue')}:</dt>
+              <dd>{doc.venue}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </PageHero>
 
       {/* --- İki kolonlu asimetrik yerleşim -------------------------------- */}
       <div className="container-page section-block grid gap-10 lg:grid-cols-12">

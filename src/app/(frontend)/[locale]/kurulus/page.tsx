@@ -8,6 +8,7 @@ import type { Page } from '@/payload-types'
 
 import { PageBlocks } from '@/components/pages/PageBlocks'
 import { ExternalLink } from '@/components/ui/ExternalLink'
+import { PageHero } from '@/components/ui/PageHero'
 import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { ROUTES, detailHref, pageHref } from '@/i18n/routes'
@@ -177,36 +178,20 @@ export default async function AboutPage({ params }: Props) {
   return (
     <>
       {/* --- Üst alan ---------------------------------------------------- */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">
-            {sayfa?.title || settings?.siteName || t('title')}
-          </h1>
-          <p className="lede measure mt-5">{sayfa?.subtitle || tanim || t('intro')}</p>
-          {!cmsIcerikVar && settings?.tagline ? (
-            <p className="mt-4 text-sm font-semibold uppercase tracking-wider text-brand-700">
-              {settings.tagline}
-            </p>
-          ) : null}
-        </div>
-      </section>
+      <PageHero
+        eyebrow={t('eyebrow')}
+        title={sayfa?.title || settings?.siteName || t('title')}
+        intro={sayfa?.subtitle || tanim || t('intro')}
+        image={heroGorsel}
+      >
+        {!cmsIcerikVar && settings?.tagline ? (
+          <p className="inline-flex items-center bg-brand-800 px-3.5 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white sm:text-sm">
+            {settings.tagline}
+          </p>
+        ) : null}
+      </PageHero>
 
       <div className="section-block">
-        {heroGorsel ? (
-          <div className="container-page mb-12">
-            <Image
-              src={heroGorsel.url}
-              alt={heroGorsel.alt || ''}
-              width={heroGorsel.width}
-              height={heroGorsel.height}
-              priority
-              sizes="(min-width: 1280px) 1024px, 100vw"
-              className="w-full border border-line-soft object-cover"
-            />
-          </div>
-        ) : null}
-
         {cmsIcerikVar ? (
           /* ================= CMS'TEN GELEN BLOKLAR ================= */
           <PageBlocks blocks={sayfa?.layout} locale={locale} />

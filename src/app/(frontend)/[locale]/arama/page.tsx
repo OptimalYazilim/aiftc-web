@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
+import { PageHero } from '@/components/ui/PageHero'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
 import { detailHref, href, ROUTES } from '@/i18n/routes'
 import { buildMetadata } from '@/lib/metadata'
@@ -266,46 +267,39 @@ export default async function SearchPage({ params, searchParams }: Props) {
   return (
     <>
       {/* --- Başlık ve arama formu --------------------------------------- */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">{t('title')}</h1>
-          <p className="lede measure mt-5">{t('intro')}</p>
-
-          {/*
-            GET formu: JavaScript kapalıyken de çalışır ve sonuç adresi
-            paylaşılabilir. `role="search"` bölgeyi ekran okuyucuya tanıtır.
-            Etiket `sr-only` değil GÖRÜNMEZ DEĞİL — `label` gerçek bir etiket
-            olarak bağlıdır, yalnızca görsel olarak gizlenir; yer tutucu metin
-            etiket yerine geçmez (WCAG 2.2 — 3.3.2).
-          */}
-          <form
-            role="search"
-            method="get"
-            action={href('search', locale)}
-            className="mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row"
+      <PageHero eyebrow={t('eyebrow')} title={t('title')} intro={t('intro')}>
+        {/*
+          GET formu: JavaScript kapalıyken de çalışır ve sonuç adresi
+          paylaşılabilir. `role="search"` bölgeyi ekran okuyucuya tanıtır.
+          Etiket görsel olarak gizlenir ama gerçek bir etiket olarak bağlıdır;
+          yer tutucu metin etiket yerine geçmez (WCAG 2.2 — 3.3.2).
+        */}
+        <form
+          role="search"
+          method="get"
+          action={href('search', locale)}
+          className="flex max-w-2xl flex-col gap-3 sm:flex-row"
+        >
+          <label htmlFor="site-search" className="sr-only">
+            {t('inputLabel')}
+          </label>
+          <input
+            id="site-search"
+            type="search"
+            name="q"
+            defaultValue={query}
+            placeholder={t('placeholder')}
+            maxLength={200}
+            className="min-h-12 flex-1 rounded-sm border border-white/40 bg-white px-5 text-base text-ink-900 transition-colors placeholder:text-ink-500 focus:border-brand-700"
+          />
+          <button
+            type="submit"
+            className="ease-editorial inline-flex min-h-12 items-center justify-center rounded-sm bg-brand-700 px-7 font-bold text-white transition-colors duration-300 hover:bg-brand-600 focus-visible:bg-brand-600"
           >
-            <label htmlFor="site-search" className="sr-only">
-              {t('inputLabel')}
-            </label>
-            <input
-              id="site-search"
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder={t('placeholder')}
-              maxLength={200}
-              className="min-h-12 flex-1 rounded-full border border-line-strong bg-surface px-5 text-base text-ink-900 transition-colors placeholder:text-ink-500 focus:border-brand-700"
-            />
-            <button
-              type="submit"
-              className="ease-editorial inline-flex min-h-12 items-center justify-center rounded-full bg-shell-950 px-7 font-bold text-white transition-colors duration-300 hover:bg-shell-900 focus-visible:bg-shell-900"
-            >
-              {t('submit')}
-            </button>
-          </form>
-        </div>
-      </section>
+            {t('submit')}
+          </button>
+        </form>
+      </PageHero>
 
       {/* --- Sonuçlar ----------------------------------------------------- */}
       <section aria-labelledby="search-results" className="bg-surface-warm">

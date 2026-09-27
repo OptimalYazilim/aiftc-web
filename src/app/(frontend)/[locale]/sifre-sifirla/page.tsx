@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm'
+import { PageHero } from '@/components/ui/PageHero'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { AUTH_ROUTES } from '@/i18n/routes'
 import { buildMetadata } from '@/lib/metadata'
@@ -64,13 +65,7 @@ export default async function ResetPasswordPage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <p className="eyebrow">{t('loginEyebrow')}</p>
-          <h1 className="title-record measure mt-3">{t('resetTitle')}</h1>
-          <p className="lede measure mt-4">{t('resetIntro')}</p>
-        </div>
-      </section>
+      <PageHero variant="record" eyebrow={t('loginEyebrow')} title={t('resetTitle')} intro={t('resetIntro')} />
 
       <div className="container-page section-block">
         <div className="max-w-md">

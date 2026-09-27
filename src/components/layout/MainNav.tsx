@@ -123,7 +123,18 @@ export const MainNav: React.FC<Props> = ({ items, variant = 'desktop', onNavigat
    *     brand-800 (#0a4423)  11.27:1   aktif / hover
    *     brand-50 zemininde brand-800  10.61:1
    */
-  const linkClasses = (active: boolean, highlight: boolean) =>
+  /**
+   * KOYU ZEMİN TONU — şeffaf başlık (bkz. HeaderShell `data-tone`)
+   * Koyu hero'lu sayfalarda başlık en üstteyken şeffaftır; bağlantılar
+   * `group-data-[tone=dark]/header` ile beyaza döner. YALNIZCA üst düzey
+   * masaüstü bağlantılarına uygulanır: açılır alt menü ve mobil panel her
+   * zaman beyaz zemindedir, orada beyaz metin okunmaz hâle gelirdi.
+   * Ölçüm: beyaz, hero karartması (shell-950 %72 + üst perde) üzerinde ≥ 9:1.
+   */
+  // Sınıflar TAM yazılır: Tailwind kaynağı statik tarar, birleştirilen ad CSS'e girmez.
+  const onDark = (enabled: boolean, classes: string) => (enabled && !isMobile ? classes : '')
+
+  const linkClasses = (active: boolean, highlight: boolean, topLevel = true) =>
     [
       // WCAG 2.2 — 2.5.8: dokunma hedefi en az 44×44 CSS px (min-h-11)
       'inline-flex min-h-11 items-center rounded-md transition-colors',
@@ -139,19 +150,26 @@ export const MainNav: React.FC<Props> = ({ items, variant = 'desktop', onNavigat
         : active
           ? 'bg-brand-50 text-brand-800 underline decoration-brand-700 decoration-2 underline-offset-8'
           : 'text-shell-900 hover:bg-surface-alt hover:text-brand-800 focus-visible:bg-surface-alt focus-visible:text-brand-800',
+      highlight
+        ? ''
+        : active
+          ? onDark(topLevel, 'group-data-[tone=dark]/header:bg-white/12 group-data-[tone=dark]/header:text-white group-data-[tone=dark]/header:decoration-white')
+          : onDark(topLevel, 'group-data-[tone=dark]/header:text-white group-data-[tone=dark]/header:hover:bg-white/10 group-data-[tone=dark]/header:hover:text-white group-data-[tone=dark]/header:focus-visible:bg-white/10 group-data-[tone=dark]/header:focus-visible:text-white'),
     ].join(' ')
 
-  const renderLeaf = (link: ResolvedNavLink, active: boolean) => {
+  const renderLeaf = (link: ResolvedNavLink, active: boolean, topLevel = true) => {
     // EK-2 servisi "yakında" ise tıklanamaz metin + açıklama.
     if (!link.available || !link.href) {
       return (
         <span
           aria-disabled="true"
-          className="inline-flex min-h-11 items-center px-3 py-2 text-ink-500"
+          className={`inline-flex min-h-11 items-center px-3 py-2 text-ink-500 ${isMobile ? 'font-medium' : 'whitespace-nowrap text-[0.9375rem] font-semibold tracking-tight'} ${onDark(topLevel, 'group-data-[tone=dark]/header:text-white/65')}`}
         >
           {link.label}
           {link.notice ? (
-            <span className="ml-2 rounded bg-surface-alt px-2 py-0.5 text-sm text-ink-600">
+            <span
+              className={`ml-2 rounded bg-surface-alt px-2 py-0.5 text-sm text-ink-600 ${onDark(topLevel, 'group-data-[tone=dark]/header:bg-white/12 group-data-[tone=dark]/header:text-white/85')}`}
+            >
               {t('comingSoonBadge')}
             </span>
           ) : null}
@@ -165,7 +183,7 @@ export const MainNav: React.FC<Props> = ({ items, variant = 'desktop', onNavigat
         <ExternalLink
           href={link.href}
           trackId={link.trackId}
-          className={linkClasses(false, link.highlight)}
+          className={linkClasses(false, link.highlight, topLevel)}
         >
           {link.label}
         </ExternalLink>
@@ -178,7 +196,7 @@ export const MainNav: React.FC<Props> = ({ items, variant = 'desktop', onNavigat
         onClick={onNavigate}
         aria-current={active ? 'page' : undefined}
         aria-label={link.ariaLabel}
-        className={linkClasses(active, link.highlight)}
+        className={linkClasses(active, link.highlight, topLevel)}
       >
         {link.label}
       </Link>
@@ -251,7 +269,7 @@ export const MainNav: React.FC<Props> = ({ items, variant = 'desktop', onNavigat
             >
               {item.children.map((child, childIndex) => (
                 <li key={`${child.label}-${childIndex}`}>
-                  {renderLeaf(child, isActive(pathname, child.canonicalPath))}
+                  {renderLeaf(child, isActive(pathname, child.canonicalPath), false)}
                 </li>
               ))}
             </ul>

@@ -61,26 +61,36 @@ export const ProjectVisibilityStrip = async ({ locale }: { locale: Locale }) => 
       aria-labelledby="project-visibility"
       className="border-t border-white/10 bg-white/[0.03]"
     >
-      <div className="container-page flex flex-col gap-6 py-8 lg:flex-row lg:items-center lg:justify-between">
-        <div className="max-w-2xl">
-          <h2 id="project-visibility" className="text-sm font-semibold uppercase tracking-wide text-brand-100">
-            {t('projectHeading')}
-          </h2>
-          {projectData ? (
-            <p className="mt-2 leading-relaxed text-white">
-              {projectData.title}
-              {projectData.symbol ? (
-                <span className="ml-2 whitespace-nowrap text-brand-100">
-                  ({projectData.symbol})
-                </span>
-              ) : null}
-            </p>
-          ) : null}
+      <div className="container-page flex flex-col gap-6 py-7 lg:flex-row lg:items-center lg:justify-between">
+        {/*
+          Proje künyesi: üst etiket, başlık ve simge rozeti solda; proje
+          sayfası bağlantısı düğme olarak sağda. Önceden başlık ve bağlantı
+          alt alta sola sıkışıyor, sağ taraf boş kalıyordu.
+        */}
+        <div className="flex min-w-0 flex-1 flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-3xl">
+            <h2
+              id="project-visibility"
+              className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-100"
+            >
+              {t('projectHeading')}
+            </h2>
+            {projectData ? (
+              <p className="mt-2 text-balance leading-relaxed text-white">
+                {projectData.title}
+                {projectData.symbol ? (
+                  <span className="ml-2 inline-block whitespace-nowrap rounded-sm border border-white/20 px-2 py-0.5 align-middle font-mono text-xs text-brand-100">
+                    {projectData.symbol}
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
+          </div>
           {projectData?.externalUrl ? (
             <ExternalLink
               href={projectData.externalUrl}
               trackId="project:fao"
-              className="mt-1 inline-block py-1.5 text-brand-100 underline underline-offset-4 hover:text-white focus-visible:text-white"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-md border border-white/30 px-4 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/10 focus-visible:border-white/60 focus-visible:bg-white/10 sm:self-auto"
             >
               {t('projectPageLink')}
             </ExternalLink>

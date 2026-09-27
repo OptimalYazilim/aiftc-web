@@ -88,10 +88,10 @@ export const LanguageSwitcher: React.FC<Props> = ({ alternates, className, varia
             hrefLang: locale.hrefLang,
             'aria-current': current ? ('true' as const) : undefined,
             className: [
-              // WCAG 2.2 — 2.5.8: koyu şeritte yükseklik 36px'e iner ama
-              // aradaki 4px boşlukla birlikte etkin hedef 44px'i korur.
+              // WCAG 2.2 — 2.5.8 (AA, asgari 24×24): ince üst şeritte hedef
+              // 28×32px. Ana menüdeki bağlantılar 44px'te kalır.
               variant === 'bar'
-                ? 'inline-flex min-h-9 min-w-9 items-center justify-center rounded px-2 text-xs font-bold uppercase tracking-wide transition-colors'
+                ? 'inline-flex min-h-7 min-w-8 items-center justify-center rounded px-1.5 text-[0.6875rem] font-bold uppercase tracking-wide transition-colors'
                 : 'inline-flex min-h-11 min-w-11 items-center justify-center rounded px-2.5 text-sm font-semibold uppercase transition-colors',
               variant === 'bar'
                 ? current

@@ -18,14 +18,13 @@ import { buildPortalLink } from './externalLinks'
  * bölümü buraya da koymak aynı bağlantıyı üst şeritte ve ana menüde iki kez
  * göstermek olurdu.
  *
- * NEDEN "YAKINDA" OLANLAR DA LİSTELENİYOR
- * Bu küme kurumun dijital ekosistemini ilan eder ("bu merkezin bir
- * kütüphanesi var"), yalnızca bugün tıklanabilen adresleri değil. `href`
- * null döndüğünde bileşenler bunu tıklanamaz metin + "Yakında" rozeti olarak
- * basar. Aynı davranış ana menüde de uygulanıyor (bkz. MainNav.renderLeaf).
- *
- * `state: 'hidden'` olan servis HİÇ görünmez — o, editörün "bu servisi
- * ziyaretçiye söyleme" kararıdır.
+ * PERSONEL GİRİŞİ YALNIZCA YAYINDAYKEN GÖRÜNÜR
+ * Önceden "yakında" durumundaki portal da tıklanamaz metin + "Yakında"
+ * rozetiyle basılıyordu. Kurum kararıyla kaldırıldı: tıklanamayan bir giriş
+ * bağlantısı ziyaretçiye iş görmüyor ve üst şeridi kalabalıklaştırıyordu.
+ * Portal `ExternalServices` global'inde `live` yapıldığı anda bağlantı kod
+ * değişikliği gerekmeden geri gelir. `coming-soon`, `maintenance` ve
+ * `hidden` durumlarında listeye hiç girmez.
  * ============================================================================
  */
 
@@ -59,9 +58,9 @@ export const buildPortalLinks = (
           notice: null,
         }
       : null,
-    portal.state !== 'hidden'
+    portal.available && portal.href
       ? {
-          href: portal.available ? portal.href : null,
+          href: portal.href,
           label: options.staffLoginLabel,
           trackId: 'portal:topbar',
           notice: portal.notice ?? null,

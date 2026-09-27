@@ -7,8 +7,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { GalleryAlbum } from '@/payload-types'
 
 import { AlbumGallery, type AlbumGalleryLabels } from '@/components/gallery/AlbumGallery'
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { ExternalLink } from '@/components/ui/ExternalLink'
+import { HeroChip, PageHero } from '@/components/ui/PageHero'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { DETAIL_ROUTES, detailHref, href } from '@/i18n/routes'
 import { formatDate } from '@/lib/dates'
@@ -186,30 +186,27 @@ export default async function GalleryAlbumPage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: `/${locale}` },
-              { label: t('eyebrow'), href: href('gallery', locale) },
-              { label: doc.title },
-            ]}
-          />
-
-          <p className="mt-6 flex flex-wrap items-center gap-x-3 text-sm text-ink-600">
-            {tarih ? <time dateTime={doc.date ?? undefined}>{tarih}</time> : null}
-            {images.length > 0 ? <span>{t('photoCount', { count: images.length })}</span> : null}
-            {videos.length > 0 ? <span>{t('videoCount', { count: videos.length })}</span> : null}
-          </p>
-
-          <h1 className="title-record measure mt-3">{doc.title}</h1>
-
-          {doc.description ? (
-            <p className="lede measure mt-4">{doc.description}</p>
-          ) : null}
-        </div>
-      </section>
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: `/${locale}` },
+            { label: t('eyebrow'), href: href('gallery', locale) },
+            { label: doc.title },
+          ],
+        }}
+        eyebrow={tarih ? <time dateTime={doc.date ?? undefined}>{tarih}</time> : null}
+        meta={
+          <>
+            {images.length > 0 ? <HeroChip>{t('photoCount', { count: images.length })}</HeroChip> : null}
+            {videos.length > 0 ? <HeroChip>{t('videoCount', { count: videos.length })}</HeroChip> : null}
+          </>
+        }
+        title={doc.title}
+        intro={doc.description || null}
+        image={resolveMedia(doc.coverImage, 'hero')}
+      />
 
       <div className="container-page section-block">
         {images.length === 0 && videos.length === 0 ? (

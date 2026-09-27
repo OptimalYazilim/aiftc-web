@@ -138,7 +138,7 @@ export const HomeHero = async ({ locale }: { locale: Locale }) => {
       <section
         aria-labelledby="hero-headline"
         // `isolate`: içerideki negatif z-index'ler sayfanın geri kalanına sızmaz.
-        className="relative isolate overflow-hidden bg-shell-950 text-white"
+        className="hero-under-header relative isolate overflow-hidden bg-shell-950 text-white"
       >
         {image?.url ? (
           <>
@@ -280,24 +280,38 @@ export const HomeHero = async ({ locale }: { locale: Locale }) => {
         görsel vurgu semantik vurgu değildir.
       */}
       {highlights.length > 0 ? (
-        <section aria-labelledby="hero-highlights" className="border-b border-line-soft bg-surface-warm">
+        <section aria-labelledby="hero-highlights" className="border-b border-line bg-surface">
           <h2 id="hero-highlights" className="sr-only">
             {site.siteName ?? 'AIFTC'}
           </h2>
-          <ul className="container-page grid gap-px py-10 sm:grid-cols-3 sm:gap-0">
+          {/*
+            ÜÇ TEMEL NİTELİK — ikonlu satır.
+            Kart kutusu yok; öğeleri ikon, kalın başlık ve ince dikey ayraç
+            ayırır. İkonlar sıraya göre seçilir (küre · simülasyon ekranı ·
+            iş birliği) ve DEKORATİFTİR: anlamı başlık metni taşır.
+          */}
+          <ul className="container-page grid gap-8 py-10 sm:grid-cols-3 sm:gap-0 lg:py-12">
             {highlights.map((item, index) => (
               <li
                 key={`${item.title}-${index}`}
-                className={`px-0 sm:px-8 ${
-                  index === 0 ? 'sm:pl-0' : 'sm:border-l sm:border-line-soft'
-                } ${index > 0 ? 'mt-6 border-t border-line-soft pt-6 sm:mt-0 sm:border-t-0 sm:pt-0' : ''}`}
+                className={`flex items-start gap-4 sm:px-8 ${
+                  index === 0 ? 'sm:pl-0' : 'sm:border-l sm:border-line'
+                }`}
               >
-                <p className="text-lg font-bold leading-snug tracking-tight text-shell-900">
-                  {item.title}
-                </p>
-                {item.description ? (
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{item.description}</p>
-                ) : null}
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700"
+                >
+                  <VurguIkonu index={index} />
+                </span>
+                <div>
+                  <p className="text-lg font-bold leading-snug tracking-tight text-shell-900">
+                    {item.title}
+                  </p>
+                  {item.description ? (
+                    <p className="mt-1 text-sm leading-relaxed text-ink-600">{item.description}</p>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
@@ -313,6 +327,32 @@ export const HomeHero = async ({ locale }: { locale: Locale }) => {
  * Hover'da "parlama" OPAKLIKLA değil GÖLGE ile kurulur; böylece metnin
  * kontrastı hiçbir durumda değişmez.
  */
+/** Vurgu satırı ikonları — sıraya göre; dekoratif. */
+const VurguIkonu: React.FC<{ index: number }> = ({ index }) => {
+  const ortak = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  if (index % 3 === 1)
+    return (
+      <svg {...ortak}>
+        <rect x="3" y="4" width="18" height="12" rx="1.5" />
+        <path d="M8 20h8M12 16v4M7 12l3-3 2.5 2 4-4.5" />
+      </svg>
+    )
+  if (index % 3 === 2)
+    return (
+      <svg {...ortak}>
+        <path d="m11 17 2 2a1 1 0 0 0 1.4 0l5.6-5.6a1 1 0 0 0 0-1.4L15 7" />
+        <path d="m13 5-1.5-1.5a1 1 0 0 0-1.4 0L4 9.6a1 1 0 0 0 0 1.4l6 6" />
+        <path d="m8 8 3 3" />
+      </svg>
+    )
+  return (
+    <svg {...ortak}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z" />
+    </svg>
+  )
+}
+
 const HeroButton: React.FC<{ link: ResolvedNavLink }> = ({ link }) => {
   const className =
     'ease-editorial inline-flex min-h-12 items-center justify-center rounded-sm bg-white px-7 text-base font-bold text-shell-900 transition-colors duration-300 hover:bg-brand-50 focus-visible:bg-brand-50'

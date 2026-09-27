@@ -6,8 +6,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import type { Project } from '@/payload-types'
 
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { ExternalLink } from '@/components/ui/ExternalLink'
+import { HeroChip, PageHero } from '@/components/ui/PageHero'
 import { RichTextBlock, hasRichTextContent, richTextExcerpt } from '@/components/ui/RichTextBlock'
 import { FOCUS_COUNTRIES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -165,22 +165,20 @@ export default async function ProjectDetailPage({ params }: Props) {
   return (
     <>
       {/* --- Üst alan ---------------------------------------------------- */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: `/${locale}` },
-              { label: t('eyebrow'), href: href('projects', locale) },
-              { label: doc.title },
-            ]}
-          />
-
-          <p className="eyebrow mt-6">{doc.symbol}</p>
-          <h1 className="title-record measure mt-3">{doc.title}</h1>
-          {donem ? <p className="mt-4 text-base text-ink-600">{donem}</p> : null}
-        </div>
-      </section>
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: `/${locale}` },
+            { label: t('eyebrow'), href: href('projects', locale) },
+            { label: doc.title },
+          ],
+        }}
+        eyebrow={doc.symbol}
+        meta={donem ? <HeroChip>{donem}</HeroChip> : null}
+        title={doc.title}
+      />
 
       {/* --- Gövde: içerik + künye rayı ----------------------------------- */}
       <div className="container-page section-block">

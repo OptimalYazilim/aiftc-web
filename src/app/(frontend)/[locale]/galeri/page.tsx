@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
+import { PageHero } from '@/components/ui/PageHero'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { ROUTES, detailHref } from '@/i18n/routes'
 import { formatDate } from '@/lib/dates'
@@ -80,13 +81,7 @@ export default async function GalleryPage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">{t('title')}</h1>
-          <p className="lede measure mt-5">{t('intro')}</p>
-        </div>
-      </section>
+      <PageHero eyebrow={t('eyebrow')} title={t('title')} intro={t('intro')} />
 
       <section aria-labelledby="gallery-list" className="bg-surface-warm">
         <div className="container-page section-block">

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { NewsCard, type NewsCardItem } from '@/components/news/NewsCard'
+import { PageHero } from '@/components/ui/PageHero'
 import { Pagination } from '@/components/ui/Pagination'
 import { NEWS_CATEGORIES } from '@/fields/options'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
@@ -124,13 +125,7 @@ export default async function NewsListPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">{t('title')}</h1>
-          <p className="lede measure mt-5">{t('intro')}</p>
-        </div>
-      </section>
+      <PageHero eyebrow={t('eyebrow')} title={t('title')} intro={t('intro')} />
 
       <section aria-labelledby="news-list" className="bg-surface-warm">
         <div className="container-page section-block">

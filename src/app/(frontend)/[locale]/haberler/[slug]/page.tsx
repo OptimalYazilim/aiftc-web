@@ -7,7 +7,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { News } from '@/payload-types'
 
 import { NewsCard, type NewsCardItem } from '@/components/news/NewsCard'
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { HeroChip, PageHero } from '@/components/ui/PageHero'
 import { RichTextBlock } from '@/components/ui/RichTextBlock'
 import { NEWS_CATEGORIES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -190,34 +190,29 @@ export default async function NewsDetailPage({ params }: Props) {
   return (
     <>
       {/* --- Üst alan ------------------------------------------------------ */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: `/${locale}` },
-              { label: t('title'), href: href('news', locale) },
-              { label: doc.title },
-            ]}
-          />
-
-          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-            {date ? (
-              <time dateTime={doc.publishedAt ?? undefined} className="text-ink-600">
-                {date}
-              </time>
-            ) : null}
-            {category ? (
-              <span className="rounded-full border border-line-strong px-3 py-1 text-ink-700">
-                <span className="sr-only">{t('categoryLabel')}: </span>
-                {category}
-              </span>
-            ) : null}
-          </div>
-
-          <h1 className="title-record measure mt-3">{doc.title}</h1>
-        </div>
-      </section>
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: `/${locale}` },
+            { label: t('title'), href: href('news', locale) },
+            { label: doc.title },
+          ],
+        }}
+        eyebrow={
+          date ? <time dateTime={doc.publishedAt ?? undefined}>{date}</time> : null
+        }
+        meta={
+          category ? (
+            <HeroChip>
+              <span className="sr-only">{t('categoryLabel')}: </span>
+              {category}
+            </HeroChip>
+          ) : null
+        }
+        title={doc.title}
+      />
 
       {/* --- Gövde --------------------------------------------------------- */}
       <article className="container-page section-block">
@@ -252,11 +247,11 @@ export default async function NewsDetailPage({ params }: Props) {
       {/* --- Diğer haberler ------------------------------------------------ */}
       {suggestions.length > 0 ? (
         <section aria-labelledby="other-news" className="border-t border-line bg-surface-alt">
-          <div className="container-page py-12">
-            <h2 id="other-news" className="text-2xl font-semibold">
+          <div className="container-page py-16 lg:py-20">
+            <h2 id="other-news" className="text-balance text-3xl font-bold leading-[1.1] tracking-tight text-shell-900 sm:text-4xl">
               {t('otherNews')}
             </h2>
-            <ul className="mt-6 grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-10 grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {suggestions.map((item) => (
                 <NewsCard
                   key={String(item.id)}

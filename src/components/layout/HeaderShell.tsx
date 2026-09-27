@@ -52,11 +52,76 @@ export const HeaderShell: React.FC<Props> = ({ brand, nav, mobileNav, topBar, mo
   const panelId = useId()
   const pathname = usePathname()
 
+  const headerRef = useRef<HTMLElement>(null)
+  const [overlay, setOverlay] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
   useEffect(() => {
     setOpen(false)
   }, [pathname])
 
   const panelRef = useRef<HTMLDivElement>(null)
+
+  /*
+    ==========================================================================
+    ŞEFFAF BAŞLIK — yalnızca koyu hero'lu sayfalarda
+    ==========================================================================
+    Sayfa `hero-under-header` sınıflı bir bölümle başlıyorsa (ana sayfa,
+    Simülasyon Merkezi) başlık en üstteyken şeffaftır ve hero'nun görseli
+    başlığın arkasına uzanır. Açık zeminli sayfalarda şeffaf başlık okunmaz;
+    orada başlık her zaman opaktır.
+
+    NEDEN SUNUCUDA DEĞİL, BURADA KARAR VERİLİYOR
+    Başlık, sayfanın hangi bölümle başladığını bilmez. Karar DOM'dan okunur
+    ve etkinleştirilene kadar sayfa bugünkü opak başlıkla çizilir: hero'nun
+    `margin-top`/`padding-top` çifti yalnızca `html[data-header-overlay]`
+    varken uygulanır ve birbirini sıfırlar. İçerik hiçbir anda yerinden
+    oynamaz (CLS = 0); değişen yalnızca renklerdir.
+
+    Başlık ile `<main>` arasında başka bir öğe (abonelik uyarı şeridi) varsa
+    şeffaflık AÇILMAZ — hero o şeridin üzerine çekilirdi.
+  */
+  useEffect(() => {
+    const header = headerRef.current
+    const main = document.getElementById('main-content')
+    const ilk = main
+      ? Array.from(main.children).find((el) => !['SCRIPT', 'STYLE', 'TEMPLATE'].includes(el.tagName))
+      : undefined
+    const uygun =
+      Boolean(header) &&
+      header?.nextElementSibling === main &&
+      Boolean(ilk?.classList.contains('hero-under-header'))
+
+    setOverlay(uygun)
+    document.documentElement.toggleAttribute('data-header-overlay', uygun)
+    return () => document.documentElement.removeAttribute('data-header-overlay')
+  }, [pathname])
+
+  /* Başlık yüksekliği → `--site-header-h` (hero'nun başlık altına uzanma payı). */
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+    const yaz = () =>
+      document.documentElement.style.setProperty('--site-header-h', `${header.offsetHeight}px`)
+    yaz()
+    const gozlem = new ResizeObserver(yaz)
+    gozlem.observe(header)
+    return () => gozlem.disconnect()
+  }, [])
+
+  /* Kaydırma durumu — pasif dinleyici, yalnızca eşik geçişinde yeniden çizer. */
+  useEffect(() => {
+    const kontrol = () => setScrolled(window.scrollY > 12)
+    kontrol()
+    window.addEventListener('scroll', kontrol, { passive: true })
+    return () => window.removeEventListener('scroll', kontrol)
+  }, [])
+
+  /*
+    Ton: şeffaf (koyu zemin üzerinde beyaz metin) YALNIZCA en üstteyken ve
+    mobil menü kapalıyken. Menü açıkken panel beyaz zemindedir.
+  */
+  const tone = overlay && !scrolled && !open ? 'dark' : 'light'
 
   useEffect(() => {
     if (!open) return
@@ -106,7 +171,19 @@ export const HeaderShell: React.FC<Props> = ({ brand, nav, mobileNav, topBar, mo
   }, [open])
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-surface">
+    <header
+      ref={headerRef}
+      data-tone={tone}
+      className={[
+        'site-header group/header sticky top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-300 ease-out',
+        tone === 'dark'
+          ? 'border-white/10 bg-transparent'
+          : scrolled
+            ? /* Kaydırılınca: hafif saydam + bulanık zemin, ince gölge. */
+              'site-header-elevated border-line/60 bg-surface/90 backdrop-blur-md backdrop-saturate-150'
+            : 'border-line bg-surface',
+      ].join(' ')}
+    >
       {/* --- 1) Üst hizmet şeridi ---------------------------------------- */}
       {topBar}
 
@@ -132,7 +209,7 @@ export const HeaderShell: React.FC<Props> = ({ brand, nav, mobileNav, topBar, mo
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((value) => !value)}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded border border-line-strong px-3 font-medium text-ink-700 lg:hidden"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded border border-line-strong px-3 font-medium text-ink-700 transition-colors group-data-[tone=dark]/header:border-white/45 group-data-[tone=dark]/header:text-white lg:hidden"
         >
           <svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" width="20" height="20">
             {open ? (

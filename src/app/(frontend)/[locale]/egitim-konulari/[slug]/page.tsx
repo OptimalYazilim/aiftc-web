@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
@@ -7,7 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import type { TrainingTopic } from '@/payload-types'
 
 import { TrainingCard, type TrainingCardItem } from '@/components/training/TrainingCard'
-import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
+import { PageHero } from '@/components/ui/PageHero'
 import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { TRAINING_LEVELS, TRAINING_TOPIC_CATEGORIES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -190,38 +189,25 @@ export default async function TrainingTopicPage({ params }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <Breadcrumbs
-            label={tn('breadcrumb')}
-            items={[
-              { label: tn('home'), href: `/${locale}` },
-              { label: t('eyebrow'), href: href('training-topics', locale) },
-              { label: doc.title },
-            ]}
-          />
-
-          {kategori ? <p className="eyebrow mt-6">{kategori}</p> : null}
-          <h1 className="title-record measure mt-3">{doc.title}</h1>
-          {doc.summary ? <p className="lede measure mt-4">{doc.summary}</p> : null}
-        </div>
-      </section>
+      <PageHero
+        variant="record"
+        breadcrumbs={{
+          label: tn('breadcrumb'),
+          items: [
+            { label: tn('home'), href: `/${locale}` },
+            { label: t('eyebrow'), href: href('training-topics', locale) },
+            { label: doc.title },
+          ],
+        }}
+        eyebrow={kategori}
+        title={doc.title}
+        intro={doc.summary || null}
+        image={cover}
+      />
 
       <div className="container-page section-block">
         <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <article className="min-w-0">
-            {cover ? (
-              <Image
-                src={cover.url}
-                alt={cover.alt || ''}
-                width={cover.width}
-                height={cover.height}
-                priority
-                sizes="(min-width: 1024px) 720px, 100vw"
-                className="mb-10 w-full border border-line-soft object-cover"
-              />
-            ) : null}
-
             {/* Boş bir Lexical alanı `null` değildir — koruma zorunlu. */}
             {hasRichTextContent(doc.description) ? (
               <RichTextBlock data={doc.description} className="max-w-prose" />
@@ -297,8 +283,8 @@ export default async function TrainingTopicPage({ params }: Props) {
 
       {/* --- Bu konudaki eğitim programları ------------------------------- */}
       <section aria-labelledby="topic-programs" className="border-t border-line bg-surface-alt">
-        <div className="container-page py-12">
-          <h2 id="topic-programs" className="title-section">
+        <div className="container-page py-16 lg:py-20">
+          <h2 id="topic-programs" className="text-balance text-3xl font-bold leading-[1.1] tracking-tight text-shell-900 sm:text-4xl">
             {t('programsHeading')}
           </h2>
 

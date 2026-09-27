@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { LoginForm } from '@/components/auth/LoginForm'
+import { PageHero } from '@/components/ui/PageHero'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { AUTH_ROUTES } from '@/i18n/routes'
 import { edevletKullanilabilir } from '@/lib/edevlet'
@@ -101,13 +102,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero-compact">
-          <p className="eyebrow">{t('loginEyebrow')}</p>
-          <h1 className="title-record measure mt-3">{t('loginTitle')}</h1>
-          <p className="lede measure mt-4">{t('loginIntro')}</p>
-        </div>
-      </section>
+      <PageHero variant="record" eyebrow={t('loginEyebrow')} title={t('loginTitle')} intro={t('loginIntro')} />
 
       <div className="container-page section-block">
         {/*

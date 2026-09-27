@@ -149,7 +149,7 @@ export default async function SimulationCentrePage({ params }: Props) {
   return (
     <>
       {/* --- Üst alan ----------------------------------------------------- */}
-      <section className="relative isolate overflow-hidden bg-shell-950 text-white">
+      <section className="hero-under-header relative isolate overflow-hidden bg-shell-950 text-white">
         {hero ? (
           <>
             <Image

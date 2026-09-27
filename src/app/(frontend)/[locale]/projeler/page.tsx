@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { CardMeta } from '@/components/ui/CardMeta'
+import { PageHero } from '@/components/ui/PageHero'
 import { richTextExcerpt } from '@/components/ui/RichTextBlock'
 import { FOCUS_COUNTRIES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -87,13 +88,7 @@ export default async function ProjectsPage({ params }: Props) {
   return (
     <>
       {/* --- Üst bölüm --------------------------------------------------- */}
-      <section className="border-b border-line bg-surface-alt">
-        <div className="container-page page-hero">
-          <p className="eyebrow">{t('eyebrow')}</p>
-          <h1 className="title-page measure mt-3">{t('title')}</h1>
-          <p className="lede measure mt-5">{t('intro')}</p>
-        </div>
-      </section>
+      <PageHero eyebrow={t('eyebrow')} title={t('title')} intro={t('intro')} />
 
       {/* --- Liste -------------------------------------------------------- */}
       <section aria-labelledby="projects-list" className="bg-surface-warm">
