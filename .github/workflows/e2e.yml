@@ -154,7 +154,7 @@ jobs:
       - name: Node.js 20 kur
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: pnpm
 
       # `npm ci`nin pnpm karşılığı: kilit dosyası DEĞİŞTİRİLEMEZ. Kilit ile
