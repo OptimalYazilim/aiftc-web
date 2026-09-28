@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     'training-topics': TrainingTopic;
     'training-programs': TrainingProgram;
+    registrations: Registration;
     'simulation-systems': SimulationSystem;
     'virtual-classrooms': VirtualClassroom;
     news: News;
@@ -98,6 +99,7 @@ export interface Config {
   collectionsSelect: {
     'training-topics': TrainingTopicsSelect<false> | TrainingTopicsSelect<true>;
     'training-programs': TrainingProgramsSelect<false> | TrainingProgramsSelect<true>;
+    registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
     'simulation-systems': SimulationSystemsSelect<false> | SimulationSystemsSelect<true>;
     'virtual-classrooms': VirtualClassroomsSelect<false> | VirtualClassroomsSelect<true>;
     news: NewsSelect<false> | NewsSelect<true>;
@@ -561,7 +563,7 @@ export interface TrainingProgram {
   } | null;
   applicationDeadline?: string | null;
   applicationTarget?: {
-    type?: ('contact' | 'external' | 'portal' | 'email' | 'none') | null;
+    type?: ('registration' | 'contact' | 'external' | 'portal' | 'email' | 'none') | null;
     url?: string | null;
     /**
      * The portal base URL comes from Site Settings > External Services. Enter only the path.
@@ -907,6 +909,164 @@ export interface Project {
    * Spec 10.2 — logo order must follow FAO/MAF/OGM visibility rules.
    */
   logos?: (number | Media)[] | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Training applications and participant decisions. Manage the status here: Pending → Approved / Rejected → Completed. Contains personal data.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations".
+ */
+export interface Registration {
+  id: number;
+  /**
+   * New applications arrive as “Pending”. Decide here; who decided and when is recorded automatically.
+   */
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  training: number | TrainingProgram;
+  /**
+   * Linked automatically when the application was made while signed in. Empty for anonymous applications.
+   */
+  user?: (number | null) | User;
+  fullName: string;
+  email: string;
+  phone?: string | null;
+  position?: string | null;
+  organization?: string | null;
+  country?: ('TR' | 'AZ' | 'KZ' | 'KG' | 'TJ' | 'TM' | 'UZ' | 'OTHER') | null;
+  /**
+   * Anything the applicant added on the form (motivation, special needs, etc.).
+   */
+  notes?: string | null;
+  /**
+   * The applicant cannot see this note.
+   */
+  adminNotes?: string | null;
+  reviewedBy?: (number | null) | User;
+  reviewedAt?: string | null;
+  completedAt?: string | null;
+  consentAcceptedAt?: string | null;
+  /**
+   * The notice shown at submission time; unchanged even if the text is later edited.
+   */
+  consentSnapshot?: string | null;
+  /**
+   * Indicates which language to write to the applicant in.
+   */
+  locale?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  name: string;
+  /**
+   * The Author role cannot publish; records stay as drafts.
+   */
+  roles?: ('admin' | 'editor' | 'author' | 'viewer')[] | null;
+  /**
+   * Spec 1.7. Controls which library records the user can see ON THE SITE. Panel permissions are the separate Roles field.
+   */
+  role: 'admin' | 'staff' | 'instructor' | 'trainee';
+  /**
+   * Spec 1.7. Accounts other than Approved cannot log in. Public registrations arrive as Pending.
+   */
+  accountStatus: 'pending' | 'approved' | 'suspended';
+  unit?: string | null;
+  edevletSubject?: string | null;
+  /**
+   * The plan granted to this account. Only administrators and staff can change it.
+   */
+  subscriptionPlan?: (number | null) | SubscriptionPlan;
+  /**
+   * ENFORCED: access ends at the close of this day; the participant then sees public content only. Do NOT leave empty — an empty date counts as “no subscription”, not “unlimited”. Staff, instructors and administrators are exempt.
+   */
+  subscriptionEndsAt?: string | null;
+  preferredAdminLanguage?: ('tr' | 'en' | 'ru') | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * Institutional subscription packages and list prices. A granted subscription is set on the user record.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription-plans".
+ */
+export interface SubscriptionPlan {
+  id: number;
+  /**
+   * Auto-generated from the title if left empty. If you change a published slug, add a 301 in Redirects.
+   */
+  slug: string;
+  /**
+   * Plans are listed in this order — the order the institution wants, not alphabetical.
+   */
+  order?: number | null;
+  /**
+   * Calculated automatically. Shows missing locales.
+   */
+  translationStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  name: string;
+  /**
+   * One or two sentences on who the plan is for.
+   */
+  description?: string | null;
+  features?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Both prices below are in this currency.
+   */
+  currency: 'TRY' | 'EUR' | 'USD';
+  /**
+   * In major units, e.g. 1500.00. EMPTY = not sold monthly. 0 = free — these are not the same.
+   */
+  monthlyPrice?: number | null;
+  /**
+   * Not derived from the monthly price — the annual discount differs per plan. EMPTY = not sold yearly.
+   */
+  yearlyPrice?: number | null;
+  /**
+   * Which period the price display opens on. Not a sales restriction.
+   */
+  defaultBillingPeriod?: ('monthly' | 'yearly') | null;
+  /**
+   * Highlighted in the list. Marking several plans defeats the purpose.
+   */
+  featured?: boolean | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -1651,118 +1811,6 @@ export interface LibraryResource {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  name: string;
-  /**
-   * The Author role cannot publish; records stay as drafts.
-   */
-  roles?: ('admin' | 'editor' | 'author' | 'viewer')[] | null;
-  /**
-   * Spec 1.7. Controls which library records the user can see ON THE SITE. Panel permissions are the separate Roles field.
-   */
-  role: 'admin' | 'staff' | 'instructor' | 'trainee';
-  /**
-   * Spec 1.7. Accounts other than Approved cannot log in. Public registrations arrive as Pending.
-   */
-  accountStatus: 'pending' | 'approved' | 'suspended';
-  unit?: string | null;
-  edevletSubject?: string | null;
-  /**
-   * The plan granted to this account. Only administrators and staff can change it.
-   */
-  subscriptionPlan?: (number | null) | SubscriptionPlan;
-  /**
-   * ENFORCED: access ends at the close of this day; the participant then sees public content only. Do NOT leave empty — an empty date counts as “no subscription”, not “unlimited”. Staff, instructors and administrators are exempt.
-   */
-  subscriptionEndsAt?: string | null;
-  preferredAdminLanguage?: ('tr' | 'en' | 'ru') | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * Institutional subscription packages and list prices. A granted subscription is set on the user record.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "subscription-plans".
- */
-export interface SubscriptionPlan {
-  id: number;
-  /**
-   * Auto-generated from the title if left empty. If you change a published slug, add a 301 in Redirects.
-   */
-  slug: string;
-  /**
-   * Plans are listed in this order — the order the institution wants, not alphabetical.
-   */
-  order?: number | null;
-  /**
-   * Calculated automatically. Shows missing locales.
-   */
-  translationStatus?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  name: string;
-  /**
-   * One or two sentences on who the plan is for.
-   */
-  description?: string | null;
-  features?:
-    | {
-        text: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Both prices below are in this currency.
-   */
-  currency: 'TRY' | 'EUR' | 'USD';
-  /**
-   * In major units, e.g. 1500.00. EMPTY = not sold monthly. 0 = free — these are not the same.
-   */
-  monthlyPrice?: number | null;
-  /**
-   * Not derived from the monthly price — the annual discount differs per plan. EMPTY = not sold yearly.
-   */
-  yearlyPrice?: number | null;
-  /**
-   * Which period the price display opens on. Not a sales restriction.
-   */
-  defaultBillingPeriod?: ('monthly' | 'yearly') | null;
-  /**
-   * Highlighted in the list. Marking several plans defeats the purpose.
-   */
-  featured?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
  * Price quotes prepared for institutions. The total is computed from line items and cannot be edited.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2073,6 +2121,10 @@ export interface PayloadLockedDocument {
         value: number | TrainingProgram;
       } | null)
     | ({
+        relationTo: 'registrations';
+        value: number | Registration;
+      } | null)
+    | ({
         relationTo: 'simulation-systems';
         value: number | SimulationSystem;
       } | null)
@@ -2335,6 +2387,31 @@ export interface TrainingProgramsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "registrations_select".
+ */
+export interface RegistrationsSelect<T extends boolean = true> {
+  status?: T;
+  training?: T;
+  user?: T;
+  fullName?: T;
+  email?: T;
+  phone?: T;
+  position?: T;
+  organization?: T;
+  country?: T;
+  notes?: T;
+  adminNotes?: T;
+  reviewedBy?: T;
+  reviewedAt?: T;
+  completedAt?: T;
+  consentAcceptedAt?: T;
+  consentSnapshot?: T;
+  locale?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

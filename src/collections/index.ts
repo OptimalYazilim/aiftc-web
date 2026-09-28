@@ -11,6 +11,7 @@ import { News } from './News'
 import { Pages } from './Pages'
 import { Projects } from './Projects'
 import { Quotes } from './Quotes'
+import { Registrations } from './Registrations'
 import { SimulationSystems } from './SimulationSystems'
 import { SubscriptionPlans } from './SubscriptionPlans'
 import { TrainingPrograms } from './TrainingPrograms'
@@ -26,6 +27,7 @@ export const collections: CollectionConfig[] = [
   // Eğitim
   TrainingTopics,
   TrainingPrograms,
+  Registrations,
   SimulationSystems,
   VirtualClassrooms,
 
@@ -65,6 +67,7 @@ export {
   Pages,
   Projects,
   Quotes,
+  Registrations,
   SimulationSystems,
   SubscriptionPlans,
   TrainingPrograms,

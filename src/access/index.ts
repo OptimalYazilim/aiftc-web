@@ -439,3 +439,62 @@ export const canManageAccounts: Access = ({ req: { user } }) => {
 
   return { id: { equals: (user as { id: number }).id } }
 }
+
+/**
+ * EGITIM BASVURULARI — OKUMA  (Registrations)
+ * ===========================================================================
+ * Ayni sekil, ayni gerekce: `formRequestReadAccess`. Kayit kisisel veri
+ * (ad, e-posta, telefon, kurum) ve bir KARAR (onay/ret) tasir.
+ *
+ *   personel / panel rolu  -> hepsi         (surec panelde yurutulur)
+ *   oturumlu ziyaretci     -> yalnizca KENDISI
+ *   oturumsuz              -> hicbiri
+ *
+ * "KENDISI" iki yoldan eslesir ve ikisi de gerekli:
+ *   - `user` iliskisi: oturum acikken yapilan basvuruda dogrudan baglanir.
+ *   - e-posta: oturum ACMADAN yapilan basvuru (buna izin verilir) `user`
+ *     tasimaz; kisi sonradan ayni adresle hesap acarsa gecmis basvurusunu
+ *     gormelidir. `like` -> ILIKE; buyuk/kucuk harf farkini kapatir.
+ *
+ * Ikinci yolun sinirinin durust ifadesi: e-posta e-Devlet/KPS tarafindan
+ * dogrulanmadigi icin, baskasinin adresiyle hesap acan biri o adresle
+ * yapilmis basvurulari GOREBILIR. Bu, form-requests icin de ayni oranda
+ * gecerli olan, kabul edilmis bir sinirdir; kapatmanin tek yolu e-posta
+ * dogrulamadir (Users.auth.verify) ve o ayri bir karardir.
+ */
+export const registrationReadAccess: Access = ({ req: { user } }) => {
+  if (!user) return false
+
+  if (hasRole('admin', 'editor', 'author', 'viewer')(user)) return true
+  const audience = audienceRoleOf(user)
+  if (audience === 'admin' || audience === 'staff') return true
+
+  const id = (user as { id?: number | string }).id
+  const eposta = (user as { email?: unknown }).email
+
+  const kosullar: Where[] = []
+  if (id !== undefined) kosullar.push({ user: { equals: id } })
+  if (typeof eposta === 'string' && eposta.length > 0) kosullar.push({ email: { like: eposta } })
+
+  if (kosullar.length === 0) return false
+  return { or: kosullar }
+}
+
+/**
+ * EGITIM BASVURULARINI YONETENLER  (karar verme)
+ * ===========================================================================
+ * Hesap onaylayanla ayni kume: panel yoneticisi ya da hedef kitle rolu
+ * admin/staff. Egitmen (`instructor`) BILINCLI OLARAK DISARIDA — kendi
+ * egitiminin listesini gormesi makul bir istektir ama "hangi egitim benim"
+ * iliskisi bugun kurulmamistir; olmayan bir iliskiye dayanan bir yetki, ya
+ * herkese acik ya da hicbir ise yaramaz olurdu.
+ *
+ * `create` bu kurala BAGLI DEGILDIR: koleksiyonda `create: () => false`.
+ * Kayit yalnizca sunucu eyleminden duser (bkz. Registrations.ts).
+ */
+export const canManageRegistrations: Access = ({ req: { user } }) => {
+  if (!user) return false
+  if (hasRole('admin', 'editor')(user)) return true
+  const audience = audienceRoleOf(user)
+  return audience === 'admin' || audience === 'staff'
+}

@@ -1,10 +1,11 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import React, { useActionState, useId, useState } from 'react'
+import React, { useActionState, useId } from 'react'
 
-import { FOCUS_COUNTRIES, SUBMISSION_TYPES } from '@/fields/options'
+import { FOCUS_COUNTRIES } from '@/fields/options'
 import { FieldGroup } from '@/components/ui/FieldGroup'
+import { SelectField, TextField as Field } from '@/components/ui/FormField'
 import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
 import { LiveRegion } from '@/components/ui/LiveRegion'
 import type { Locale } from '@/i18n/locales'
@@ -43,176 +44,23 @@ import {
 
 const INITIAL_STATE: ContactFormState = { status: 'idle' }
 
-type FieldProps = {
-  id: string
-  name: string
-  label: string
-  required?: boolean
-  type?: string
-  autoComplete?: string
-  maxLength?: number
-  error?: string
-  requiredHint: string
-  multiline?: boolean
-  hint?: string
-}
-
-const Field: React.FC<FieldProps> = ({
-  id,
-  name,
-  label,
-  required,
-  type = 'text',
-  autoComplete,
-  maxLength,
-  error,
-  requiredHint,
-  multiline,
-  hint,
-}) => {
-  const errorId = `${id}-error`
-  const hintId = `${id}-hint`
-  const describedBy = [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ')
-
-  const shared = {
-    id,
-    name,
-    required,
-    maxLength,
-    autoComplete,
-    /*
-      Görünür "(zorunlu)" metni artık `aria-hidden` olduğu için zorunluluk
-      yardımcı teknolojiye YALNIZCA programatik olarak ulaşır. `required`
-      özniteliği bunu zaten örtük biçimde bildirir; `aria-required` onu açık
-      hâle getirir ve `AuthField` ile aynı garantiyi verir — iki form bileşeni
-      arasındaki sessiz bir davranış farkı olmasın.
-    */
-    'aria-required': required || undefined,
-    'aria-invalid': error ? true : undefined,
-    'aria-describedby': describedBy || undefined,
-    className: `mt-2 w-full rounded-card border bg-surface px-4 py-2.5 text-ink-900 placeholder:text-ink-500 ${
-      error ? 'border-danger-700' : 'border-line-strong'
-    }`,
-  }
-
-  return (
-    <div>
-      <label htmlFor={id} className="block font-medium text-ink-700">
-        {label}
-        {required ? (
-          /*
-            `aria-hidden` — gerekçe `auth/AuthField.tsx` içinde ayrıntılı.
-            Kısaca: işaret etiketin içinde olduğu için erişilebilir isme de
-            giriyordu ve isim hesaplaması satır içi öğeler arasına boşluk
-            koymadığı için ad "Konu(zorunlu)" biçiminde birleşiyordu. Metin
-            ekranda aynen kalır (Kontrol Listesi 117); zorunluluk yardımcı
-            teknolojiye `required` + `aria-required` ile bildirilir.
-          */
-          <span aria-hidden="true" className="ms-1 font-normal text-ink-600">
-            ({requiredHint})
-          </span>
-        ) : null}
-      </label>
-
-      {multiline ? (
-        <textarea {...shared} rows={6} className={`${shared.className} min-h-40`} />
-      ) : (
-        <input {...shared} type={type} className={`${shared.className} min-h-11`} />
-      )}
-
-      {hint ? (
-        <p id={hintId} className="mt-1 text-sm text-ink-600">
-          {hint}
-        </p>
-      ) : null}
-
-      {error ? (
-        <p id={errorId} className="mt-1 text-sm font-medium text-danger-700">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
 /**
- * Seçim alanı. `Field` ile aynı etiket/hata düzenini kullanır; ayrı bir
- * bileşen çünkü `<select>` `maxLength`/`autoComplete` almaz ve seçenekleri
- * kendi çizer.
+ * EĞİTİM BAŞVURUSU ARTIK BURADA DEĞİL.
+ * "Talep türü" seçimi ve "Bağlı eğitim" alanı kaldırıldı: başvurular kendi
+ * formuna (/basvuru) ve kendi koleksiyonuna (registrations) taşındı — bir
+ * yaşam döngüsü (onay/ret/tamamlandı) gelen kutusu mantığına sığmıyordu.
+ * Bu form yalnızca iletişim mesajı alır; sunucu eylemi türü 'contact' yazar.
  */
-const SelectField: React.FC<{
-  id: string
-  name: string
-  label: string
-  required?: boolean
-  requiredHint: string
-  hint?: string
-  value?: string
-  onChange?: (value: string) => void
-  defaultValue?: string
-  children: React.ReactNode
-}> = ({ id, name, label, required, requiredHint, hint, value, onChange, defaultValue, children }) => (
-  <div>
-    <label htmlFor={id} className="block font-medium text-ink-900">
-      {label}
-      {required ? (
-        <>
-          {' '}
-          <span className="text-danger-700" aria-hidden="true">
-            *
-          </span>
-          <span className="sr-only"> ({requiredHint})</span>
-        </>
-      ) : null}
-    </label>
-    <select
-      id={id}
-      name={name}
-      required={required}
-      {...(onChange ? { value, onChange: (e) => onChange(e.target.value) } : { defaultValue })}
-      className="mt-2 block min-h-11 w-full rounded border border-line-strong bg-surface px-3 text-ink-900 focus:border-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-700"
-    >
-      {children}
-    </select>
-    {hint ? <p className="mt-1 text-sm text-ink-600">{hint}</p> : null}
-  </div>
-)
-
-export type TrainingOption = { id: number; title: string }
-
 type ContactFormProps = {
   locale: Locale
   consentText?: string | null
-  /** Başvuru türü seçildiğinde listelenecek YAYINDAKİ eğitimler. */
-  trainings?: TrainingOption[]
-  /** Eğitim sayfasından gelindiğinde ön seçim (bkz. ApplicationCta). */
-  defaultType?: string
-  defaultTrainingId?: number | null
 }
 
-export const ContactForm: React.FC<ContactFormProps> = ({
-  locale,
-  consentText,
-  trainings = [],
-  defaultType,
-  defaultTrainingId,
-}) => {
+export const ContactForm: React.FC<ContactFormProps> = ({ locale, consentText }) => {
   const t = useTranslations('contact')
   const [state, formAction, pending] = useActionState(submitContactForm, INITIAL_STATE)
   const base = useId()
 
-  /*
-    Talep türü DENETİMLİ (controlled) bir alandır: seçim değişince "Bağlı
-    Eğitim" alanının görünürlüğü de değişmeli. Diğer alanlar denetimsiz
-    bırakıldı — gereksiz yeniden çizim yapmasınlar.
-
-    Eğitim listesi boşsa başvuru seçeneği yine sunulur; kullanıcı hangi
-    eğitim olduğunu mesaj alanında yazabilir. Seçeneği gizlemek, başvurmak
-    isteyen ziyaretçiyi çıkmaza sokardı.
-  */
-  const [submissionType, setSubmissionType] = useState(
-    SUBMISSION_TYPES.some((option) => option.value === defaultType) ? String(defaultType) : 'contact',
-  )
 
   const errors = state.fieldErrors ?? {}
 
@@ -341,42 +189,6 @@ export const ContactForm: React.FC<ContactFormProps> = ({
         `fieldset` kenarliksiz ve dolgusuzdur — gorsel duzen degismez,
         degisen yalnizca yardimci teknolojinin duyurdugu yapidir.
       */}
-      <FieldGroup baslik={t('groupRequest')} className="space-y-5">
-      <SelectField
-        id={`${base}-submissionType`}
-        name="submissionType"
-        label={t('fieldSubmissionType')}
-        required
-        requiredHint={t('requiredHint')}
-        value={submissionType}
-        onChange={setSubmissionType}
-      >
-        {SUBMISSION_TYPES.map((option) => (
-          <option key={option.value} value={option.value}>
-            {optionLabel(SUBMISSION_TYPES, option.value, locale)}
-          </option>
-        ))}
-      </SelectField>
-
-      {submissionType === 'training-application' && trainings.length > 0 ? (
-        <SelectField
-          id={`${base}-relatedTraining`}
-          name="relatedTraining"
-          label={t('fieldRelatedTraining')}
-          requiredHint={t('requiredHint')}
-          hint={t('fieldRelatedTrainingHint')}
-          defaultValue={defaultTrainingId ? String(defaultTrainingId) : ''}
-        >
-          <option value="">{t('optionNotSpecified')}</option>
-          {trainings.map((training) => (
-            <option key={training.id} value={training.id}>
-              {training.title}
-            </option>
-          ))}
-        </SelectField>
-      ) : null}
-
-      </FieldGroup>
 
       <FieldGroup baslik={t('groupContact')} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">

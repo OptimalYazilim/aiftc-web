@@ -31,17 +31,12 @@ import { getSiteSettings, payloadClient } from '@/lib/queries'
 export const revalidate = 300
 
 /**
- * `searchParams` OKUNDUĞU İÇİN SAYFA DİNAMİKTİR.
- * Eğitim detayındaki "Bilgi/başvuru talebi" bağlantısı buraya
- * `?tur=basvuru&egitim=<id>` ile gelir ve form ön seçili açılır.
- * Yukarıdaki `revalidate` bu yüzden artık ISR uygulamaz; form sayfasında
- * istek anında çizim doğru davranıştır — sabit tutulup sorgu yok sayılsaydı
- * ziyaretçi başvurmak istediği eğitimi elle aramak zorunda kalırdı.
+ * SAYFA YENİDEN ISR'DİR (yukarıdaki `revalidate`).
+ * Bir dönem `?tur=basvuru&egitim=<id>` okunuyor ve bu sayfa dinamik çalışıyordu;
+ * eğitim başvurusu kendi sayfasına (/basvuru) taşındığı için sorgu dizesi
+ * artık okunmuyor ve önbellek geri geldi.
  */
-type Props = {
-  params: Promise<{ locale: Locale }>
-  searchParams: Promise<Record<string, string | string[] | undefined>>
-}
+type Props = { params: Promise<{ locale: Locale }> }
 
 export function generateStaticParams() {
   return LOCALE_CODES.map((locale) => ({ locale }))
@@ -91,7 +86,7 @@ const InfoRow = ({
   </div>
 )
 
-export default async function ContactPage({ params, searchParams }: Props) {
+export default async function ContactPage({ params }: Props) {
   const { locale } = await params
   if (!isLocale(locale)) notFound()
 
@@ -123,40 +118,6 @@ export default async function ContactPage({ params, searchParams }: Props) {
   const consentText = (forms.docs[0] as { consentText?: string | null } | undefined)?.consentText
   const staticMap = resolveMedia(contact.map?.staticMapImage, 'hero')
 
-  /*
-    --- Başvuru akışı --------------------------------------------------------
-    Şartname EK-1 gereği eğitim DETAY sayfası başvuru formu barındırmaz; kişisel
-    veri yalnızca bu sayfada, açık rıza metniyle birlikte toplanır. Eğitim
-    sayfasındaki buton buraya yönlendirir ve hangi programdan gelindiğini
-    sorgu dizesiyle taşır.
-
-    Liste yalnızca YAYINDAKİ eğitimlerden kurulur; başlık ve id dışında alan
-    çekilmez (`select`) — form sayfasına eğitim kayıtlarının tamamını
-    taşımanın anlamı yok.
-  */
-  const query = await searchParams
-  const readParam = (key: string) => {
-    const value = query[key]
-    return Array.isArray(value) ? value[0] : value
-  }
-
-  const defaultType = readParam('tur') === 'basvuru' ? 'training-application' : undefined
-  const rawTraining = readParam('egitim')
-  const defaultTrainingId = rawTraining && /^\d+$/.test(rawTraining) ? Number(rawTraining) : null
-
-  const trainingResult = await payload.find({
-    collection: 'training-programs',
-    locale,
-    where: { _status: { equals: 'published' } },
-    limit: 100,
-    depth: 0,
-    sort: '-startDate',
-    select: { title: true } as never,
-  })
-
-  const trainings = (trainingResult.docs as unknown as { id: number; title?: string | null }[])
-    .filter((doc): doc is { id: number; title: string } => Boolean(doc.title))
-    .map((doc) => ({ id: doc.id, title: doc.title }))
 
   return (
     <>
@@ -262,13 +223,7 @@ export default async function ContactPage({ params, searchParams }: Props) {
           <p className="mt-2 max-w-2xl text-ink-600">{t('formIntro')}</p>
 
           <div className="mt-6">
-            <ContactForm
-              locale={locale}
-              consentText={consentText}
-              trainings={trainings}
-              defaultType={defaultType}
-              defaultTrainingId={defaultTrainingId}
-            />
+            <ContactForm locale={locale} consentText={consentText} />
           </div>
         </section>
       </div>

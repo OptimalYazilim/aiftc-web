@@ -11,6 +11,7 @@ import {
   TRAINING_LEVELS,
   TRAINING_STATUSES,
 } from '@/fields/options'
+import { guardRegistrations } from '@/hooks/guardRegistrations'
 import { guardVirtualClassrooms } from '@/hooks/guardVirtualClassrooms'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
@@ -26,7 +27,9 @@ import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
  *
  * Boylece editor tek kayit acar; sayfa, takvim ve duyuru ayni veriden beslenir.
  * Sartname acikca belirtiyor: "tam kapsamli bir LMS zorunlulugu dogurmadan".
- * Bu nedenle basvuru ALINMAZ, yalnizca yonlendirilir (applicationTarget).
+ * Basvurunun KENDISI bu koleksiyonda tutulmaz: applicationTarget yalnizca
+ * yonlendirir; alinan basvurular ve karar surecleri `registrations`
+ * koleksiyonundadir (kurumun karari: surec panelde yurutulur, dis portal yok).
  */
 export const TrainingPrograms: CollectionConfig = {
   slug: 'training-programs',
@@ -61,8 +64,8 @@ export const TrainingPrograms: CollectionConfig = {
       syncTranslationStatus(['title', 'summary']),
       revalidateCollection('/egitim-programlari'),
     ],
-    // Bagli sanal sinif varsa silmeyi anlasilir bir mesajla durdurur.
-    beforeDelete: [guardVirtualClassrooms],
+    // Bagli sanal sinif ya da basvuru varsa silmeyi anlasilir bir mesajla durdurur.
+    beforeDelete: [guardVirtualClassrooms, guardRegistrations],
     afterDelete: [revalidateOnDelete('/egitim-programlari')],
   },
   fields: [
@@ -297,9 +300,26 @@ enumName: 'enum_tp_custom_status',
                 {
                   name: 'type',
                   type: 'select',
-                  defaultValue: 'contact',
+                  /*
+                    VARSAYILAN ARTIK 'registration' — SİTE İÇİ BAŞVURU.
+                    Onay ve katılımcı süreci panelde yürütülür (Registrations
+                    koleksiyonu); dış portal yoktur. 'contact' seçeneği kalır
+                    ama anlamı daralmıştır: "başvuru almıyoruz, iletişim
+                    birimine yazın". Eski 'contact' kayıtları göçle
+                    'registration'a çevrildi — gerekçe migrations/
+                    *_registrations_data.ts içinde.
+                  */
+                  defaultValue: 'registration',
                   label: { tr: 'Yönlendirme Türü', en: 'Type', ru: 'Тип' },
                   options: [
+                    {
+                      value: 'registration',
+                      label: {
+                        tr: 'Site içi başvuru formu (panelde yönetilir)',
+                        en: 'On-site application form (managed in the panel)',
+                        ru: 'Форма заявки на сайте (управляется в панели)',
+                      },
+                    },
                     { value: 'contact', label: { tr: 'İletişim birimine yönlendir', en: 'Contact unit', ru: 'Контактное лицо' } },
                     { value: 'external', label: { tr: 'Harici başvuru bağlantısı', en: 'External link', ru: 'Внешняя ссылка' } },
                     { value: 'portal', label: { tr: 'Yönetim portalı (subdomain)', en: 'Management portal (subdomain)', ru: 'Портал управления' } },
@@ -346,7 +366,11 @@ enumName: 'enum_tp_custom_status',
                   type: 'text',
                   localized: true,
                   label: { tr: 'İletişim Kişisi / Birimi', en: 'Contact person or unit', ru: 'Контактное лицо / отдел' },
-                  admin: { condition: (_, siblingData) => siblingData?.type === 'contact' },
+                  admin: {
+                    /* Her iki site içi yolda da anlamlı: kişiye 'sorunuz için' bir birim gösterilir. */
+                    condition: (_, siblingData) =>
+                      siblingData?.type === 'contact' || siblingData?.type === 'registration',
+                  },
                 },
               ],
             },

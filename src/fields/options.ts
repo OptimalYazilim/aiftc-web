@@ -328,6 +328,33 @@ export const SUBMISSION_STATUSES: Option[] = [
   { value: 'read', label: { tr: 'Okundu', en: 'Read', ru: 'Прочитано' } },
 ]
 
+/**
+ * EGITIM BASVURUSU YASAM DONGUSU  (`Registrations.status`)
+ * ===========================================================================
+ * `SUBMISSION_STATUSES` ile KARISTIRILMAZ. O liste bir gelen kutusunun
+ * "okundu/bekliyor" isaretidir; bu liste bir KARARDIR ve kisinin egitime
+ * katilip katilmayacagini belirler.
+ *
+ *   pending    -> basvuru alindi, karar bekliyor (tek giris noktasi)
+ *   approved   -> yonetici/personel onayladi; katilimci listesindedir
+ *   rejected   -> reddedildi; kayit SILINMEZ, karar iz birakir
+ *   completed  -> egitim tamamlandi (sertifika/katilim belgesi asamasi)
+ *
+ * Katı bir durum makinesi ZORLANMAZ (orn. "completed yalnizca approved'dan
+ * gelir" diye). Gerekce Registrations.ts icinde: panelde veri duzeltmek
+ * gunluk istir ve kilitli gecisler o isi engeller; kancalar yalnizca kararin
+ * KIMIN ve NE ZAMAN verdigini damgalar.
+ */
+export const REGISTRATION_STATUSES: Option[] = [
+  { value: 'pending', label: { tr: 'Bekliyor', en: 'Pending', ru: 'Ожидает' } },
+  { value: 'approved', label: { tr: 'Onaylandı', en: 'Approved', ru: 'Одобрено' } },
+  { value: 'rejected', label: { tr: 'Reddedildi', en: 'Rejected', ru: 'Отклонено' } },
+  {
+    value: 'completed',
+    label: { tr: 'Tamamlandı (Sertifika)', en: 'Completed (certificate)', ru: 'Завершено (сертификат)' },
+  },
+]
+
 // ===========================================================================
 // ERISIM SEVIYELERI  (Sartname 1.7 — Erisim Seviyeleri)
 // ===========================================================================

@@ -71,15 +71,18 @@ test.describe('Erişilebilirlik değişmezleri', () => {
     await expect(konu).toHaveAttribute('aria-required', 'true')
 
     /*
-      Açılır listeler AYRI bir yol izler ve ZATEN doğruydu: yıldız
-      `aria-hidden`, zorunluluk ise `sr-only` bir metinle — başında BOŞLUKLA —
-      isme ekleniyor. Yani adı "… (zorunlu)" olarak biter ve birleşme yaşanmaz.
-      Bu satır o farkın bilinçli olduğunu kayda geçirir.
-
-      Ölçülen ad: combobox "Talep türü (zorunlu)". Etiketteki "türü" KÜÇÜK
-      harfle başlar; bu yüzden düzenli ifade harf duyarsızdır.
+      AÇILIR LİSTE — ARTIK METİN ALANLARIYLA AYNI YOL.
+      Eski iletişim formundaki "Talep türü" seçimi kaldırıldı (başvurular
+      kendi formuna taşındı); seçim alanı artık ortak `ui/FormField` içinde ve
+      metin alanlarıyla AYNI kuralı izliyor: işaret `aria-hidden`, zorunluluk
+      `aria-required`. Ölçülen ad: combobox "Başvurulan eğitim" — "(zorunlu)"
+      isme karışmaz. İki bileşenin ayrışması bir kez tam olarak bu sessiz
+      farkla yaşanmıştı; ortak bileşen o farkı kapatır.
     */
-    await expect(page.getByRole('combobox', { name: /^Talep türü \(zorunlu\)$/i })).toBeVisible()
+    await page.goto('/tr/basvuru')
+    const secim = page.getByRole('combobox', { name: 'Başvurulan eğitim', exact: true })
+    await expect(secim).toBeVisible()
+    await expect(secim).toHaveAttribute('aria-required', 'true')
   })
 
   test('form hatasında odak, hata özetine taşınır', async ({ page }) => {

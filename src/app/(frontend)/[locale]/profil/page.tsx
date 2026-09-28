@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
-import { AUDIENCE_ROLES, SUBMISSION_STATUSES, SUBMISSION_TYPES } from '@/fields/options'
+import { AUDIENCE_ROLES, REGISTRATION_STATUSES, SUBMISSION_STATUSES, SUBMISSION_TYPES } from '@/fields/options'
 import { isLocale, type Locale } from '@/i18n/locales'
 import { authHref, detailHref, href } from '@/i18n/routes'
 import { formatDateRange } from '@/lib/dates'
@@ -95,26 +95,6 @@ const Satir: React.FC<{ etiket: string; deger?: string | null }> = ({ etiket, de
  * doğru cümle "sistem bunu henüz tutmuyor"dur. İkisi farklı şeydir ve
  * kullanıcının kuruma soracağı soru da farklıdır.
  */
-const KayitTutulmuyor: React.FC<{
-  baslik: string
-  aciklama: string
-  iletisimHref: string
-  iletisimEtiketi: string
-}> = ({ baslik, aciklama, iletisimHref, iletisimEtiketi }) => (
-  <section className="border border-line bg-surface p-6">
-    <h2 className="text-lg font-bold tracking-tight text-shell-900">{baslik}</h2>
-    <p className="mt-2 text-sm leading-relaxed text-ink-700">{aciklama}</p>
-    <p className="mt-4">
-      <Link
-        href={iletisimHref}
-        className="inline-flex min-h-11 items-center text-sm font-semibold text-shell-900 underline underline-offset-4 hover:text-brand-800 focus-visible:text-brand-800"
-      >
-        {iletisimEtiketi}
-      </Link>
-    </p>
-  </section>
-)
-
 export default async function ProfilePage({ params }: Props) {
   const { locale } = await params
   if (!isLocale(locale)) notFound()
@@ -122,7 +102,6 @@ export default async function ProfilePage({ params }: Props) {
   setRequestLocale(locale)
 
   const t = await getTranslations('profile')
-  const tc = await getTranslations('contact')
   const payload = await payloadClient()
 
   const { user } = await payload.auth({ headers: await headers() })
@@ -151,6 +130,31 @@ export default async function ProfilePage({ params }: Props) {
     overrideAccess: false,
     user,
   })
+
+  /*
+    EĞİTİM BAŞVURULARI (registrations) — KENDİ KAYITLARI.
+    Kural `registrationReadAccess` içindedir: `user` ilişkisi YA DA e-posta
+    eşleşmesi. Burada tekrarlanmaz; `overrideAccess: false` + `user` onu
+    devreye sokar. Eğitim başlığı ve slug'ı için depth 1.
+  */
+  const kayitlar = await payload.find({
+    collection: 'registrations',
+    locale,
+    sort: '-createdAt',
+    limit: 100,
+    depth: 1,
+    overrideAccess: false,
+    user,
+  })
+  const kayitListesi = kayitlar.docs as unknown as {
+    id: number | string
+    status?: string | null
+    createdAt?: string | null
+    completedAt?: string | null
+    training?: { slug?: string | null; title?: string | null } | number | null
+  }[]
+  const tamamlananlar = kayitListesi.filter((k) => k.status === 'completed')
+  const basvuruHref = href('application', locale)
 
   const abonelik = abonelikDurumu(user)
   const rolEtiketi = optionLabel(AUDIENCE_ROLES, String(user.role ?? ''), locale)
@@ -309,20 +313,114 @@ export default async function ProfilePage({ params }: Props) {
           )}
         </section>
 
-        {/* --- Henüz tutulmayan kayıtlar ----------------------------------- */}
+        {/* --- Eğitimlerim (registrations) ---------------------------------- */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <KayitTutulmuyor
-            baslik={t('trainingsHeading')}
-            aciklama={t('trainingsNotTracked')}
-            iletisimHref={iletisimHref}
-            iletisimEtiketi={tc('contactPageLink')}
-          />
-          <KayitTutulmuyor
-            baslik={t('certificatesHeading')}
-            aciklama={t('certificatesNotTracked')}
-            iletisimHref={iletisimHref}
-            iletisimEtiketi={tc('contactPageLink')}
-          />
+          <section className="border border-line bg-surface p-6">
+            <h2 className="text-lg font-bold tracking-tight text-shell-900">
+              {t('trainingsHeading')}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-600">{t('trainingsIntro')}</p>
+
+            {kayitListesi.length === 0 ? (
+              <p className="mt-5 border-t border-line-soft pt-5 text-sm text-ink-700">
+                {t('trainingsEmpty')}
+              </p>
+            ) : (
+              <ul className="mt-5 border-t border-line-soft">
+                {kayitListesi.map((kayit) => {
+                  const egitim =
+                    kayit.training && typeof kayit.training === 'object' ? kayit.training : null
+                  const tarih = kayit.createdAt
+                    ? new Date(kayit.createdAt).toLocaleDateString(locale, {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
+                    : null
+                  return (
+                    <li key={String(kayit.id)} className="border-b border-line-soft py-4 last:border-0">
+                      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold uppercase tracking-wider text-ink-600">
+                        {/* Durum renge EK OLARAK metin taşır (Madde 47/89). */}
+                        <span className="bg-surface-alt px-2 py-0.5 text-ink-700">
+                          <span className="sr-only">{t('fieldStatus')}: </span>
+                          {optionLabel(REGISTRATION_STATUSES, String(kayit.status ?? ''), locale)}
+                        </span>
+                        {tarih ? <span className="font-normal normal-case">{tarih}</span> : null}
+                      </p>
+                      <p className="mt-1.5 font-semibold leading-snug text-shell-900">
+                        {egitim?.slug && egitim.title ? (
+                          <Link
+                            href={detailHref('training-program', locale, egitim.slug)}
+                            className="underline decoration-line-strong underline-offset-4 hover:decoration-brand-700 focus-visible:decoration-brand-700"
+                          >
+                            {egitim.title}
+                          </Link>
+                        ) : (
+                          (egitim?.title ?? t('trainingUnavailable'))
+                        )}
+                      </p>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            <p className="mt-5">
+              <Link
+                href={basvuruHref}
+                className="inline-flex min-h-11 items-center text-sm font-semibold text-shell-900 underline underline-offset-4 hover:text-brand-800 focus-visible:text-brand-800"
+              >
+                {t('applyLink')}
+              </Link>
+            </p>
+          </section>
+
+          {/*
+            SERTİFİKALAR = "tamamlandı" durumundaki kayıtlar.
+            Sertifika BELGESİ bu sistemde üretilmez/saklanmaz; burada yalnızca
+            hangi eğitimin tamamlandığı görünür, belgenin kendisi merkezden
+            alınır. Bunu açıkça yazmak, olmayan bir indirme düğmesini aramaktan
+            iyidir.
+          */}
+          <section className="border border-line bg-surface p-6">
+            <h2 className="text-lg font-bold tracking-tight text-shell-900">
+              {t('certificatesHeading')}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-600">{t('certificatesIntro')}</p>
+
+            {tamamlananlar.length === 0 ? (
+              <p className="mt-5 border-t border-line-soft pt-5 text-sm text-ink-700">
+                {t('certificatesEmpty')}
+              </p>
+            ) : (
+              <ul className="mt-5 border-t border-line-soft">
+                {tamamlananlar.map((kayit) => {
+                  const egitim =
+                    kayit.training && typeof kayit.training === 'object' ? kayit.training : null
+                  const tarih = kayit.completedAt
+                    ? new Date(kayit.completedAt).toLocaleDateString(locale, {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
+                    : null
+                  return (
+                    <li key={String(kayit.id)} className="border-b border-line-soft py-4 last:border-0">
+                      <p className="font-semibold leading-snug text-shell-900">
+                        {egitim?.title ?? t('trainingUnavailable')}
+                      </p>
+                      {tarih ? (
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-ink-600">
+                          {t('completedOn')}: <span className="font-normal normal-case">{tarih}</span>
+                        </p>
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+            <p className="mt-5 text-sm leading-relaxed text-ink-600">{t('certificateNote')}</p>
+          </section>
         </div>
       </div>
     </>

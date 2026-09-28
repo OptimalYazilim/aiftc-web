@@ -75,7 +75,8 @@ test.describe('Oturum senkronizasyonu', () => {
     const onBasvuru = page.getByRole('link', { name: 'Ön Başvuru Yap' })
     await expect(onBasvuru).toBeVisible()
     /* Hedef: iletişim formu, eğitim ön seçili. */
-    await expect(onBasvuru).toHaveAttribute('href', /\/tr\/iletisim\?tur=basvuru&egitim=\d+/)
+    /* Hedef: site içi başvuru formu, eğitim ön seçili (Registrations akışı). */
+    await expect(onBasvuru).toHaveAttribute('href', /\/tr\/basvuru\?egitim=\d+/)
     await expect(page.getByRole('link', { name: 'Eğitim Materyallerine Git' })).toHaveCount(0)
 
     /* -- oturumlu: materyale götürür ------------------------------------ */

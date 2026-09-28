@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import React from 'react'
 
@@ -117,10 +118,40 @@ export const ApplicationCta = async ({
     Form EK-1 gereği eğitim sayfasına GÖMÜLMEZ; kişisel veri yalnızca açık
     rıza metninin bulunduğu iletişim sayfasında toplanır.
   */
-  if (type === 'contact' || !applicationHref) {
+  /*
+    'contact' ARTIK BAŞVURU ALMAZ — "iletişim birimine yazın" demektir.
+    Başvuru süreci panelde yürütülür (Registrations); iletişim formundaki
+    "Eğitim Başvurusu" türü kaldırıldı. Editör bu türü seçtiyse ziyaretçi
+    genel iletişim sayfasına gider ve düğme öyle der. Eski 'contact'
+    kayıtları göçle 'registration'a çevrildi; bu dal ancak editörün BİLİNÇLİ
+    seçimiyle görülür.
+  */
+  if (type === 'contact') {
+    return (
+      <div>
+        <Link href={href('contact', locale)} className={activeClass}>
+          {t('contactUnitLink')}
+        </Link>
+        {target?.contactUnit ? (
+          <p className="mt-3 text-sm text-ink-600">
+            {t('contactUnit')}: {target.contactUnit}
+          </p>
+        ) : null}
+      </div>
+    )
+  }
+
+  /*
+    SİTE İÇİ BAŞVURU ('registration') — ve hedefi çözülemeyen her tür.
+    Portal "yakında" olduğu için `applicationHref` null dönerse ziyaretçi
+    yine site içi forma alınır: editör portalı seçmiş olsa da başvuruyu
+    kaybetmek en kötü sonuçtur; kayıt panelde görülür ve gerekirse portala
+    elle aktarılır.
+  */
+  if (type === 'registration' || !applicationHref) {
     const contactHref = trainingId
-      ? `${href('contact', locale)}?tur=basvuru&egitim=${trainingId}`
-      : href('contact', locale)
+      ? `${href('application', locale)}?egitim=${trainingId}`
+      : href('application', locale)
 
     /*
       BUTON OTURUMA GÖRE DEĞİŞİR  (UX — aynı düğme iki kitleye hitap edemez)

@@ -945,6 +945,76 @@ Cloudflare'in resmî test anahtarlarıyla; hesap gerekmedi. 14/14 geçti.
 
 ---
 
+## 8A. Eğitim başvuruları ve katılımcı yaşam döngüsü (Madde 6.4) — **KURULDU (2026-09-28)**
+
+Kurumun kararı: onay ve katılımcı yönetimi dış bir portalda değil, **bu
+panelde** yürütülür. Bunun için `registrations` koleksiyonu eklendi; eğitim
+başvurusu artık `form-requests` gelen kutusuna değil buraya düşer.
+
+### Yaşam döngüsü
+
+| Durum | Anlamı | Kim verir |
+|---|---|---|
+| `pending` | Başvuru alındı, karar bekliyor | Sistem (tek giriş noktası) |
+| `approved` | Katılımcı listesinde | Yönetici / OGM-UOEM personeli |
+| `rejected` | Reddedildi; kayıt SİLİNMEZ | Yönetici / personel |
+| `completed` | Eğitim tamamlandı (sertifika aşaması) | Yönetici / personel |
+
+Katı geçiş kilidi **yoktur** (bilinçli): panelde veri düzeltmek günlük iştir.
+Bunun yerine `beforeChange` kancası kararın izini damgalar — `reviewedBy`,
+`reviewedAt`, `completedAt`. Damgalar salt okunurdur; elle düzeltilebilen bir
+iz, iz değildir.
+
+### Kim ne görür / ne yapar
+
+- **Okuma** (`registrationReadAccess`): personel ve panel rolleri hepsini;
+  oturumlu ziyaretçi **yalnızca kendisini** (`user` ilişkisi **veya** e-posta
+  eşleşmesi — anonim başvuru `user` taşımaz, kişi sonradan aynı adresle hesap
+  açarsa geçmişini görmeli); oturumsuz hiçbirini.
+- **Oluşturma**: `create: () => false`. Kayıt yalnızca sunucu eyleminden düşer
+  (`app/(frontend)/[locale]/basvuru/actions.ts`); genel REST'e yazma kapalı.
+- **Karar** (`status`, `adminNotes`, damgalar): alan düzeyinde
+  `canApproveAccounts` — hesap onaylayan küme. Koleksiyon düzeyindeki
+  `update` kuralı gevşetilse bile kişi **kendini onaylayamaz**.
+- `adminNotes` başvurana **hiç görünmez** (alan düzeyi `read`).
+
+### Sunucu eyleminin ek denetimleri
+
+Eğitim **yayında ve `applications-open`** olmalı (tarayıcıdan gelen id'ye
+güvenilmez); aynı e-posta + aynı eğitim için reddedilmemiş kayıt varsa
+**mükerrer** reddedilir (yarış sınırı: iki eş zamanlı gönderim ikisini de
+geçirebilir — bileşik tekil indeks Payload alan API'siyle tanımlanamıyor,
+panelde ikinciyi silmek yeterli). Oturum varsa kayıt hesaba bağlanır.
+
+### Bilinçli olarak yapılmayanlar
+
+- **KVKK süpürmesine dahil değil** (`lib/kvkkRetention.ts` yalnızca
+  `form-requests`i siler). Katılım kaydı kurumun sertifika/raporlama
+  dayanağıdır; saklama süresi KVKK envanterinde ayrıca belirlenmeli.
+- **E-posta bildirimi yok.** Durum değişince kişiye posta gitmez; SMTP
+  yapılandırması ve metinler kurum kararı.
+- **Kontenjan zorlanmıyor.** `TrainingPrograms.quota` bir bilgidir; onaylı
+  kayıt sayısı kontenjanı aşarsa sistem uyarmaz.
+- **Sertifika belgesi saklanmıyor.** `completed` durumu "tamamlandı" bilgisidir;
+  belgenin kendisi merkezden alınır, profil sayfası bunu açıkça söyler.
+- **Eğitmen kendi eğitiminin listesini göremez.** "Hangi eğitim benim"
+  ilişkisi kurulu değil; olmayan ilişkiye dayanan yetki yazılmadı.
+
+### Aydınlatma metni
+
+Form, `forms` koleksiyonunda **"Eğitim Başvuru Formu"** başlıklı kaydın
+`consentText`ini okur; yoksa iletişim formununkine, o da yoksa sabit yedeğe
+düşer. Başvuruda telefon ve görev de toplandığı için **kuruma özel metin
+panelden girilmelidir** — kod hukuki metin üretmez.
+
+### `applicationTarget.type` değişikliği
+
+Yeni değer `registration` (varsayılan). Eski `contact` kayıtları göçle
+`registration`a çevrildi (gerekçe `migrations/*_registrations_varsayilan_ve_veri.ts`);
+`contact` artık "başvuru almıyoruz, iletişim birimine yazın" demektir.
+İki göç ayrıdır: Postgres, aynı işlemde eklenen enum değerinin kullanılmasını
+reddeder (`unsafe use of new value`) — ölçüldü.
+
 ## 9. Ölçülmüş tuzaklar — kural yazmak yetmiyor, ÇAĞRILDIĞINI doğrulayın
 
 Bu bölüm, **doğru yazılmış bir erişim kuralının hiç çalışmadığı** üç durumu

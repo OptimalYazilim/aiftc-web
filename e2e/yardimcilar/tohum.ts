@@ -116,6 +116,7 @@ const pngUret = (genislik = 96, yukseklik = 72): Promise<Buffer> =>
  */
 export const ADLAR = {
   egitimSlug: `${TEST_ONEKI}-erken-uyari-calistayi`,
+  egitimBasligi: `${TEST_ONEKI} Orman Yangını Erken Uyarı Çalıştayı`,
   acikKayit: `${TEST_ONEKI} Herkese Acik Yangin Raporu`,
   kisitliKayit: `${TEST_ONEKI} Katilimciya Ozel Egitim Rehberi`,
   kisitliSlug: `${TEST_ONEKI}-kisitli-rehber`,
@@ -178,12 +179,57 @@ export type TohumSonucu = {
  * tohumlanırsa, erişim kuralı "oturum varsa her şeyi göster" biçiminde bozulsa
  * dahi testler yeşil kalırdı.
  */
+/**
+ * Slug'a göre GÜNCELLE ya da OLUŞTUR. Var olan kaydın id'si korunur; alanlar
+ * her koşuda tohumdaki değere sıfırlanır (bir önceki koşu ne bırakmış olursa
+ * olsun içerik deterministiktir). Gerekçe `tohumla` içinde.
+ */
+const slugaGoreYaz = async (
+  collection: 'training-topics' | 'training-programs',
+  slug: string,
+  args: { locale: 'tr'; data: never },
+) => {
+  const payload = await payloadIstemcisi()
+  const mevcut = await payload.find({
+    collection,
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  })
+  const varOlan = mevcut.docs[0]
+  if (varOlan) {
+    return payload.update({ ...yaz(), collection, id: varOlan.id, ...args })
+  }
+  return payload.create({ ...yaz(), collection, ...args })
+}
+
 export const tohumla = async (): Promise<TohumSonucu> => {
   const payload = await payloadIstemcisi()
 
-  /* Önceki koşu çökmüşse artık veri kalmış olabilir. */
+  /*
+    Önceki koşu çökmüşse artık veri kalmış olabilir — TEMİZLENİR; ama eğitim
+    ve konu kayıtları KORUNUR ve aşağıda slug'a göre GÜNCELLENİR. Gerekçe
+    uzun, çünkü ölçülmüş ve yanıltıcı bir yarışın çözümü:
+
+    DERLEME, TOHUMLAMADAN ÖNCE ÇALIŞIR. Playwright önce `webServer`
+    (next build) sonra globalSetup'ı koşturur. Eğitim künyesi sayfası ISR ile
+    ÖN ÜRETİLİR ve "Ön Başvuru Yap" düğmesi eğitimin id'sini adrese gömer.
+    Önceki koşunun temizliği çökmüşse derleme anında veritabanında ESKİ eğitim
+    durur, sayfa onun id'siyle üretilir; tohum sonra eğitimi silip yeniden
+    yaratır (YENİ id) ve test, eski id'yi taşıyan düğmeye tıklar. Başvuru
+    formu yeni id'yi listeler, eski id'yi bulamaz, ön seçim tutmaz:
+
+        Expected: "21"   Received: ""      (2026-09-28, koşu Q)
+
+    Aynı kod tek başına koştuğunda 5/5 geçiyordu — hata koddaki değil,
+    koşular ARASINDAKİ durumdaydı. Sil+yarat yerine slug'a göre güncelleme,
+    id'yi koşular arasında SABİT tutar; artık ne bırakılırsa bırakılsın
+    ön üretilmiş sayfa doğru id'ye işaret eder. CI'da da geçerli: veritabanı
+    koşular arasında yaşar, çöken bir koşu sonrakini zehirleyebilirdi.
+  */
   yazanKullanici = YONETICI_BAGLAMI
-  await temizle()
+  await temizle({ egitimleriKoru: true })
 
   /* -- GERÇEK yönetici: bundan sonraki her yazma onun kimliğiyle yapılır -- */
   /*
@@ -206,9 +252,7 @@ export const tohumla = async (): Promise<TohumSonucu> => {
   yazanKullanici = yonetici as unknown as Parameters<Payload['create']>[0]['user']
 
   /* -- Eğitim konusu: eğitim programının zorunlu `topics` ilişkisi -------- */
-  const konu = await payload.create({
-    ...yaz(),
-    collection: 'training-topics',
+  const konu = await slugaGoreYaz('training-topics', `${TEST_ONEKI}-orman-yanginlari`, {
     locale: 'tr',
     data: {
       title: `${TEST_ONEKI} Orman Yangınlarıyla Mücadele`,
@@ -219,19 +263,17 @@ export const tohumla = async (): Promise<TohumSonucu> => {
     } as never,
   })
 
-  const egitimBasligi = `${TEST_ONEKI} Orman Yangını Erken Uyarı Çalıştayı`
+  const egitimBasligi = ADLAR.egitimBasligi
 
   /*
     BAŞVURUYA AÇIK + İLETİŞİM HEDEFLİ bir eğitim.
     İki alan da senaryonun ön koşuludur:
-      status = applications-open        -> düğme etkin gelir
-      applicationTarget.type = contact  -> düğme iletişim formuna gider
+      status = applications-open             -> düğme etkin gelir
+      applicationTarget.type = registration  -> düğme site içi başvuru formuna gider
     Başka bir durumda `ApplicationCta` devre dışı düğme ya da harici bağlantı
     basar ve senaryo hiç başlamaz.
   */
-  const egitim = await payload.create({
-    ...yaz(),
-    collection: 'training-programs',
+  const egitim = await slugaGoreYaz('training-programs', ADLAR.egitimSlug, {
     locale: 'tr',
     data: {
       title: egitimBasligi,
@@ -251,7 +293,8 @@ export const tohumla = async (): Promise<TohumSonucu> => {
       venue: `${TEST_ONEKI} Test Kampüsü`,
       instructionLanguages: ['tr', 'en'],
       certificateType: 'attendance',
-      applicationTarget: { type: 'contact', contactUnit: `${TEST_ONEKI} Eğitim Birimi` },
+      /* 'registration': düğme site içi başvuru formuna gider (Registrations). */
+      applicationTarget: { type: 'registration', contactUnit: `${TEST_ONEKI} Eğitim Birimi` },
       _status: 'published',
     } as never,
   })
@@ -488,7 +531,7 @@ export const tohumla = async (): Promise<TohumSonucu> => {
  * `slug` alanı YOKTUR (şemadan doğrulandı). Önceki sürüm slug'a bakıyordu ve
  * hiçbir paketi silmiyordu — sessiz bir artık bırakıyordu.
  */
-export const temizle = async (): Promise<void> => {
+export const temizle = async (secenek: { egitimleriKoru?: boolean } = {}): Promise<void> => {
   const payload = await payloadIstemcisi()
 
   const sil = async (collection: string, where: Record<string, unknown>) => {
@@ -499,9 +542,23 @@ export const temizle = async (): Promise<void> => {
     or: [{ subject: { like: TEST_ONEKI } }, { email: { like: TEST_ONEKI } }],
   })
   await sil('library-resources', { slug: { like: TEST_ONEKI } })
-  await sil('training-programs', { slug: { like: TEST_ONEKI } })
-  /* Programlardan SONRA: ilişki hedefini önce silmek yetim satır bırakırdı. */
-  await sil('training-topics', { slug: { like: TEST_ONEKI } })
+  /*
+    EĞİTİMLERDEN ÖNCE — ÖLÇÜLMÜŞ ZORUNLULUK. `registrations.training` NOT NULL,
+    yabancı anahtar ise ON DELETE set null: başvurusu olan eğitim silinince
+    Postgres NULL yazamaz, işlem düşer ve temizlik 'transaction is aborted'
+    ile kırılır. Üretimde aynı durumu guardRegistrations kancası anlaşılır
+    bir mesajla durdurur; burada sıra doğru kurulur.
+  */
+  await sil('registrations', { email: { like: TEST_ONEKI } })
+  /*
+    Koşu BAŞINDA eğitim ve konu korunur (id sabit kalsın — gerekçe tohumla
+    içinde); koşu SONUNDA hepsi silinir, veritabanı temiz kalır.
+  */
+  if (!secenek.egitimleriKoru) {
+    await sil('training-programs', { slug: { like: TEST_ONEKI } })
+    /* Programlardan SONRA: ilişki hedefini önce silmek yetim satır bırakırdı. */
+    await sil('training-topics', { slug: { like: TEST_ONEKI } })
+  }
   await sil('document-files', { title: { like: TEST_ONEKI } })
   await sil('media', { alt: { like: TEST_ONEKI } })
   await sil('users', { email: { like: TEST_ONEKI } })

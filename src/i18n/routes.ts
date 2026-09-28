@@ -58,6 +58,12 @@ export const ROUTES = {
   },
   projects: { tr: '/projeler', en: '/projects', ru: '/proekty' },
   contact: { tr: '/iletisim', en: '/contact', ru: '/kontakty' },
+  /**
+   * EĞİTİM BAŞVURU FORMU. Eğitim künyesinden `?egitim=<id>` ile gelinir; tek
+   * başına açıldığında başvuruya açık eğitimlerden seçim sunar, o yüzden
+   * site haritasında durması doğrudur (ROUTE_KEYS üzerinden girer).
+   */
+  application: { tr: '/basvuru', en: '/apply', ru: '/zayavka' },
   search: { tr: '/arama', en: '/search', ru: '/poisk' },
 } as const satisfies Record<string, Record<Locale, string>>
 
