@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
@@ -87,48 +88,62 @@ import { payloadClient } from '@/lib/queries'
  * gösterir.
  * ============================================================================
  */
-export const revalidate = 300
+/**
+ * ÖNBELLEK KALDIRILDI — LİSTELEME SAYFASIYLA AYNI GEREKÇE
+ * ============================================================================
+ * ÖLÇÜLMÜŞ KUSUR (2026-09-28): bu sayfa kaydı Local API'ye `user` GEÇMEDEN
+ * arıyordu, yani sorgu her zaman ANONİMDİ. Sonuç:
+ *
+ *     oturum açık, /tr/kutuphane            -> "2 yayın listeleniyor"
+ *     oturum açık, o kayda tıklayınca       -> 404
+ *
+ * Yani listeleme "bunu görebilirsin" derken künye "böyle bir şey yok" diyordu.
+ * Kullanıcı açısından bu, bozuk bir bağlantıdır.
+ *
+ * (Listenin kısıtlı kaydı anonime SIZDIRMADIĞI ayrıca ölçüldü: oturumsuz
+ * istekte liste 1 kayıt döndürüyor. Kusur yalnızca bu sayfadaydı.)
+ *
+ * Oturumu okumak tek başına YETMEZ, hatta tehlikeli olurdu: sayfa 5 dakikalık
+ * ISR ile üretiliyordu ve kişiye özel üretilmiş bir HTML önbelleğe düşse
+ * SONRAKİ ziyaretçiye önceki kullanıcının yetkisiyle üretilmiş içerik
+ * gösterilirdi. Bu bir sızıntı olurdu, ödünleşim değil.
+ *
+ * Bu yüzden `force-dynamic`. Aynı sebeple `generateStaticParams` kaldırıldı:
+ * önceden üretilecek bir çıktı yok. Listeleme sayfası bir tur önce tam olarak
+ * bu tedaviyi görmüştü; künye sayfası o düzeltmede gözden kaçmıştı.
+ *
+ * BEDELİ AÇIKÇA: herkese açık künyeler de artık her istekte üretilir. Kayıt
+ * sayısı düşük olduğu için ölçülebilir bir yük beklenmiyor; kişiye özel
+ * içerikle önbelleği aynı rotada barındırmanın güvenli bir yolu yok.
+ * ============================================================================
+ */
+export const dynamic = 'force-dynamic'
 
 type Props = { params: Promise<{ locale: Locale; slug: string }> }
 
 type AllLocaleSlugs = { id: number; slug?: Partial<Record<Locale, string>> }
 
-export async function generateStaticParams() {
-  try {
-    const payload = await payloadClient()
-    const result = await payload.find({
-      collection: 'library-resources',
-      locale: 'all',
-      where: { _status: { equals: 'published' } },
-      limit: 1000,
-      pagination: false,
-      depth: 0,
-      /*
-        Erişim denetimi burada da açıktır: yalnızca herkese açık kayıtlar
-        ÖNCEDEN üretilir. Kısıtlı kayıtlar istek anında değerlendirilir ve
-        yetkisiz ziyaretçiye 404 döner — üretilmiş bir HTML olarak CDN'de
-        beklemezler.
-      */
-      overrideAccess: false,
-    })
-
-    const params: { locale: Locale; slug: string }[] = []
-
-    for (const doc of result.docs as unknown as AllLocaleSlugs[]) {
-      for (const locale of LOCALE_CODES) {
-        const slug = doc.slug?.[locale]
-        if (slug) params.push({ locale, slug })
-      }
-    }
-
-    return params
-  } catch {
-    // Veritabanı build anında erişilemezse sayfalar istek anında üretilir.
-    return []
-  }
+/**
+ * Oturumdaki kullanıcıyı çözer.
+ *
+ * `payload.auth` istek başlıklarındaki `aiftc-token` çerezini okur. Değer
+ * aşağıdaki sorgulara GEÇİLMEK ZORUNDADIR: `overrideAccess: false` erişim
+ * kuralını çalıştırır ama kullanıcı verilmezse kural isteği anonim sayar ve
+ * seviyeli kayıtlar hiç kimseye açılmaz.
+ */
+const oturumKullanicisi = async () => {
+  const payload = await payloadClient()
+  const { user } = await payload.auth({ headers: await headers() })
+  return user
 }
 
-const findBySlug = async (locale: Locale, slug: string): Promise<LibraryResource | null> => {
+type Kullanici = Awaited<ReturnType<typeof oturumKullanicisi>>
+
+const findBySlug = async (
+  locale: Locale,
+  slug: string,
+  user: Kullanici,
+): Promise<LibraryResource | null> => {
   const payload = await payloadClient()
 
   const result = await payload.find({
@@ -142,12 +157,13 @@ const findBySlug = async (locale: Locale, slug: string): Promise<LibraryResource
     */
     depth: 2,
     overrideAccess: false,
+    user,
   })
 
   return (result.docs[0] as LibraryResource | undefined) ?? null
 }
 
-const findInAnyLocale = async (slug: string): Promise<AllLocaleSlugs | null> => {
+const findInAnyLocale = async (slug: string, user: Kullanici): Promise<AllLocaleSlugs | null> => {
   const payload = await payloadClient()
 
   const result = await payload.find({
@@ -160,6 +176,7 @@ const findInAnyLocale = async (slug: string): Promise<AllLocaleSlugs | null> => 
     limit: 1,
     depth: 0,
     overrideAccess: false,
+    user,
   })
 
   return (result.docs[0] as unknown as AllLocaleSlugs | undefined) ?? null
@@ -169,10 +186,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params
   if (!isLocale(locale)) return {}
 
-  const doc = await findBySlug(locale, slug)
+  /*
+    Başlık ve açıklama da kişiye özeldir: seviyeli bir kaydın künyesi,
+    yetkisi olmayan ziyaretçi için VAR OLMAMALIDIR. Oturum burada da okunmazsa
+    sayfa açılır ama sekme başlığı boş kalırdı.
+  */
+  const user = await oturumKullanicisi()
+
+  const doc = await findBySlug(locale, slug, user)
   if (!doc) return {}
 
-  const alternates = await findInAnyLocale(slug)
+  const alternates = await findInAnyLocale(slug, user)
 
   /** Çevirisi girilmemiş bir dil hreflang listesine HİÇ girmez. */
   const pathByLocale: Partial<Record<Locale, string>> = {}
@@ -210,17 +234,19 @@ export default async function LibraryDetailPage({ params }: Props) {
 
   setRequestLocale(locale)
 
-  let doc = await findBySlug(locale, slug)
+  const user = await oturumKullanicisi()
+
+  let doc = await findBySlug(locale, slug, user)
 
   if (!doc) {
-    const anyLocale = await findInAnyLocale(slug)
+    const anyLocale = await findInAnyLocale(slug, user)
     const correctSlug = anyLocale?.slug?.[locale]
 
     if (correctSlug && correctSlug !== slug) {
       redirect(detailHref('library-resource', locale, correctSlug))
     }
 
-    if (correctSlug) doc = await findBySlug(locale, correctSlug)
+    if (correctSlug) doc = await findBySlug(locale, correctSlug, user)
   }
 
   if (!doc) notFound()

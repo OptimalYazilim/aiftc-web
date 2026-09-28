@@ -115,6 +115,46 @@ test.describe('Negatif yetki kapıları', () => {
     expect(yanit.status()).not.toBe(206)
   })
 
+  test('kısıtlı kütüphane kaydının künyesi: anonime 404, yetkiliye açılır', async ({ page }) => {
+    /*
+      ÖLÇÜLMÜŞ KUSURUN NÖBETÇİSİ (2026-09-28).
+      Künye sayfası kaydı Local API'ye `user` GEÇMEDEN arıyordu, yani sorgu her
+      zaman anonimdi. Kullanıcı açısından sonuç bozuk bir bağlantıydı:
+
+          oturum açık, /tr/kutuphane   -> kayıt listede GÖRÜNÜYOR
+          o karta tıklayınca           -> 404
+
+      Aynı hata bir tur önce LİSTELEME sayfasında düzeltilmişti; künye sayfası
+      o düzeltmede gözden kaçmıştı. Bu yüzden nöbetçi iki ucu birden tutar —
+      biri olmadan öteki yanıltır:
+
+        · anonim 404 almalı   -> kaydın VARLIĞI bile sızmamalı
+        · yetkili 200 almalı  -> listede gördüğünü AÇABİLMELİ
+
+      Yalnızca ikincisi yazılsaydı, erişim kuralı tümden kaldırıldığında da
+      geçerdi. Yalnızca birincisi yazılsaydı, bugünkü kusur zaten geçiyordu.
+    */
+    const adres = `/tr/kutuphane/${ADLAR.kisitliSlug}`
+
+    const anonim = await page.request.get(adres)
+    expect(anonim.status(), 'Kısıtlı kaydın varlığı anonime sızıyor.').toBe(404)
+
+    /*
+      `girisYap` kütüphanede biter; oradan KARTA TIKLANIR — `page.goto`
+      kullanılmaz. İki sebep:
+        1. Kullanıcının bildirdiği yol tam olarak budur.
+        2. Tarayıcı tıklamayı aynı kökenli gezinme olarak işaretler; Payload'ın
+           çereze güvenmesi için gereken şey de budur (aynı tuzak belge indirme
+           testinde `Origin` başlığıyla çözülmüştü).
+      Kart başlığının kendisi bağlantıdır (LibraryResourceCard).
+    */
+    await girisYap(page, KATILIMCI)
+    await page.getByRole('link', { name: ADLAR.kisitliKayit }).click()
+
+    await expect(page).toHaveURL(new RegExp(`/tr/kutuphane/${ADLAR.kisitliSlug}$`))
+    await expect(page.getByRole('heading', { name: ADLAR.kisitliKayit })).toBeVisible()
+  })
+
   test('anonim istek form taleplerini API üzerinden çekemez', async ({ page }) => {
     /*
       `formRequestReadAccess` oturumsuz istek için `false` döner — filtre

@@ -118,6 +118,9 @@ export const ADLAR = {
   egitimSlug: `${TEST_ONEKI}-erken-uyari-calistayi`,
   acikKayit: `${TEST_ONEKI} Herkese Acik Yangin Raporu`,
   kisitliKayit: `${TEST_ONEKI} Katilimciya Ozel Egitim Rehberi`,
+  kisitliSlug: `${TEST_ONEKI}-kisitli-rehber`,
+  acikSlug: `${TEST_ONEKI}-acik-rapor`,
+  personelSlug: `${TEST_ONEKI}-personel-raporu`,
   personelKaydi: `${TEST_ONEKI} Personele Ozel Ic Rapor`,
   album: `${TEST_ONEKI} Saha Uygulamasi Fotograflari`,
   albumSlug: `${TEST_ONEKI}-saha-fotograflari`,
@@ -320,8 +323,15 @@ export const tohumla = async (): Promise<TohumSonucu> => {
   }
 
   /* -- Kütüphane: üç erişim seviyesi -------------------------------------- */
+  /*
+    TAM SLUG ALIR, EK ALMAZ.
+    Önceki sürüm son eki alıp başına öneki kendisi ekliyordu; sonuç olarak
+    aynı slug iki yerde kodlanmış oluyordu (`ADLAR.albumSlug` ve buradaki
+    `'saha-fotograflari'`). Biri değişip öteki kalsa test "kayıt yok" diye
+    kırılır ve hata erişim kuralında sanılırdı. Artık tek kaynak `ADLAR`.
+  */
   const kutuphaneKaydi = (
-    ad: string,
+    slug: string,
     baslik: string,
     accessLevel: string,
     ek: Record<string, unknown> = {},
@@ -332,7 +342,7 @@ export const tohumla = async (): Promise<TohumSonucu> => {
       locale: 'tr',
       data: {
         title: baslik,
-        slug: `${TEST_ONEKI}-${ad}`,
+        slug,
         accessLevel,
         resourceType: 'report',
         publicationYear: 2026,
@@ -345,9 +355,9 @@ export const tohumla = async (): Promise<TohumSonucu> => {
   const kisitliKayitBasligi = ADLAR.kisitliKayit
   const personelKaydiBasligi = ADLAR.personelKaydi
 
-  await kutuphaneKaydi('acik-rapor', acikKayitBasligi, 'public')
-  await kutuphaneKaydi('kisitli-rehber', kisitliKayitBasligi, 'trainee')
-  await kutuphaneKaydi('personel-raporu', personelKaydiBasligi, 'staff')
+  await kutuphaneKaydi(ADLAR.acikSlug, acikKayitBasligi, 'public')
+  await kutuphaneKaydi(ADLAR.kisitliSlug, kisitliKayitBasligi, 'trainee')
+  await kutuphaneKaydi(ADLAR.personelSlug, personelKaydiBasligi, 'staff')
 
   /* -- Fotoğraf albümü: modal (lightbox) senaryosu için ------------------- */
   /*
@@ -376,7 +386,7 @@ export const tohumla = async (): Promise<TohumSonucu> => {
 
   const albumBasligi = ADLAR.album
   const albumSlug = ADLAR.albumSlug
-  await kutuphaneKaydi('saha-fotograflari', albumBasligi, 'public', {
+  await kutuphaneKaydi(ADLAR.albumSlug, albumBasligi, 'public', {
     resourceType: 'photo-album',
     gallery: gorseller.map((gorsel) => gorsel.id),
   })
