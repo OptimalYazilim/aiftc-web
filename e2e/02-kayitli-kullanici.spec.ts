@@ -125,10 +125,20 @@ test.describe('Kayıtlı kullanıcı akışı', () => {
       günlüğünde `MISSING_MESSAGE: contact.contactPageLink (tr)` satırı
       geçtiği için görüldü — arayüze bakan hiçbir iddia onu yakalamamıştı.
 
-      Aşağıdaki iki satır birlikte çalışır: metnin DOĞRU hâli görünmeli VE
-      anahtar yolu ekranda hiç geçmemeli.
+      NÖBETÇİ NEDEN BAĞLANTI METNİNİ ARTIK ARAMIYOR
+      Bu iddianın ilk hâli "İletişim sayfası ve form →" bağlantısının
+      görünmesini bekliyordu. Başvuru yaşam döngüsü profildeki o bağlantıyı
+      kaldırdı (yerini gerçek kayıtlar aldı); iddia ise `.first()` yüzünden
+      SESSİZCE altbilgideki aynı metinli bağlantıya kaydı ve profil hakkında
+      hiçbir şey söylemeden geçmeye devam etti. Yeniden tasarım altbilgideki
+      "→"yu metinden çıkarıp ikona çevirince kaza ortaya çıktı.
+
+      Artık var olmayan bir öğeyi aramak yerine kusurun KENDİSİ aranır:
+      sayfanın ana içeriğinde çözülmemiş bir anahtar yolu (`profile.…`,
+      `contact.…`) geçmemeli. İkinci satır aynı kontrolü tüm sayfada, eski
+      kusurun tam anahtarıyla tutar.
     */
-    await expect(page.getByRole('link', { name: 'İletişim sayfası ve form →' }).first()).toBeVisible()
+    await expect(page.locator('#main-content')).not.toContainText(/\b(profile|contact)\.[a-z][A-Za-z]*/)
     await expect(page.getByText(/contact.contactPageLink/)).toHaveCount(0)
   })
 })
