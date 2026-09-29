@@ -25,6 +25,36 @@ import { buildPortalLink } from './externalLinks'
  * Portal `ExternalServices` global'inde `live` yapıldığı anda bağlantı kod
  * değişikliği gerekmeden geri gelir. `coming-soon`, `maintenance` ve
  * `hidden` durumlarında listeye hiç girmez.
+ *
+ * ---------------------------------------------------------------------------
+ * İKİ AYRI ANAHTAR, İKİ AYRI SORU
+ * ---------------------------------------------------------------------------
+ * Personel girişi için editörün elinde BİRBİRİNDEN BAĞIMSIZ iki ayar var ve
+ * karıştırılmamalıdır:
+ *
+ *   portal.status                  → "Bu servis hangi durumda?"
+ *                                    (yayında / yakında / bakımda / gizli)
+ *   portal.showStaffLoginInHeader  → "Üst menüde görünsün mü?"
+ *
+ * Öğe başlıkta ancak İKİSİ BİRDEN izin verirse görünür: portal `live` VE
+ * anahtar açık. İkincisi YALNIZCA BAŞLIĞI ilgilendirir. Portal `live` olsa
+ * bile kurum onu üst şeritte duyurmak istemeyebilir (örneğin bağlantı yalnızca
+ * kurum içi dolaşımda paylaşılıyorsa). Tersi de geçerli: anahtar kapalıyken
+ * servisin durumu değişmez, yalnızca başlıkta görünmez. Portal `live` değilken
+ * anahtarın görünür bir etkisi olmaz — öğe zaten yukarıdaki kurum kararıyla
+ * listeye girmez.
+ *
+ * ---------------------------------------------------------------------------
+ * ANAHTAR NEDEN BURADA UYGULANIYOR
+ * ---------------------------------------------------------------------------
+ * `buildPortalLink()` (lib/externalLinks.ts) DEĞİL, burası. O fonksiyon
+ * portalın adresini çözer ve EĞİTİM BAŞVURULARI da onu kullanır
+ * (`resolveApplicationHref`, `applicationTarget.type = 'portal'`). Anahtarı
+ * oraya koymak, "üst menüde gösterme" tercihinin eğitim künyesindeki başvuru
+ * düğmesini de sessizce kırması demek olurdu — editörün sormadığı bir şey.
+ *
+ * Burada ise liste TEK YERDE kurulduğu için anahtar hem masaüstü şeridini hem
+ * mobil menü panelini birlikte kapsar; ikisi ayrılamaz.
  * ============================================================================
  */
 
@@ -46,6 +76,20 @@ export const buildPortalLinks = (
 ): PortalLink[] => {
   const portal = buildPortalLink(services, { kind: 'login' })
 
+  /*
+    `!== false` — `=== true` DEĞİL. Bilinçli.
+
+    Alanın şemadaki varsayılanı `true` (bkz. globals/ExternalServices.ts), ama
+    bu global alan eklenmeden ÖNCE kaydedilmişse değer veritabanında `null`
+    olarak durur. `=== true` yazılsaydı o kayıtlarda öğe bir anda kaybolur ve
+    editör hiçbir şey değiştirmediği hâlde başlığın değiştiğini görürdü.
+
+    Dolayısıyla kural şudur: yalnızca AÇIKÇA kapatılmışsa gizlenir. Bu bir
+    görünürlük tercihi, güvenlik kapısı değil — belirsiz durumda mevcut
+    davranışı korumak doğrudur.
+  */
+  const basliktaGosterilsin = services.portal?.showStaffLoginInHeader !== false
+
   const project = (settings as { primaryProject?: ProjectLike | number | null }).primaryProject
   const projectData = project && typeof project === 'object' ? project : null
 
@@ -58,7 +102,14 @@ export const buildPortalLinks = (
           notice: null,
         }
       : null,
-    portal.available && portal.href
+    /*
+      İki koşul da sağlanmalı: portal yayında OLMALI (tıklanabilir bir adresi
+      var) ve editör onu üst menüde göstermeyi seçmiş OLMALI. Biri bile
+      sağlanmazsa öğe listeye HİÇ girmez — "gizli ama DOM'da duruyor" gibi bir
+      ara hâl üretilmez, çünkü öyle bir öğe ekran okuyucuya ve klavyeye
+      görünmeye devam ederdi.
+    */
+    portal.available && portal.href && basliktaGosterilsin
       ? {
           href: portal.href,
           label: options.staffLoginLabel,
