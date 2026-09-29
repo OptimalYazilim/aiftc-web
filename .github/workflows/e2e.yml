@@ -151,7 +151,7 @@ jobs:
           # alanı olmadığı için burada açıkça verilir.
           version: 11.25.0
 
-      - name: Node.js 20 kur
+      - name: Node.js 22 kur
         uses: actions/setup-node@v4
         with:
           node-version: '22'
