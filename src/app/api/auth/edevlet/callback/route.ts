@@ -6,13 +6,13 @@ import { isLocale, type Locale } from '@/i18n/locales'
 import { authHref, href as routeHref } from '@/i18n/routes'
 import {
   EDEVLET_STATE_COOKIE,
-  edevletKullanilabilir,
   kimlikOzeti,
   mockModuAktif,
   rastgeleParola,
   stateEslesiyor,
   tcknBicimiGecerli,
 } from '@/lib/edevlet'
+import { edevletSitedeAcik } from '@/lib/edevletSite'
 import { payloadClient } from '@/lib/queries'
 import { hizSinirinaBak, limitYaniti } from '@/lib/rateLimit'
 
@@ -199,7 +199,7 @@ const veriOku = async (
 }
 
 const isle = async (request: NextRequest) => {
-  if (!edevletKullanilabilir()) {
+  if (!(await edevletSitedeAcik())) {
     return new NextResponse(null, { status: 404 })
   }
 

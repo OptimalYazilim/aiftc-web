@@ -293,6 +293,43 @@ dbName: 'feat_cols',
         {
           label: { tr: 'Diğer Sistemler', en: 'Other systems', ru: 'Другие системы' },
           fields: [
+            /*
+              VATANDAŞ e-DEVLET GİRİŞİ — KURUM KARARIYLA VARSAYILAN KAPALI
+              29.09.2026 toplantısı: merkez yasal olarak vatandaşa eğitim
+              vermediği için vatandaşın e-Devlet ile giriş yapmasına gerek
+              yok. Akış SİLİNMEDİ, GİZLENDİ; ileride vatandaş eğitimleri
+              açılırsa editör buradan geri açar.
+
+              Anahtar yalnızca düğmeyi değil UÇLARI da kapatır
+              (lib/edevletSite.ts): gizli bir düğmenin arkasında açık kalan
+              bir `/api/auth/edevlet/login`, "kapalı" denen bir girişin hâlâ
+              çalışması demek olurdu. Açık olsa bile akış ancak kum havuzu ya
+              da gerçek kapı yapılandırılmışsa çalışır (lib/edevlet.ts).
+            */
+            {
+              name: 'edevlet',
+              type: 'group',
+              label: { tr: 'e-Devlet Girişi', en: 'e-Devlet sign-in', ru: 'Вход через e-Devlet' },
+              fields: [
+                {
+                  name: 'citizenLoginEnabled',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  label: {
+                    tr: 'Vatandaş e-Devlet girişini göster',
+                    en: 'Show citizen e-Devlet sign-in',
+                    ru: 'Показывать вход граждан через e-Devlet',
+                  },
+                  admin: {
+                    description: {
+                      tr: 'Kapalıyken giriş sayfasında e-Devlet düğmesi görünmez ve e-Devlet uçları 404 döner. Kurum kararıyla (29.09.2026) kapalıdır; vatandaş eğitimleri açılırsa işaretleyin.',
+                      en: 'When off, the e-Devlet button is hidden and its endpoints return 404. Off by institutional decision (29 Sep 2026).',
+                      ru: 'Если выключено, кнопка e-Devlet скрыта, а её адреса возвращают 404.',
+                    },
+                  },
+                },
+              ],
+            },
             {
               name: 'virtualClassroom',
               type: 'group',

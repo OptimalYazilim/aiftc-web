@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { EdevletMockForm } from '@/components/auth/EdevletMockForm'
 import { isLocale, type Locale } from '@/i18n/locales'
 import { mockModuAktif } from '@/lib/edevlet'
+import { edevletSitedeAcik } from '@/lib/edevletSite'
 
 /**
  * e-DEVLET KUM HAVUZU EKRANI  (yalnızca yerel geliştirme)
@@ -79,7 +80,7 @@ const tek = (deger: string | string[] | undefined): string =>
 export default async function EdevletMockPage({ params, searchParams }: Props) {
   const { locale } = await params
   if (!isLocale(locale)) notFound()
-  if (!mockModuAktif()) notFound()
+  if (!mockModuAktif() || !(await edevletSitedeAcik())) notFound()
 
   setRequestLocale(locale)
 

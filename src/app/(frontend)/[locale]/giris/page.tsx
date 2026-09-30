@@ -6,7 +6,8 @@ import { LoginForm } from '@/components/auth/LoginForm'
 import { PageHero } from '@/components/ui/PageHero'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { AUTH_ROUTES } from '@/i18n/routes'
-import { edevletKullanilabilir } from '@/lib/edevlet'
+import { mockModuAktif } from '@/lib/edevlet'
+import { edevletSitedeAcik } from '@/lib/edevletSite'
 import { buildMetadata } from '@/lib/metadata'
 
 /**
@@ -98,7 +99,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
     o değişkenler `NEXT_PUBLIC_*` DEĞİLDİR ve istemciye gitmemelidir. Form
     yalnızca sonucu (bir boolean) alır.
   */
-  const edevletAktif = edevletKullanilabilir()
+  const edevletAktif = await edevletSitedeAcik()
 
   return (
     <>
@@ -112,7 +113,12 @@ export default async function LoginPage({ params, searchParams }: Props) {
           taranabildiği genişlik.
         */}
         <div className="max-w-md">
-          <LoginForm locale={locale} edevletAktif={edevletAktif} edevletHata={edevletHata} />
+          <LoginForm
+            locale={locale}
+            edevletAktif={edevletAktif}
+            edevletHata={edevletHata}
+            edevletKumHavuzu={mockModuAktif()}
+          />
         </div>
       </div>
     </>

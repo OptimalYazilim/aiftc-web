@@ -567,7 +567,6 @@
     "groupCredentials": "Sign-in details",
     "orDivider": "or",
     "edevletSubmit": "Sign in with e-Devlet",
-    "edevletNotice": "Sign-in through the e-Devlet gateway is not active yet. The option will open here once it is ready; for now, please use your e-mail address and password.",
     "edevletSandboxNotice": "DEVELOPMENT MODE: e-Devlet sign-in currently runs through a sandbox flow and does not connect to the real e-Devlet gateway. This option appears only in a local development environment.",
     "edevletErrorTitle": "e-Devlet sign-in could not be completed",
     "edevletErrorEmailTaken": "This e-mail address already belongs to an account. For security reasons accounts are not merged automatically by e-mail: please sign in with your e-mail address and password.",

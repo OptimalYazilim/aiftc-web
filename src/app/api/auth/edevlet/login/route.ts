@@ -4,11 +4,11 @@ import {
   EDEVLET_GERCEK_ALANLAR,
   EDEVLET_STATE_COOKIE,
   EDEVLET_STATE_OMRU_SN,
-  edevletKullanilabilir,
   gercekKapiHazir,
   mockModuAktif,
   stateUret,
 } from '@/lib/edevlet'
+import { edevletSitedeAcik } from '@/lib/edevletSite'
 import { isLocale, type Locale } from '@/i18n/locales'
 
 /**
@@ -52,7 +52,7 @@ export const GET = async (request: NextRequest) => {
     403 yerine 404: yapılandırılmamış bir entegrasyonun VARLIĞINI duyurmanın
     kimseye faydası yok, tarama yapan birine yol göstermekten başka.
   */
-  if (!edevletKullanilabilir()) {
+  if (!(await edevletSitedeAcik())) {
     return new NextResponse(null, { status: 404 })
   }
 

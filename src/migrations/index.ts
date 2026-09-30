@@ -10,6 +10,7 @@ import * as migration_20260907_192905_commerce_abonelik_ve_teklifler from './202
 import * as migration_20260926_122952_edevlet_subject from './20260926_122952_edevlet_subject';
 import * as migration_20260928_061412_registrations from './20260928_061412_registrations';
 import * as migration_20260928_061500_registrations_varsayilan_ve_veri from './20260928_061500_registrations_varsayilan_ve_veri';
+import * as migration_20260930_091923_edevlet_vatandas_anahtari from './20260930_091923_edevlet_vatandas_anahtari';
 
 export const migrations = [
   {
@@ -71,5 +72,10 @@ export const migrations = [
     up: migration_20260928_061500_registrations_varsayilan_ve_veri.up,
     down: migration_20260928_061500_registrations_varsayilan_ve_veri.down,
     name: '20260928_061500_registrations_varsayilan_ve_veri'
+  },
+  {
+    up: migration_20260930_091923_edevlet_vatandas_anahtari.up,
+    down: migration_20260930_091923_edevlet_vatandas_anahtari.down,
+    name: '20260930_091923_edevlet_vatandas_anahtari'
   },
 ];

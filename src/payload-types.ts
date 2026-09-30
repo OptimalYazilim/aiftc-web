@@ -3747,6 +3747,12 @@ export interface ExternalService {
     certificateVerifyPath?: string | null;
     showStaffLoginInHeader?: boolean | null;
   };
+  edevlet?: {
+    /**
+     * When off, the e-Devlet button is hidden and its endpoints return 404. Off by institutional decision (29 Sep 2026).
+     */
+    citizenLoginEnabled?: boolean | null;
+  };
   /**
    * Spec EK-2 general provisions. EK-1 only links to it.
    */
@@ -4110,6 +4116,11 @@ export interface ExternalServicesSelect<T extends boolean = true> {
         applicationPath?: T;
         certificateVerifyPath?: T;
         showStaffLoginInHeader?: T;
+      };
+  edevlet?:
+    | T
+    | {
+        citizenLoginEnabled?: T;
       };
   virtualClassroom?:
     | T

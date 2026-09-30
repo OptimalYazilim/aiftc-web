@@ -105,9 +105,10 @@ export const LoginForm: React.FC<{
    * (bu projede bir kez ölçüldü ve siteyi derlenemez hâle getirmişti).
    */
   edevletHata?: string | null
-}> = ({ locale, edevletAktif = false, edevletHata = null }) => {
+  /** Akış kum havuzu kipinde mi? Yalnızca "GELİŞTİRME KİPİ" uyarısını gösterir. */
+  edevletKumHavuzu?: boolean
+}> = ({ locale, edevletAktif = false, edevletHata = null, edevletKumHavuzu = false }) => {
   const t = useTranslations('auth')
-  const tn = useTranslations('nav')
 
   /** Hata ozetinde kullanilacak GORUNUR etiketler (Madde 89). */
   const etiketler: Record<keyof Alanlar, string> = {
@@ -355,10 +356,14 @@ export const LoginForm: React.FC<{
 
       {/*
         ======================================================================
-        e-DEVLET İLE GİRİŞ — HENÜZ BAĞLI DEĞİL
+        e-DEVLET İLE GİRİŞ — KAPALIYKEN HİÇ GÖRÜNMEZ
         ======================================================================
-        Entegrasyon kurulmadı; düğme bir YER TUTUCUDUR ve bunu kullanıcıdan
-        gizlemez. "Yakında" rozeti görünür metindir, süslemesi değil.
+        Kurum kararı (29.09.2026): vatandaş e-Devlet girişi gizlenir; editör
+        `Dış Servisler → e-Devlet Girişi` anahtarıyla geri açabilir. Eskiden
+        burada "Yakında" rozetli pasif bir yer tutucu duruyordu; kurum girişin
+        duyurulmasını değil gizlenmesini istediği için blok artık — ayraç ve
+        açıklama dahil — hiç render edilmez. Karar sunucuda verilir
+        (`lib/edevletSite.ts`), uçlar da aynı kararla 404 döner.
 
         ----------------------------------------------------------------------
         RESMÎ AMBLEM KULLANILMADI — BİLİNÇLİ
@@ -368,69 +373,48 @@ export const LoginForm: React.FC<{
         olmayan bir entegrasyonu RESMÎ GÖRÜNDÜRÜR. Nötr bir kimlik kartı
         ikonu kullanıldı; gerçek entegrasyon kurulduğunda marka varlıkları
         kurumun kendi yönergesine göre eklenmelidir.
-
-        ----------------------------------------------------------------------
-        `disabled` DEĞİL `aria-disabled` — ERİŞİLEBİLİRLİK GEREKÇESİ
-        ----------------------------------------------------------------------
-        `disabled` özniteliği düğmeyi ODAK SIRASINDAN TAMAMEN ÇIKARIR: klavye
-        ve ekran okuyucu kullanıcısı böyle bir seçeneğin VAR OLDUĞUNU bile
-        öğrenemez. Oysa buradaki bilgi ("bu yol yakında açılacak") tam olarak
-        duyurulması gereken şey.
-
-        `aria-disabled` düğmeyi keşfedilebilir bırakır, "devre dışı" diye
-        duyurur ve `aria-describedby` ile gerekçeyi bağlar. Tıklama
-        `preventDefault` ile değil, `type="button"` ve işleyici olmamasıyla
-        etkisiz kalır — form GÖNDERİLMEZ.
-
-        Görsel olarak da pasif okunur: sönük metin + kesikli kenarlık. Bilgi
-        yalnızca renkle verilmez (Kontrol Listesi 47), rozet metni taşır.
       */}
-      <div className="space-y-3">
-        {/*
-          AYIRAÇ — iki giriş yolu arasındaki seçimi görünür kılar.
-          Çizgi `aria-hidden`: "veya" kelimesi metin olarak zaten okunuyor,
-          çizgiyi ayrıca duyurmanın faydası yok.
-        */}
-        <p className="flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-ink-500">
-          <span aria-hidden="true" className="h-px flex-1 bg-line" />
-          {t('orDivider')}
-          <span aria-hidden="true" className="h-px flex-1 bg-line" />
-        </p>
+      {edevletAktif ? (
+        <div className="space-y-3">
+          {/*
+            AYIRAÇ — iki giriş yolu arasındaki seçimi görünür kılar.
+            Çizgi `aria-hidden`: "veya" kelimesi metin olarak zaten okunuyor,
+            çizgiyi ayrıca duyurmanın faydası yok.
+          */}
+          <p className="flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-ink-500">
+            <span aria-hidden="true" className="h-px flex-1 bg-line" />
+            {t('orDivider')}
+            <span aria-hidden="true" className="h-px flex-1 bg-line" />
+          </p>
 
-        {/*
-          e-Devlet akışından dönen hata. `role="alert"` ile duyurulur: kullanıcı
-          bu sayfaya YENİDEN YÜKLENEREK döner, yani ekranda sessizce belirmiş
-          bir metni fark etmeyebilir.
+          {/*
+            e-Devlet akışından dönen hata. `role="alert"` ile duyurulur: kullanıcı
+            bu sayfaya YENİDEN YÜKLENEREK döner, yani ekranda sessizce belirmiş
+            bir metni fark etmeyebilir.
 
-          Mesaj koda göre seçilir; bilinmeyen kod jenerik metne düşer — sunucu
-          ileride yeni bir kod eklerse kullanıcı boş bir kutu değil, anlaşılır
-          bir cümle görür.
-        */}
-        {edevletHata ? (
-          <AuthNotice ton="hata" baslik={t('edevletErrorTitle')} rol="alert">
-            <p>
-              {edevletHata === 'eposta_kullanimda'
-                ? t('edevletErrorEmailTaken')
-                : edevletHata === 'hesap_askida'
-                  ? t('statusSuspended')
-                  : edevletHata === 'gercek_kapi_kurulmadi'
-                    ? t('edevletErrorNotConfigured')
-                    : t('edevletErrorGeneric')}
-            </p>
-          </AuthNotice>
-        ) : null}
+            Mesaj koda göre seçilir; bilinmeyen kod jenerik metne düşer — sunucu
+            ileride yeni bir kod eklerse kullanıcı boş bir kutu değil, anlaşılır
+            bir cümle görür.
+          */}
+          {edevletHata ? (
+            <AuthNotice ton="hata" baslik={t('edevletErrorTitle')} rol="alert">
+              <p>
+                {edevletHata === 'eposta_kullanimda'
+                  ? t('edevletErrorEmailTaken')
+                  : edevletHata === 'hesap_askida'
+                    ? t('statusSuspended')
+                    : edevletHata === 'gercek_kapi_kurulmadi'
+                      ? t('edevletErrorNotConfigured')
+                      : t('edevletErrorGeneric')}
+              </p>
+            </AuthNotice>
+          ) : null}
 
-        {/*
-          İKİ HÂL, TEK GÖRSEL DİL.
-          Akış açıkken düğme bir BAĞLANTIDIR (`<a>`), çünkü yaptığı şey başka
-          bir adrese GİTMEKTİR — form göndermek değil. Sunucu yönlendirmesiyle
-          çalışır; bu yüzden JavaScript kapalı olsa bile işler.
-
-          Akış kapalıyken eski yer tutucu aynen durur: `aria-disabled` ile
-          keşfedilebilir kalır ve gerekçesi `aria-describedby` ile bağlanır
-          (gerekçe aşağıdaki docblock'ta).
-        */}
-        {edevletAktif ? (
+          {/*
+            Düğme bir BAĞLANTIDIR (`<a>`), çünkü yaptığı şey başka bir adrese
+            GİTMEKTİR — form göndermek değil. Sunucu yönlendirmesiyle çalışır;
+            bu yüzden JavaScript kapalı olsa bile işler.
+          */}
           <a
             href={`/api/auth/edevlet/login?locale=${locale}`}
             className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-sm border border-line-strong bg-surface px-6 text-sm font-bold text-shell-900 transition-colors hover:bg-surface-alt focus-visible:bg-surface-alt"
@@ -438,27 +422,14 @@ export const LoginForm: React.FC<{
             <EdevletIkonu />
             {t('edevletSubmit')}
           </a>
-        ) : (
-          <button
-            type="button"
-            aria-disabled="true"
-            aria-describedby={edevletNotId}
-            className="inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-sm border border-dashed border-line-strong bg-surface px-6 text-sm font-bold text-ink-500"
-          >
-            <EdevletIkonu />
 
-            {t('edevletSubmit')}
-
-            <span className="rounded-sm bg-surface-alt px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-ink-600">
-              {tn('comingSoonBadge')}
-            </span>
-          </button>
-        )}
-
-        <p id={edevletNotId} className="text-xs leading-relaxed text-ink-500">
-          {edevletAktif ? t('edevletSandboxNotice') : t('edevletNotice')}
-        </p>
-      </div>
+          {edevletKumHavuzu ? (
+            <p id={edevletNotId} className="text-xs leading-relaxed text-ink-500">
+              {t('edevletSandboxNotice')}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {/*
         İKİ İKİNCİL YOL, TEK ŞERİTTE.
