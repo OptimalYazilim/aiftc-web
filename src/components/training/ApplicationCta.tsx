@@ -16,9 +16,10 @@ import { ApplicationCtaLink } from './ApplicationCtaLink'
 /**
  * BAŞVURU AKSİYONU  (Şartname 6.4, 12.2)
  * ============================================================================
- * KAPSAM KURALI — EK-1 başvuru FORMU barındırmaz. Kişisel veri toplanmaz;
- * ziyaretçi yalnızca yönetim portalına, harici bir adrese, e-postaya veya
- * iletişim sayfasına YÖNLENDİRİLİR (`applicationTarget`).
+ * HEDEF — `applicationTarget`. Varsayılan site içi başvuru formudur
+ * (`/basvuru`, kayıtlar panelde Registrations'ta yönetilir). Editör harici
+ * adres, portal veya e-posta da seçebilir. Künyenin kendisi form barındırmaz;
+ * düğme forma götürür.
  *
  * BUTON NE ZAMAN AKTİF?
  * Yalnızca eğitim durumu "Başvuruya açık" iken. Diğer tüm durumlarda buton
@@ -149,33 +150,23 @@ export const ApplicationCta = async ({
     elle aktarılır.
   */
   if (type === 'registration' || !applicationHref) {
-    const contactHref = trainingId
+    const basvuruHref = trainingId
       ? `${href('application', locale)}?egitim=${trainingId}`
       : href('application', locale)
 
     /*
-      BUTON OTURUMA GÖRE DEĞİŞİR  (UX — aynı düğme iki kitleye hitap edemez)
-      --------------------------------------------------------------------
-      Önceki sürümde herkes aynı "Bilgi Al" düğmesini görüyordu. Giriş yapmış
-      bir katılımcı için bu YANLIŞ EYLEMDİR: o kişi zaten kayıtlıdır, aradığı
-      şey eğitimin materyalidir.
+      BİRİNCİL DÜĞME HERKESE "BAŞVUR" (kurum kararı, 29.09.2026) — personel
+      giriş yaparak başvurur; oturum açmış kişiye materyal bağlantısı EK
+      olarak gösterilir. Ayrıntı: ApplicationCtaLink docblock'u.
 
-        oturum YOK → "Ön Başvuru Yap"            iletişim formuna gider
-        oturum VAR → "Eğitim Materyallerine Git" kütüphaneye gider
-
-      Karar İSTEMCİDE verilir (çerez httpOnly'dir); bu sunucu bileşeni iki
-      olasılığı da hazırlar, seçimi `ApplicationCtaLink` yapar. Görsel
-      sınıflar iki hâlde de AYNI — değişen yalnızca metin ve hedef.
-
-      Hedef, egitimin materyallerine SUZULMUS kutuphanedir
-      (`?egitim=<slug>`). Kutuphane sayfasi artik oturumu sunucuda
-      okuyor, yani katilimci kendi seviyesindeki kayitlari da gorur.
+      Materyal hedefi, eğitimin materyallerine SÜZÜLMÜŞ kütüphanedir
+      (`?egitim=<slug>`); kütüphane oturumu sunucuda okur.
     */
     return (
       <div>
         <ApplicationCtaLink
-          bilgiHref={contactHref}
-          bilgiEtiketi={t('preApply')}
+          basvuruHref={basvuruHref}
+          basvuruEtiketi={t('apply')}
           materyalHref={
             trainingSlug
               ? `${href('library', locale)}?egitim=${encodeURIComponent(trainingSlug)}`

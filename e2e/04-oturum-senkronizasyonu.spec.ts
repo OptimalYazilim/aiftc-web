@@ -68,26 +68,33 @@ test.describe('Oturum senkronizasyonu', () => {
     expect(govde.user ?? null, 'Çıkıştan sonra sunucu hâlâ bir oturum görüyor.').toBeNull()
   })
 
-  test('eğitim künyesindeki CTA, oturum durumuna göre değişir', async ({ page }) => {
-    /* -- oturumsuz: ön başvuruya çağırır -------------------------------- */
+  test('künyede BAŞVUR herkese görünür, oturumluya materyal bağlantısı EKLENİR', async ({ page }) => {
+    /*
+      Kurum kararı (29.09.2026): personel giriş yaparak başvurur. Önceki
+      davranış oturumluya başvuru düğmesini HİÇ göstermiyordu; bu test o
+      gerilemeyi yakalar — başvuru düğmesi iki hâlde de ölçülür.
+    */
+    /* -- oturumsuz: yalnızca başvuru ------------------------------------ */
     await page.goto(EGITIM_ADRESI)
 
-    const onBasvuru = page.getByRole('link', { name: 'Ön Başvuru Yap' })
-    await expect(onBasvuru).toBeVisible()
-    /* Hedef: iletişim formu, eğitim ön seçili. */
+    const basvur = page.getByRole('link', { name: 'Başvur', exact: true })
+    await expect(basvur).toBeVisible()
     /* Hedef: site içi başvuru formu, eğitim ön seçili (Registrations akışı). */
-    await expect(onBasvuru).toHaveAttribute('href', /\/tr\/basvuru\?egitim=\d+/)
+    await expect(basvur).toHaveAttribute('href', /\/tr\/basvuru\?egitim=\d+/)
     await expect(page.getByRole('link', { name: 'Eğitim Materyallerine Git' })).toHaveCount(0)
 
-    /* -- oturumlu: materyale götürür ------------------------------------ */
+    /* -- oturumlu: başvuru YERİNDE, materyal bağlantısı ek olarak ------- */
     await girisYap(page, KATILIMCI)
     await page.goto(EGITIM_ADRESI)
 
+    await expect(page.getByRole('link', { name: 'Başvur', exact: true })).toHaveAttribute(
+      'href',
+      /\/tr\/basvuru\?egitim=\d+/,
+    )
     const materyal = page.getByRole('link', { name: 'Eğitim Materyallerine Git' })
     await expect(materyal).toBeVisible()
     /* Hedef: kütüphane, bu eğitimin süzgeciyle. */
     await expect(materyal).toHaveAttribute('href', /\/tr\/kutuphane\?egitim=/)
-    await expect(page.getByRole('link', { name: 'Ön Başvuru Yap' })).toHaveCount(0)
   })
 
   test('CTA hedefi kütüphanede GERÇEKTEN süzülmüş bir liste açar', async ({ page }) => {

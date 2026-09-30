@@ -311,6 +311,18 @@ enumName: 'enum_tp_custom_status',
                   */
                   defaultValue: 'registration',
                   label: { tr: 'Yönlendirme Türü', en: 'Type', ru: 'Тип' },
+                  /*
+                    'contact' YENİ SEÇİMDE GÖRÜNMEZ (kurum kararı, 29.09.2026:
+                    künyedeki "İletişim birimine yazın" düğmesi "Başvur" olur).
+                    Değer enum'dan SİLİNMEDİ: silmek göç + veri dönüşümü ister
+                    ve bu değeri taşıyan eski bir kayıt panelde açılamaz hâle
+                    gelirdi. Kayıt zaten 'contact' ise seçenek o kayıtta
+                    görünmeye devam eder, editör onu başka türe çevirebilir.
+                  */
+                  filterOptions: ({ options, siblingData }) =>
+                    (siblingData as { type?: string } | undefined)?.type === 'contact'
+                      ? options
+                      : options.filter((o) => (typeof o === 'string' ? o : o.value) !== 'contact'),
                   options: [
                     {
                       value: 'registration',

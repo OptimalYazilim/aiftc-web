@@ -7,7 +7,7 @@ import { ADLAR, payloadIstemcisi, TEST_ONEKI } from './yardimcilar/tohum'
  * ============================================================================
  * Eğitim künyesinden başlayıp KARAR BEKLEYEN bir kayda ulaşan zincir:
  *
- *   eğitim sayfası → "Ön Başvuru Yap" → /basvuru (eğitim ön seçili)
+ *   eğitim sayfası → "Başvur" → /basvuru (eğitim ön seçili)
  *   → registrations kaydı (status: pending)
  *
  * Bu senaryo bir dönem iletişim formuna gidiyordu ve kayıt `form-requests`
@@ -47,8 +47,8 @@ test.describe('Ziyaretçi eğitim başvurusu', () => {
   test('eğitim künyesindeki düğme, eğitimi ön seçili başvuru formuna götürür', async ({ page }) => {
     await page.goto(EGITIM_ADRESI)
 
-    /* Oturumsuz ziyaretçi "Ön Başvuru Yap" görür (oturumlu hâl senaryo 4'te). */
-    const dugme = page.getByRole('link', { name: 'Ön Başvuru Yap' })
+    /* Oturumsuz ziyaretçi "Başvur" görür (oturumlu hâl senaryo 4'te). */
+    const dugme = page.getByRole('link', { name: 'Başvur', exact: true })
     await expect(dugme).toBeVisible()
     await dugme.click()
 
@@ -63,7 +63,7 @@ test.describe('Ziyaretçi eğitim başvurusu', () => {
 
   test('KVKK onayı olmadan gönderim SUNUCUDA reddedilir', async ({ page }) => {
     await page.goto(EGITIM_ADRESI)
-    await page.getByRole('link', { name: 'Ön Başvuru Yap' }).click()
+    await page.getByRole('link', { name: 'Başvur', exact: true }).click()
 
     const eposta = `${TEST_ONEKI}-riza@example.test`
     await page.getByLabel(/^Ad Soyad/).fill('E2E Rıza Testi')
@@ -94,7 +94,7 @@ test.describe('Ziyaretçi eğitim başvurusu', () => {
 
   test('eksiksiz başvuru gönderilir ve KARAR BEKLEYEN KAYIT OLUŞUR', async ({ page }) => {
     await page.goto(EGITIM_ADRESI)
-    await page.getByRole('link', { name: 'Ön Başvuru Yap' }).click()
+    await page.getByRole('link', { name: 'Başvur', exact: true }).click()
     await expect(page).toHaveURL(/\/tr\/basvuru\?/)
 
     const eposta = `${TEST_ONEKI}-basvuru@example.test`
@@ -152,7 +152,7 @@ test.describe('Ziyaretçi eğitim başvurusu', () => {
     })
 
     await page.goto(EGITIM_ADRESI)
-    await page.getByRole('link', { name: 'Ön Başvuru Yap' }).click()
+    await page.getByRole('link', { name: 'Başvur', exact: true }).click()
     await page.getByLabel(/^Ad Soyad/).fill('E2E İkinci Deneme')
     await page.getByLabel(/^E-posta adresi/).fill(eposta)
     await page.getByRole('checkbox').check()
@@ -164,7 +164,7 @@ test.describe('Ziyaretçi eğitim başvurusu', () => {
 
   test('bal küpü dolduğunda arayüz başarılı der ama KAYIT YAZILMAZ', async ({ page }) => {
     await page.goto(EGITIM_ADRESI)
-    await page.getByRole('link', { name: 'Ön Başvuru Yap' }).click()
+    await page.getByRole('link', { name: 'Başvur', exact: true }).click()
 
     const eposta = `${TEST_ONEKI}-bot@example.test`
     await page.getByLabel(/^Ad Soyad/).fill('E2E Bot')

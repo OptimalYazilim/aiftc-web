@@ -6,58 +6,60 @@ import React from 'react'
 import { useOturum } from '@/components/account/SessionProvider'
 
 /**
- * BAŞVURU AKSİYONU — OTURUMA GÖRE DEĞİŞEN BAĞLANTI
+ * BAŞVURU AKSİYONU — BİRİNCİL DÜĞME HERKESE "BAŞVUR"
  * ============================================================================
- * Eğitim künyesindeki birincil düğme, ziyaretçiye göre iki farklı şey ifade
- * eder:
+ * Kurum kararı (29.09.2026): eğitimlere OGM personeli GİRİŞ YAPARAK başvurur.
+ * Önceki sürüm oturum açmış kişiye başvuru düğmesi yerine "Eğitim
+ * Materyallerine Git" gösteriyordu — yani eğitime başvurması beklenen kitle
+ * başvuru düğmesini hiç görmüyordu. Artık:
  *
- *   oturum YOK  → "Bilgi Al"                  iletişim sayfasına gider
- *   oturum VAR  → "Eğitim Materyallerine Git" kütüphaneye gider
+ *   oturum YOK → [Başvur]
+ *   oturum VAR → [Başvur] + altında ikincil "Eğitim Materyallerine Git"
  *
- * Gerekçe: giriş yapmış bir katılımcı için "Bilgi Al" yanlış eylemdir —
- * zaten kayıtlıdır, aradığı şey eğitimin materyalidir. Aynı düğmenin iki
- * kitleye aynı şeyi söylemesi, ikisinden birini her zaman yanlış yere
- * götürür.
+ * Birincil eylem iki hâlde de aynıdır; oturum yalnızca EK bir bağlantı açar.
+ * Başvuru formu oturumu kendisi okur ve kaydı hesaba bağlar (basvuru/actions).
  *
  * ---------------------------------------------------------------------------
  * NEDEN AYRI BİR İSTEMCİ BİLEŞENİ
  * ---------------------------------------------------------------------------
  * `ApplicationCta` bir SUNUCU bileşenidir: başvuru hedefini, eğitim durumunu
  * ve harici servis ayarlarını çözer. Oturum ise yalnızca istemcide
- * bilinebilir — çerez `httpOnly`dir (bkz. SessionProvider). Sunucu bileşenini
- * tümden istemciye çevirmek, o veri çözümlemesini de tarayıcıya taşırdı.
+ * bilinebilir — çerez `httpOnly`dir (bkz. SessionProvider). Ayrım en dar
+ * yerde yapılır: sunucu iki bağlantıyı da hazırlar, bu bileşen yalnızca
+ * ikincisinin basılıp basılmayacağına karar verir.
  *
- * Bu yüzden ayrım en dar yerde yapılır: sunucu İKİ OLASILIĞI DA hazırlar,
- * bu bileşen yalnızca hangisinin basılacağına karar verir.
- *
- * ---------------------------------------------------------------------------
- * OKUNURKEN "BİLGİ AL" GÖSTERİLİR — BİLİNÇLİ
- * ---------------------------------------------------------------------------
- * Oturum `/api/users/me` yanıtlayana kadar bilinmez. O ana kadar oturumsuz
- * hâl basılır: ziyaretçilerin ezici çoğunluğu için zaten doğrudur ve yanlış
- * yöne düşen kullanıcı daha AZ yetkili seçeneği görür. Tersi — henüz
- * doğrulanmamış bir ziyaretçiye "Materyallere Git" demek — onu erişemeyeceği
- * bir yere yollardı.
- *
- * Görsel sınıflar İKİ HÂLDE DE AYNIDIR; değişen yalnızca metin ve hedeftir.
+ * Oturum `/api/users/me` yanıtlayana kadar bilinmez; o ana kadar ikincil
+ * bağlantı basılmaz — henüz doğrulanmamış birine materyal bağlantısı
+ * göstermek, onu erişemeyeceği bir yere yollamak olurdu.
  * ============================================================================
  */
 export const ApplicationCtaLink: React.FC<{
-  /** Oturumsuz hâl: iletişim sayfası (varsa eğitim ön seçimiyle). */
-  bilgiHref: string
-  bilgiEtiketi: string
-  /** Oturumlu hâl: kütüphane. */
+  /** Site içi başvuru formu (varsa eğitim ön seçimiyle). */
+  basvuruHref: string
+  basvuruEtiketi: string
+  /** Oturumluya ek olarak gösterilen kütüphane bağlantısı. */
   materyalHref: string
   materyalEtiketi: string
   className: string
-}> = ({ bilgiHref, bilgiEtiketi, materyalHref, materyalEtiketi, className }) => {
+}> = ({ basvuruHref, basvuruEtiketi, materyalHref, materyalEtiketi, className }) => {
   const { durum } = useOturum()
-  const oturumVar = durum === 'var'
 
   return (
-    <Link href={oturumVar ? materyalHref : bilgiHref} className={className}>
-      {oturumVar ? materyalEtiketi : bilgiEtiketi}
-    </Link>
+    <>
+      <Link href={basvuruHref} className={className}>
+        {basvuruEtiketi}
+      </Link>
+      {durum === 'var' ? (
+        <p className="mt-3 text-center text-sm">
+          <Link
+            href={materyalHref}
+            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
+          >
+            {materyalEtiketi}
+          </Link>
+        </p>
+      ) : null}
+    </>
   )
 }
 
