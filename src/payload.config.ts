@@ -470,6 +470,19 @@ export default buildConfig({
     searchPlugin({
       collections: ['pages', 'training-programs', 'training-topics', 'news', 'simulation-systems', 'faqs', 'library-resources'],
       localize: true,
+      /*
+        SSS'LERİN BAŞLIĞI `question` ALANINDADIR — ÖLÇÜLDÜ (2026-09-30).
+        Eklenti dizin başlığını kaynak kaydın `title` alanından kopyalar;
+        SSS'lerde böyle bir alan yok. Dizindeki SSS kayıtları başlıksız
+        kalıyordu; arama sayfası (arama/page.tsx) başlıkta aradığı ve başlıksız
+        satırları elediği için SSS'ler aramada HİÇ çıkmıyordu.
+        Eklenti `originalDoc`u eşitlenen dilde getirir; soru o dilde yazılır.
+        Mevcut kayıtlar için: Arama Dizini → Yeniden dizinle (SSS).
+      */
+      beforeSync: ({ originalDoc, searchDoc }) =>
+        searchDoc.doc.relationTo === 'faqs' && !searchDoc.title
+          ? { ...searchDoc, title: (originalDoc as { question?: string | null }).question ?? '' }
+          : searchDoc,
       defaultPriorities: {
         'training-programs': 30,
         'training-topics': 25,
