@@ -147,7 +147,9 @@
     "filteredByTraining": "Showing only materials for “{egitim}”.",
     "showAllRecords": "Show all records",
     "noMaterialsForTraining": "No material has been linked to this training yet. Clear the filter to see the whole library.",
-    "homeTotalLabel": "records available"
+    "homeTotalLabel": "records available",
+    "filterByCategory": "Category",
+    "allCategories": "All"
   },
   "training": {
     "statusLabel": "Training status",

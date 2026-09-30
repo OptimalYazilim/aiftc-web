@@ -458,6 +458,26 @@ export const LibraryResources: CollectionConfig = {
             },
             {
               /**
+               * KATEGORİ — BİRİNCİL SINIFLANDIRMA (kurum kararı, 29.09.2026).
+               * Kütüphane bütün OGM'yi kapsar ve her içerik bir eğitime bağlı
+               * değildir; içerik ana başlık / alt başlık yapısıyla sınıflanır
+               * (LibraryCategories). Eğitim ve eğitim konusu ilişkileri
+               * aşağıda İSTEĞE BAĞLI olarak kalır.
+               */
+              name: 'category',
+              type: 'relationship',
+              relationTo: 'library-categories',
+              label: { tr: 'Kategori', en: 'Category', ru: 'Категория' },
+              admin: {
+                description: {
+                  tr: 'Alt başlık varsa onu, yoksa ana başlığı seçin. Başlık listesi "Kütüphane Kategorileri"nden yönetilir.',
+                  en: 'Pick the sub-heading if there is one, otherwise the main heading.',
+                  ru: 'Выберите подраздел, если он есть, иначе основной раздел.',
+                },
+              },
+            },
+            {
+              /**
                * EĞİTİM BAĞLANTISI — `TrainingPrograms.libraryCollectionKey`
                * İLE KARIŞTIRILMAMALIDIR.
                *
@@ -479,8 +499,8 @@ export const LibraryResources: CollectionConfig = {
               label: { tr: 'İlgili Eğitimler', en: 'Related trainings', ru: 'Связанные обучения' },
               admin: {
                 description: {
-                  tr: 'Bu yayının materyali olduğu eğitim programları.',
-                  en: 'Training programmes this publication belongs to.',
+                  tr: 'Yalnızca içerik bir eğitimin materyaliyse doldurun; eğitimle ilgisi olmayan içerikte boş bırakın.',
+                  en: 'Fill in only if the item is material of a training; leave empty otherwise.',
                   ru: 'Программы обучения, к которым относится публикация.',
                 },
               },
@@ -514,8 +534,8 @@ export const LibraryResources: CollectionConfig = {
               label: { tr: 'İlgili Eğitim Konuları', en: 'Related training topics', ru: 'Связанные темы' },
               admin: {
                 description: {
-                  tr: 'Tematik filtreler bu alandan üretilir. Eğitim kataloğuyla aynı konu listesidir.',
-                  en: 'Drives the thematic filters; same list as the training catalogue.',
+                  tr: 'İsteğe bağlı. İçerik bir eğitim konusuyla ilgiliyse seçin; kütüphanedeki "Konu" süzgeci bu alandan üretilir. Asıl sınıflandırma "Kategori" alanıdır.',
+                  en: 'Optional. Pick it if the item relates to a training topic; the primary classification is Category.',
                   ru: 'Определяет тематические фильтры.',
                 },
               },

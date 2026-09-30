@@ -130,6 +130,14 @@ export type LibraryResourceItem = {
   topicIds: (string | number)[]
   /** Aramaya dahil edilen konu adları. */
   topicTitles: string[]
+  /**
+   * Kategori yolu: [ana başlık id, alt başlık id] ya da yalnız [ana başlık id].
+   * Süzgeçte ana başlık seçilince alt başlıktaki içerik de eşleşsin diye
+   * yolun tamamı taşınır.
+   */
+  categoryPath: string[]
+  /** Aramada kategori adları da eşleşsin. */
+  categoryTitles: string[]
 }
 
 /**

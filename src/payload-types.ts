@@ -79,6 +79,7 @@ export interface Config {
     'gallery-albums': GalleryAlbum;
     media: Media;
     'document-files': DocumentFile;
+    'library-categories': LibraryCategory;
     'library-resources': LibraryResource;
     projects: Project;
     'subscription-plans': SubscriptionPlan;
@@ -109,6 +110,7 @@ export interface Config {
     'gallery-albums': GalleryAlbumsSelect<false> | GalleryAlbumsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'document-files': DocumentFilesSelect<false> | DocumentFilesSelect<true>;
+    'library-categories': LibraryCategoriesSelect<false> | LibraryCategoriesSelect<true>;
     'library-resources': LibraryResourcesSelect<false> | LibraryResourcesSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
     'subscription-plans': SubscriptionPlansSelect<false> | SubscriptionPlansSelect<true>;
@@ -1651,6 +1653,28 @@ export interface GalleryAlbum {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Main heading / sub-heading structure of the digital library. Pick a parent for a sub-heading; leave it empty for a main heading.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "library-categories".
+ */
+export interface LibraryCategory {
+  id: number;
+  title: string;
+  /**
+   * Empty = main heading. Only main headings can be chosen.
+   */
+  parent?: (number | null) | LibraryCategory;
+  /**
+   * Auto-generated from the title if left empty. If you change a published slug, add a 301 in Redirects.
+   */
+  slug: string;
+  order?: number | null;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Catalogue records for library publications. Upload the file under “Site documents” first, then link it here.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1734,7 +1758,11 @@ export interface LibraryResource {
    */
   identifier?: string | null;
   /**
-   * Training programmes this publication belongs to.
+   * Pick the sub-heading if there is one, otherwise the main heading.
+   */
+  category?: (number | null) | LibraryCategory;
+  /**
+   * Fill in only if the item is material of a training; leave empty otherwise.
    */
   relatedTrainings?: (number | TrainingProgram)[] | null;
   /**
@@ -1742,7 +1770,7 @@ export interface LibraryResource {
    */
   relatedProjects?: (number | Project)[] | null;
   /**
-   * Drives the thematic filters; same list as the training catalogue.
+   * Optional. Pick it if the item relates to a training topic; the primary classification is Category.
    */
   topics?: (number | TrainingTopic)[] | null;
   /**
@@ -2167,6 +2195,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'document-files';
         value: number | DocumentFile;
+      } | null)
+    | ({
+        relationTo: 'library-categories';
+        value: number | LibraryCategory;
       } | null)
     | ({
         relationTo: 'library-resources';
@@ -2849,6 +2881,19 @@ export interface DocumentFilesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "library-categories_select".
+ */
+export interface LibraryCategoriesSelect<T extends boolean = true> {
+  title?: T;
+  parent?: T;
+  slug?: T;
+  order?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "library-resources_select".
  */
 export interface LibraryResourcesSelect<T extends boolean = true> {
@@ -2870,6 +2915,7 @@ export interface LibraryResourcesSelect<T extends boolean = true> {
   countries?: T;
   keywords?: T;
   identifier?: T;
+  category?: T;
   relatedTrainings?: T;
   relatedProjects?: T;
   topics?: T;

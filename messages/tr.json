@@ -147,7 +147,9 @@
     "filteredByTraining": "Yalnızca “{egitim}” eğitimine ait materyaller gösteriliyor.",
     "showAllRecords": "Tüm kayıtları göster",
     "noMaterialsForTraining": "Bu eğitime bağlı bir materyal henüz eklenmemiş. Kütüphanenin tamamını görmek için süzgeci kaldırabilirsiniz.",
-    "homeTotalLabel": "kayıt erişime açık"
+    "homeTotalLabel": "kayıt erişime açık",
+    "filterByCategory": "Kategori",
+    "allCategories": "Tümü"
   },
   "training": {
     "statusLabel": "Eğitim durumu",

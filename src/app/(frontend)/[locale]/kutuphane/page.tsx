@@ -100,6 +100,26 @@ type TopicRef = { id: string | number; title?: string | null }
 const topicOf = (value: unknown): TopicRef | null =>
   value && typeof value === 'object' && 'id' in value ? (value as TopicRef) : null
 
+type CategoryRef = {
+  id: string | number
+  title?: string | null
+  order?: number | null
+  parent?: CategoryRef | number | string | null
+}
+
+/**
+ * Kaydın kategori yolu: [ana başlık, alt başlık] ya da yalnız [ana başlık].
+ * `depth: 2` sayesinde kategori ve üst başlığı dolu nesne olarak gelir; üst
+ * başlık kimlik olarak kalmışsa (okuma yetkisi, silinmiş kayıt) yol tek
+ * düğümle kalır ve kayıt yine kendi kategorisinde süzülür.
+ */
+const categoryPathOf = (value: unknown): CategoryRef[] => {
+  if (!value || typeof value !== 'object' || !('id' in value)) return []
+  const kat = value as CategoryRef
+  const ust = kat.parent && typeof kat.parent === 'object' ? kat.parent : null
+  return ust ? [ust, kat] : [kat]
+}
+
 /**
  * Albüm görselleri SUNUCUDA çözülür, istemciye ham Payload nesnesi gitmez.
  *
@@ -266,8 +286,43 @@ export default async function LibraryPage({ params, searchParams }: Props) {
       topicTitles: topics
         .map((topic) => topic.title)
         .filter((title): title is string => Boolean(title)),
+      categoryPath: categoryPathOf(doc.category).map((kat) => String(kat.id)),
+      categoryTitles: categoryPathOf(doc.category)
+        .map((kat) => kat.title)
+        .filter((title): title is string => Boolean(title)),
     }
   })
+
+  /**
+   * KATEGORİ SÜZGECİ
+   * Kayıtlardan toplanır (ayrı sorgu yok); kaydı olmayan başlık listelenmez.
+   * Ana başlığın sayacı alt başlıklarındaki kayıtları da içerir — süzgeç de
+   * öyle çalışır (`categoryPath`). Alt başlık "Ana › Alt" diye yazılır ki
+   * farklı ana başlıklardaki aynı adlı alt başlıklar karışmasın. Sıra: ana
+   * başlığın `order` değeri, sonra alt başlıklar ana başlığının hemen ardından.
+   */
+  const categoryCounts = new Map<
+    string,
+    { label: string; count: number; sira: [number, number, string] }
+  >()
+  for (const doc of result.docs) {
+    const yol = categoryPathOf(doc.category)
+    yol.forEach((kat, i) => {
+      const ana = yol[0]!
+      const key = String(kat.id)
+      const label = i === 0 ? (kat.title ?? '') : `${ana.title ?? ''} › ${kat.title ?? ''}`
+      if (!label.trim()) return
+      const onceki = categoryCounts.get(key)
+      categoryCounts.set(key, {
+        label,
+        count: (onceki?.count ?? 0) + 1,
+        sira: [ana.order ?? 100, i === 0 ? -Infinity : (kat.order ?? 100), label],
+      })
+    })
+  }
+  const categoryOptions: LibraryFilterOption[] = [...categoryCounts.entries()]
+    .sort(([, a], [, b]) => a.sira[0] - b.sira[0] || a.sira[1] - b.sira[1] || a.sira[2].localeCompare(b.sira[2], locale))
+    .map(([value, { label, count }]) => ({ value, label, count }))
 
   /**
    * TÜR FİLTRELERİ
@@ -352,7 +407,13 @@ export default async function LibraryPage({ params, searchParams }: Props) {
               {egitim ? t('noMaterialsForTraining') : t('emptyCollection')}
             </p>
           ) : (
-            <LibraryCatalog items={items} types={typeOptions} topics={topicOptions} locale={locale} />
+            <LibraryCatalog
+              items={items}
+              types={typeOptions}
+              topics={topicOptions}
+              categories={categoryOptions}
+              locale={locale}
+            />
           )}
         </div>
       </section>

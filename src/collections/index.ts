@@ -5,6 +5,7 @@ import { Faqs } from './Faqs'
 import { FormRequests } from './FormRequests'
 import { GalleryAlbums } from './GalleryAlbums'
 import { InternationalGuide } from './InternationalGuide'
+import { LibraryCategories } from './LibraryCategories'
 import { LibraryResources } from './LibraryResources'
 import { Media } from './Media'
 import { News } from './News'
@@ -41,6 +42,7 @@ export const collections: CollectionConfig[] = [
   GalleryAlbums,
   Media,
   DocumentFiles,
+  LibraryCategories,
   LibraryResources,
 
   // Kurumsal

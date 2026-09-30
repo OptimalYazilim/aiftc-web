@@ -12,6 +12,7 @@ import * as migration_20260928_061412_registrations from './20260928_061412_regi
 import * as migration_20260928_061500_registrations_varsayilan_ve_veri from './20260928_061500_registrations_varsayilan_ve_veri';
 import * as migration_20260930_091923_edevlet_vatandas_anahtari from './20260930_091923_edevlet_vatandas_anahtari';
 import * as migration_20260930_092850_basvuru_onay_epostasi from './20260930_092850_basvuru_onay_epostasi';
+import * as migration_20260930_100600_kutuphane_kategorileri from './20260930_100600_kutuphane_kategorileri';
 
 export const migrations = [
   {
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20260930_092850_basvuru_onay_epostasi.up,
     down: migration_20260930_092850_basvuru_onay_epostasi.down,
     name: '20260930_092850_basvuru_onay_epostasi'
+  },
+  {
+    up: migration_20260930_100600_kutuphane_kategorileri.up,
+    down: migration_20260930_100600_kutuphane_kategorileri.down,
+    name: '20260930_100600_kutuphane_kategorileri'
   },
 ];

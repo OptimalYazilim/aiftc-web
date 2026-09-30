@@ -62,16 +62,19 @@ type Props = {
   items: LibraryResourceItem[]
   types: LibraryFilterOption[]
   topics: LibraryFilterOption[]
+  /** Kütüphane kategorileri; alt başlık etiketi "Ana › Alt" biçimindedir. */
+  categories: LibraryFilterOption[]
   /** Kartın künye sayfası adresini üretebilmesi için gerekir. */
   locale: Locale
 }
 
-export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, locale }) => {
+export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, categories, locale }) => {
   const t = useTranslations('library')
 
   const [query, setQuery] = useState('')
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
   const searchId = useId()
 
@@ -85,6 +88,9 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, locale }
   const filtered = useMemo(() => {
     return items.filter((item) => {
       if (selectedType && item.resourceType !== selectedType) return false
+
+      /* Ana başlık seçiliyse alt başlıklarındaki içerik de eşleşir (yol). */
+      if (selectedCategory && !item.categoryPath.includes(selectedCategory)) return false
 
       // Birden fazla konu seçiliyse "VEYA" mantığı: herhangi biri eşleşsin.
       if (selectedTopics.length > 0) {
@@ -104,16 +110,19 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, locale }
         item.resourceTypeLabel,
         item.publicationYear,
         ...item.topicTitles,
+        ...item.categoryTitles,
       ])
     })
-  }, [items, deferredQuery, selectedType, selectedTopics])
+  }, [items, deferredQuery, selectedType, selectedTopics, selectedCategory])
 
-  const hasFilters = query.length > 0 || selectedType !== null || selectedTopics.length > 0
+  const hasFilters =
+    query.length > 0 || selectedType !== null || selectedTopics.length > 0 || selectedCategory !== null
 
   const clearAll = () => {
     setQuery('')
     setSelectedType(null)
     setSelectedTopics([])
+    setSelectedCategory(null)
   }
 
   return (
@@ -139,6 +148,28 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, locale }
         />
 
         <ConsoleDivider>
+          {/*
+            KATEGORİ — birincil sınıflandırma (kurum kararı, 29.09.2026).
+            Tek seçimli: bir içerik tek kategoriye bağlıdır. Hiç kategori
+            tanımlı değilse grup basılmaz (sayfa bugünkü hâliyle kalır).
+          */}
+          {categories.length > 0 ? (
+            <FilterGroup legend={t('filterByCategory')}>
+              {[{ value: '', label: t('allCategories'), count: items.length }, ...categories].map((option) => {
+                const value = option.value || null
+                return (
+                  <FilterPill
+                    key={option.value || 'all'}
+                    label={option.label}
+                    count={option.count}
+                    active={selectedCategory === value}
+                    onClick={() => setSelectedCategory(value)}
+                  />
+                )
+              })}
+            </FilterGroup>
+          ) : null}
+
           <FilterGroup legend={t('filterByType')}>
             {[{ value: '', label: t('allTypes'), count: items.length }, ...types].map((option) => {
               const value = option.value || null

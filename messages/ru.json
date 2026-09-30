@@ -147,7 +147,9 @@
     "filteredByTraining": "Показаны только материалы обучения «{egitim}».",
     "showAllRecords": "Показать все записи",
     "noMaterialsForTraining": "К этому обучению пока не привязаны материалы. Снимите фильтр, чтобы увидеть всю библиотеку.",
-    "homeTotalLabel": "записей в открытом доступе"
+    "homeTotalLabel": "записей в открытом доступе",
+    "filterByCategory": "Категория",
+    "allCategories": "Все"
   },
   "training": {
     "statusLabel": "Статус обучения",
