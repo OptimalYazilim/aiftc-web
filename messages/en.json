@@ -683,6 +683,11 @@
     "errorTraining": "Choose a programme that is open for applications.",
     "errorDuplicate": "An application for this programme already exists with this e-mail address. You can follow its status on your profile page.",
     "errorSummaryCount": "The form has {sayi} error(s). Use the links below to fix them.",
-    "errorTitlePrefix": "({sayi} errors)"
+    "errorTitlePrefix": "({sayi} errors)",
+    "approvalEmailSubject": "Your training application has been approved: {training}",
+    "approvalEmailGreeting": "Dear {name},",
+    "approvalEmailBody": "Your application for the training \"{training}\" has been approved.",
+    "approvalEmailProfileLine": "You can follow your applications on the profile page of your account: {url}",
+    "approvalEmailFooter": "This is an automated message."
   }
 }

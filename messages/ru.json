@@ -683,6 +683,11 @@
     "errorTraining": "Выберите программу, открытую для приёма заявок.",
     "errorDuplicate": "Заявка на эту программу с этим адресом уже существует. Её статус можно отслеживать на странице профиля.",
     "errorSummaryCount": "В форме {sayi} ошибок. Перейдите по ссылкам ниже, чтобы исправить.",
-    "errorTitlePrefix": "({sayi} ошибок)"
+    "errorTitlePrefix": "({sayi} ошибок)",
+    "approvalEmailSubject": "Ваша заявка на обучение одобрена: {training}",
+    "approvalEmailGreeting": "Здравствуйте, {name}!",
+    "approvalEmailBody": "Ваша заявка на обучение «{training}» одобрена.",
+    "approvalEmailProfileLine": "Следить за своими заявками можно на странице профиля в вашей учётной записи: {url}",
+    "approvalEmailFooter": "Это сообщение отправлено автоматически."
   }
 }

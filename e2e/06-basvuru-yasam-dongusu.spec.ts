@@ -95,6 +95,18 @@ test.describe('Başvuru yaşam döngüsü', () => {
     expect(reviewedById).toBe(yonetici.id)
     expect(onaylanan.reviewedAt).toBeTruthy()
 
+    /*
+      ONAY E-POSTASI (kurum kararı, 29.09.2026). Test ortamında SMTP_HOST boş
+      olduğu için ileti yalnızca günlüğe yazılır — iz bunu `logged` diye
+      DÜRÜSTÇE söylemeli, `sent` değil. İz kanca tarafından ayrı bir
+      güncellemeyle yazıldığı için kayıt yeniden okunur.
+    */
+    const onayIzi = (await payload.findByID({ collection: 'registrations', id: kayit.id, depth: 0 })) as unknown as {
+      approvalEmail?: { status?: string | null; at?: string | null } | null
+    }
+    expect(onayIzi.approvalEmail?.status).toBe('logged')
+    expect(onayIzi.approvalEmail?.at).toBeTruthy()
+
     /* --- Profil: Katıldığım Eğitimler → Onaylandı ------------------------ */
     await page.getByRole('link', { name: 'Profilim' }).click()
     await expect(page).toHaveURL(/\/tr\/profil/)
@@ -122,6 +134,12 @@ test.describe('Başvuru yaşam döngüsü', () => {
       context: { skipRevalidate: true },
     })) as unknown as { completedAt?: string | null }
     expect(tamamlanan.completedAt).toBeTruthy()
+
+    /* Onaylı → Tamamlandı geçişi e-postayı YENİDEN göndermez: iz aynı kalır. */
+    const tamamIzi = (await payload.findByID({ collection: 'registrations', id: kayit.id, depth: 0 })) as unknown as {
+      approvalEmail?: { at?: string | null } | null
+    }
+    expect(tamamIzi.approvalEmail?.at).toBe(onayIzi.approvalEmail?.at)
 
     await page.reload()
     await expect(sertifikalar.getByText(ADLAR.egitimBasligi)).toBeVisible()

@@ -683,6 +683,11 @@
     "errorTraining": "Başvuruya açık bir eğitim seçin.",
     "errorDuplicate": "Bu e-posta adresiyle bu eğitime zaten başvurulmuş. Durumu profil sayfanızdan izleyebilirsiniz.",
     "errorSummaryCount": "Formda {sayi} hata var. Düzeltmek için aşağıdaki bağlantıya tıklayın.",
-    "errorTitlePrefix": "({sayi} hata)"
+    "errorTitlePrefix": "({sayi} hata)",
+    "approvalEmailSubject": "Eğitim başvurunuz onaylandı: {training}",
+    "approvalEmailGreeting": "Sayın {name},",
+    "approvalEmailBody": "\"{training}\" eğitimine yaptığınız başvuru onaylanmıştır.",
+    "approvalEmailProfileLine": "Başvurularınızı hesabınızdaki profil sayfasından izleyebilirsiniz: {url}",
+    "approvalEmailFooter": "Bu ileti otomatik olarak gönderilmiştir."
   }
 }

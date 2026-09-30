@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { canApproveAccounts, canDeleteContent, canManageRegistrations, registrationReadAccess } from '@/access'
 import { FOCUS_COUNTRIES, REGISTRATION_STATUSES } from '@/fields/options'
+import { registrationApprovalEmail } from '@/hooks/registrationApprovalEmail'
 
 /**
  * EĞİTİM BAŞVURULARI / KATILIMCILAR  (Şartname 6.4 · 1.7 · 12.2 KVKK)
@@ -111,6 +112,7 @@ export const Registrations: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [registrationApprovalEmail],
   },
   fields: [
     // --- Karar ---------------------------------------------------------------
@@ -309,6 +311,61 @@ export const Registrations: CollectionConfig = {
             date: { pickerAppearance: 'dayAndTime', timeFormat: 'HH:mm' },
             condition: (data) => data?.status === 'completed',
           },
+        },
+        /*
+          ONAY E-POSTASININ SONUCU — elle DEĞİŞTİRİLEMEZ. Kanca yazar
+          (hooks/registrationApprovalEmail.ts). `logged` = SMTP tanımlı
+          olmadığı için ileti yalnızca sunucu günlüğüne yazıldı, kimseye
+          ULAŞMADI; `failed` = gönderim hata verdi, kişiye başka yoldan
+          ulaşılmalı.
+        */
+        {
+          name: 'approvalEmail',
+          type: 'group',
+          label: { tr: 'Onay E-postası', en: 'Approval e-mail', ru: 'Письмо об одобрении' },
+          access: { update: () => false },
+          admin: { condition: (data) => Boolean(data?.approvalEmail?.status) },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'status',
+                  type: 'select',
+                  label: { tr: 'Sonuç', en: 'Result', ru: 'Результат' },
+                  options: [
+                    { value: 'sent', label: { tr: 'Gönderildi', en: 'Sent', ru: 'Отправлено' } },
+                    {
+                      value: 'logged',
+                      label: {
+                        tr: 'Gönderilmedi — SMTP tanımlı değil, yalnızca günlüğe yazıldı',
+                        en: 'Not sent — no SMTP configured, written to the log only',
+                        ru: 'Не отправлено — SMTP не настроен, только в журнале',
+                      },
+                    },
+                    { value: 'failed', label: { tr: 'Gönderim başarısız', en: 'Failed', ru: 'Ошибка отправки' } },
+                  ],
+                  admin: { readOnly: true, width: '50%' },
+                },
+                {
+                  name: 'at',
+                  type: 'date',
+                  label: { tr: 'Zaman', en: 'At', ru: 'Время' },
+                  admin: {
+                    readOnly: true,
+                    width: '50%',
+                    date: { pickerAppearance: 'dayAndTime', timeFormat: 'HH:mm' },
+                  },
+                },
+              ],
+            },
+            {
+              name: 'error',
+              type: 'text',
+              label: { tr: 'Hata', en: 'Error', ru: 'Ошибка' },
+              admin: { readOnly: true, condition: (_, sibling) => sibling?.status === 'failed' },
+            },
+          ],
         },
       ],
     },

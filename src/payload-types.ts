@@ -947,6 +947,11 @@ export interface Registration {
   reviewedBy?: (number | null) | User;
   reviewedAt?: string | null;
   completedAt?: string | null;
+  approvalEmail?: {
+    status?: ('sent' | 'logged' | 'failed') | null;
+    at?: string | null;
+    error?: string | null;
+  };
   consentAcceptedAt?: string | null;
   /**
    * The notice shown at submission time; unchanged even if the text is later edited.
@@ -2407,6 +2412,13 @@ export interface RegistrationsSelect<T extends boolean = true> {
   reviewedBy?: T;
   reviewedAt?: T;
   completedAt?: T;
+  approvalEmail?:
+    | T
+    | {
+        status?: T;
+        at?: T;
+        error?: T;
+      };
   consentAcceptedAt?: T;
   consentSnapshot?: T;
   locale?: T;
