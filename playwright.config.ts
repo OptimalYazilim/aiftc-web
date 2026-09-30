@@ -1,12 +1,14 @@
 import { defineConfig, devices } from '@playwright/test'
-import dotenv from 'dotenv'
+
+import { portOf, testOrtaminiYukle } from './e2e/yardimcilar/ortam'
 
 /**
  * PLAYWRIGHT — UÇTAN UCA TEST YAPILANDIRMASI
  * ============================================================================
  * ÖNCE ORTAM, SONRA HER ŞEY
  * ---------------------------------------------------------------------------
- * `.env.test` BU SATIRDA, her şeyden önce yüklenir. `override: true` şart:
+ * `.env.test` her şeyden önce, aşağıdaki `testOrtaminiYukle()` çağrısıyla
+ * yüklenir (e2e/yardimcilar/ortam.ts). `override: true` şart:
  * kabuğun içinde zaten bir `DATABASE_URI` varsa (geliştirici `.env`i yüklemiş
  * olabilir) testler GELİŞTİRME VERİTABANINA bağlanır ve orada hesap açıp
  * siler. Bu, geri alınamaz bir veri kaybıdır; sessizce olur ve testler yeşil
@@ -28,11 +30,14 @@ import dotenv from 'dotenv'
  * 3000 geliştirme sunucusunundur. Aynı portu paylaşmak, testlerin yanlışlıkla
  * geliştirme veritabanına bakan bir sunucuya bağlanmasına yol açardı —
  * yukarıdaki `override` ile aynı kategoriden bir hata.
+ *
+ * 3100 de doluysa `E2E_PORT` ile başka bir port verilir; ortamın yüklenmesi ve
+ * port kuralı `e2e/yardimcilar/ortam.ts` içindedir. Portta BİZİM sunucumuzun
+ * çalıştığı ayrıca `e2e/genel-kurulum.ts` içinde doğrulanır.
  * ============================================================================
  */
-dotenv.config({ path: '.env.test', override: true })
-
-const TABAN_ADRES = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3100'
+const TABAN_ADRES = testOrtaminiYukle()
+const PORT = portOf(TABAN_ADRES)
 
 /**
  * Derleme, Playwright yerine ÇAĞIRAN tarafta mı yapıldı?
@@ -119,8 +124,8 @@ export default defineConfig({
       (`pnpm test:e2e`) derleme + koşu yapılır.
     */
     command: derlemeyiAtla
-      ? 'pnpm exec next start -p 3100'
-      : 'node e2e/derleme-temizle.mjs && pnpm exec next build && pnpm exec next start -p 3100',
+      ? `pnpm exec next start -p ${PORT}`
+      : `node e2e/derleme-temizle.mjs && pnpm exec next build && pnpm exec next start -p ${PORT}`,
     url: TABAN_ADRES,
     /* Derleme uzun sürer; yerelde ayakta duran sunucu yeniden kullanılır. */
     reuseExistingServer: !process.env.CI,

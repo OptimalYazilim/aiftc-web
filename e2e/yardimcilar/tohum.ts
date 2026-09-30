@@ -231,6 +231,38 @@ export const tohumla = async (): Promise<TohumSonucu> => {
   yazanKullanici = YONETICI_BAGLAMI
   await temizle({ egitimleriKoru: true })
 
+  /*
+    PANEL ANAHTARLARI BİLİNEN DURUMDAN BAŞLAR.
+    Bazı senaryolar global ayarları açıp kapatır ve sonda eski hâline getirir
+    (07: vatandaş e-Devlet girişi, 13: konaklama ön başvurusu, 15: genel
+    kayıt). Koşu yarıda kesilirse — süreç öldürülür ya da çökerse; bu makinede
+    2026-09-30'da koşular bellek yetersizliğinden birkaç kez durduruldu —
+    `afterAll` hiç çalışmaz ve anahtar AÇIK kalabilir. Global ayarlar
+    `temizle`nin sildiği kayıtlardan değildir; açık kalan anahtar sonraki
+    koşuda başka senaryoları bozar: konaklama açık kalırsa başvuru formunda
+    ikinci bir onay kutusu belirir ve `getByRole('checkbox')` kullanan
+    senaryolar (01, 06, 12) "birden fazla öğe" hatasıyla kırılır — hatanın
+    görünen yeri ile sebebi birbirinden çok uzaktır.
+  */
+  await payload.updateGlobal({
+    slug: 'external-services',
+    data: { edevlet: { citizenLoginEnabled: false } },
+    context: ctx(),
+    overrideAccess: true,
+  })
+  await payload.updateGlobal({
+    slug: 'accommodation-settings',
+    data: { enabled: false, capacity: null, rateInTraining: null, rateOutsideTraining: null, closedPeriods: [] },
+    context: ctx(),
+    overrideAccess: true,
+  })
+  await payload.updateGlobal({
+    slug: 'site-settings',
+    data: { accounts: { publicRegistrationEnabled: false } },
+    context: ctx(),
+    overrideAccess: true,
+  })
+
   /* -- GERÇEK yönetici: bundan sonraki her yazma onun kimliğiyle yapılır -- */
   /*
     Gerekçe `yazanKullanici` tanımının üstünde. Kısaca: `req.user.id`den türeyen

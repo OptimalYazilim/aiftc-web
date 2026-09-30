@@ -1,6 +1,6 @@
-import dotenv from 'dotenv'
+import { testOrtaminiYukle } from './yardimcilar/ortam'
 
-dotenv.config({ path: '.env.test', override: true })
+testOrtaminiYukle()
 
 /**
  * GENEL TEMİZLİK — tüm testlerden SONRA bir kez.
