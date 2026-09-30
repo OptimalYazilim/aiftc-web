@@ -144,6 +144,43 @@ export type { AbonelikDurumu } from '@/lib/subscription'
  * gerekir — ACIK MADDE, bkz. docs/access-control-guide.md
  * ===========================================================================
  */
+/**
+ * DAİRE KOŞULU — seviyeli kütüphane kaydı ve belge dosyası için ORTAK
+ * ===========================================================================
+ * Kurum kararı (29.09.2026): eğitim içeriklerine personel DAİRESİNE göre
+ * erişir. Kayıt `restrictToDepartments` işaretliyse, seviyesi uyan kişi
+ * ancak dairesi `departments` listesindeyse görür. İşaretli değilse (ya da
+ * alan henüz yoksa → NULL) yalnız seviye kuralı geçerlidir.
+ *
+ * Kullanıcının dairesi yoksa kısıtlı kayıt ona hiç açılmaz. Anahtar açık,
+ * liste boşsa kayıt hiçbir daireye açılmaz — hata kapalı tarafa düşer.
+ *
+ * `req.user.department` jetondan kimlik, veritabanından dolu nesne olarak
+ * gelebilir; ikisi de karşılanır. Bu koşul yalnızca SEVİYELİ dala eklenir:
+ * herkese açık kayıt ve panel rolleri etkilenmez (fields/departmentAccess.ts).
+ */
+const daireKosulu = (user: unknown): Where => {
+  const ham = (user as { department?: unknown } | null | undefined)?.department
+  const daireId =
+    ham && typeof ham === 'object' ? (ham as { id?: number | string }).id : (ham as number | string | undefined)
+  const kisitsiz: Where[] = [
+    { restrictToDepartments: { equals: false } },
+    { restrictToDepartments: { exists: false } },
+  ]
+  return { or: daireId != null ? [...kisitsiz, { departments: { in: [daireId] } }] : kisitsiz }
+}
+
+/** Herkese açık VEYA (izinli seviye VE daire koşulu). Seviye yoksa yalnız herkese açık. */
+const seviyeVeDaire = (seviyeler: string[], user: unknown): Where =>
+  seviyeler.length === 0
+    ? { accessLevel: { equals: 'public' } }
+    : {
+        or: [
+          { accessLevel: { equals: 'public' } },
+          { and: [{ accessLevel: { in: seviyeler } }, daireKosulu(user)] },
+        ],
+      }
+
 export const libraryReadAccess: Access = ({ req: { user } }) => {
   /* `Where` olarak tiplenir: dizi icindeki nesneler farkli alanlar tasidigi
      icin TypeScript aksi halde ortak bir tip cikaramiyor. */
@@ -178,7 +215,8 @@ export const libraryReadAccess: Access = ({ req: { user } }) => {
     .filter(([, rol]) => rol === audience)
     .map(([seviye]) => seviye)
 
-  return yayimlanmisVe({ accessLevel: { in: ['public', ...seviyeler] } })
+  /* Seviyeli kayıtta daire kısıtı da aranır (daireKosulu). */
+  return yayimlanmisVe(seviyeVeDaire(seviyeler, user))
 }
 
 /**
@@ -235,7 +273,8 @@ export const documentFileReadAccess: Access = ({ req: { user } }) => {
     .filter(([, roller]) => (audience ? roller.includes(audience) : false))
     .map(([seviye]) => seviye)
 
-  return { accessLevel: { in: ['public', ...seviyeler] } }
+  /* Kütüphane kaydıyla AYNI daire koşulu: dosya adresinden indirme de daireye bağlı. */
+  return seviyeVeDaire(seviyeler, user)
 }
 
 /**

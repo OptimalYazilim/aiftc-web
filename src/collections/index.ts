@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
+import { Departments } from './Departments'
 import { DocumentFiles } from './DocumentFiles'
 import { Faqs } from './Faqs'
 import { FormRequests } from './FormRequests'
@@ -54,6 +55,7 @@ export const collections: CollectionConfig[] = [
 
   // Sistem
   FormRequests,
+  Departments,
   Users,
 ]
 

@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { canAuthorContent, canDeleteContent, documentFileReadAccess } from '@/access'
+import { daireKisitiAlanlari } from '@/fields/departmentAccess'
 import { ACCESS_LEVELS, INSTRUCTION_LANGUAGES, LICENSE_TYPES } from '@/fields/options'
 
 /**
@@ -179,6 +180,7 @@ export const DocumentFiles: CollectionConfig = {
         },
       },
     },
+    ...daireKisitiAlanlari(),
     {
       name: 'isArchived',
       type: 'checkbox',

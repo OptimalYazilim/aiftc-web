@@ -85,6 +85,7 @@ export interface Config {
     'subscription-plans': SubscriptionPlan;
     quotes: Quote;
     'form-requests': FormRequest;
+    departments: Department;
     users: User;
     'search-index': SearchIndex;
     forms: Form;
@@ -116,6 +117,7 @@ export interface Config {
     'subscription-plans': SubscriptionPlansSelect<false> | SubscriptionPlansSelect<true>;
     quotes: QuotesSelect<false> | QuotesSelect<true>;
     'form-requests': FormRequestsSelect<false> | FormRequestsSelect<true>;
+    departments: DepartmentsSelect<false> | DepartmentsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'search-index': SearchIndexSelect<false> | SearchIndexSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
@@ -740,6 +742,11 @@ export interface DocumentFile {
    */
   accessLevel: 'public' | 'staff' | 'participants' | 'trainers' | 'internal';
   /**
+   * If ticked, only people whose department is listed below can see it (on top of the access level).
+   */
+  restrictToDepartments?: boolean | null;
+  departments?: (number | Department)[] | null;
+  /**
    * Archived documents disappear from listings; existing links keep working.
    */
   isArchived?: boolean | null;
@@ -758,6 +765,22 @@ export interface DocumentFile {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * OGM departments for department-based library access. Entered by the institution.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "departments".
+ */
+export interface Department {
+  id: number;
+  title: string;
+  /**
+   * Department code in the OGM staff system, used to match users once the integration is connected.
+   */
+  externalCode?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -984,6 +1007,10 @@ export interface User {
    * Spec 1.7. Controls which library records the user can see ON THE SITE. Panel permissions are the separate Roles field.
    */
   role: 'admin' | 'staff' | 'instructor' | 'trainee';
+  /**
+   * Determines access to department-restricted library content.
+   */
+  department?: (number | null) | Department;
   /**
    * Spec 1.7. Accounts other than Approved cannot log in. Public registrations arrive as Pending.
    */
@@ -1695,6 +1722,11 @@ export interface LibraryResource {
    */
   accessLevel: 'public' | 'staff' | 'instructor' | 'trainee';
   /**
+   * If ticked, only people whose department is listed below can see it (on top of the access level).
+   */
+  restrictToDepartments?: boolean | null;
+  departments?: (number | Department)[] | null;
+  /**
    * Drives the filter bar on the library page.
    */
   resourceType:
@@ -2219,6 +2251,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'form-requests';
         value: number | FormRequest;
+      } | null)
+    | ({
+        relationTo: 'departments';
+        value: number | Department;
       } | null)
     | ({
         relationTo: 'users';
@@ -2863,6 +2899,8 @@ export interface DocumentFilesSelect<T extends boolean = true> {
   language?: T;
   version?: T;
   accessLevel?: T;
+  restrictToDepartments?: T;
+  departments?: T;
   isArchived?: T;
   license?: T;
   copyrightHolder?: T;
@@ -2900,6 +2938,8 @@ export interface LibraryResourcesSelect<T extends boolean = true> {
   slug?: T;
   reviewStatus?: T;
   accessLevel?: T;
+  restrictToDepartments?: T;
+  departments?: T;
   resourceType?: T;
   publicationYear?: T;
   featured?: T;
@@ -3040,12 +3080,23 @@ export interface FormRequestsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "departments_select".
+ */
+export interface DepartmentsSelect<T extends boolean = true> {
+  title?: T;
+  externalCode?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   roles?: T;
   role?: T;
+  department?: T;
   accountStatus?: T;
   unit?: T;
   edevletSubject?: T;

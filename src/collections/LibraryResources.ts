@@ -12,6 +12,7 @@ import {
   LICENSE_TYPES,
 } from '@/fields/options'
 import { publishingFields, reviewStatusField, translationStatusField } from '@/fields/publishing'
+import { daireKisitiAlanlari } from '@/fields/departmentAccess'
 import { slugField } from '@/fields/slug'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
@@ -156,6 +157,7 @@ export const LibraryResources: CollectionConfig = {
         },
       },
     },
+    ...daireKisitiAlanlari(),
 
     {
       name: 'resourceType',

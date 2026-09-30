@@ -91,10 +91,39 @@ Bağlandığı yer: `src/collections/LibraryResources.ts` → `access.read`
 | 1 | Oturum yok | Yalnızca **yayımlanmış** ve `accessLevel = public` |
 | 2 | `roles` içinde `admin` | Her şey |
 | 3 | `roles` içinde editor / author / viewer | Her şey |
-| 4 | Yalnızca `role` taşıyan site hesabı | **Yayımlanmış** ve `accessLevel ∈ (public, role)` |
+| 4 | Yalnızca `role` taşıyan site hesabı | **Yayımlanmış** ve (`accessLevel = public` **veya** `accessLevel = role` **ve** daire koşulu) |
 
 **3. satırın gerekçesi:** panel personeli kütüphaneyi *yönetir*; göremediği bir
 kaydı düzeltemez. Yayımlama yetkisi ayrıca `canAuthorContent` ile sınırlıdır.
+
+### Daire koşulu (kurum kararı, 29.09.2026)
+
+Eğitim içeriklerine personel **dairesine** göre erişir. Seviyeli bir kayıt
+`restrictToDepartments` işaretliyse, seviyesi uyan kişi ancak dairesi
+(`Users.department`) kaydın `departments` listesindeyse görür. İşaretli değilse
+yalnız seviye kuralı geçerlidir. Kuralın kendisi: `access/index.ts →
+daireKosulu / seviyeVeDaire`.
+
+| Durum | Sonuç |
+|---|---|
+| Kayıt herkese açık | Daireden bağımsız, herkes görür |
+| Anahtar kapalı | Yalnız seviye kuralı |
+| Anahtar açık, kişinin dairesi listede | Görür |
+| Anahtar açık, dairesi listede değil **ya da hiç dairesi yok** | Görmez |
+| Anahtar açık, liste **boş** | Hiçbir daire görmez (kapalı tarafa düşer) |
+
+- **Belge dosyaları aynı alanları taşır** ve `documentFileReadAccess` aynı
+  koşulu kullanır. Kısıt yalnızca kayıtta olsaydı, kaydın bağladığı dosya kendi
+  adresinden indirilebilirdi. Editör: kısıtlı bir kayda eklenen belgeye de aynı
+  daireleri işaretleyin.
+- **Daire listesi** (`Sistem → Daireler`) kurumdan gelir; yalnızca sistem
+  yöneticisi düzenler. Kullanıcının dairesini de yalnızca yönetici değiştirir.
+  OGM personel entegrasyonu bağlandığında daire, `externalCode` ile eşleşerek
+  API'den dolacak.
+- Ölçüm: `e2e/11-daire-bazli-erisim.spec.ts`. Aynı katılımcı ve aynı seviye
+  kullanılır; farkı yalnızca daire listesi yaratır. Liste `[B]` iken kayıt
+  listelenmez, künye 404 döner ve belge okunamaz. Listeye kişinin dairesi
+  eklenince üçü de açılır.
 
 ### Neden `false` değil, filtre dönüyor
 

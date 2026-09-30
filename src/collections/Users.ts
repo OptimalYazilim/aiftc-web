@@ -175,6 +175,32 @@ export const Users: CollectionConfig = {
     },
     {
       /*
+        DAİRE — daire bazlı kütüphane yetkisi (kurum kararı, 29.09.2026).
+        OGM personel entegrasyonu bağlandığında API'den gelecek; o güne kadar
+        yönetici girer. Kullanıcı KENDİ dairesini değiştiremez: daire bir
+        yetki girdisidir, değiştirebilen kişi kendine içerik açmış olurdu.
+        Erişim kontrolü her istekte okuduğu için `role` gibi jetona yazılır.
+      */
+      name: 'department',
+      type: 'relationship',
+      relationTo: 'departments',
+      saveToJWT: true,
+      access: {
+        create: isAdminFieldLevel,
+        update: isAdminFieldLevel,
+      },
+      label: { tr: 'Daire', en: 'Department', ru: 'Департамент' },
+      admin: {
+        position: 'sidebar',
+        description: {
+          tr: 'Daireye özel kütüphane içeriklerine erişimi belirler. OGM personel entegrasyonu bağlanınca otomatik dolacak.',
+          en: 'Determines access to department-restricted library content.',
+          ru: 'Определяет доступ к материалам библиотеки по департаменту.',
+        },
+      },
+    },
+    {
+      /*
         HESAP DURUMU  (Şartname 1.7 — kayıt ve onay)
         ---------------------------------------------------------------------
         Varsayılan `pending`: dışarıdan gelen her kayıt ONAY BEKLER. Değer

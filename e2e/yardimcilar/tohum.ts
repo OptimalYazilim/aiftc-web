@@ -91,7 +91,7 @@ const yaz = () => ({ context: ctx(), user: yazanKullanici, overrideAccess: true 
  * oturumda bir kez ölçüldü — geçersiz başlıklı bir dosyayı tümden reddetmişti.
  * `sharp` zaten projenin doğrudan bağımlılığıdır.
  */
-const pngUret = (genislik = 96, yukseklik = 72): Promise<Buffer> =>
+export const pngUret = (genislik = 96, yukseklik = 72): Promise<Buffer> =>
   sharp({
     create: {
       width: genislik,
