@@ -266,6 +266,25 @@ export const tohumla = async (): Promise<TohumSonucu> => {
   const egitimBasligi = ADLAR.egitimBasligi
 
   /*
+    KAPAK GÖRSELİ — kurum kuralı (29.09.2026): yayındaki eğitimde en az bir
+    fotoğraf olmalı ve kural kullanıcı adına yapılan yazmalarda işler
+    (TrainingPrograms.coverImage). Tohum GERÇEK bir yönetici kimliğiyle
+    yazdığı için eğitim de kurala uymak zorundadır.
+  */
+  const egitimKapagi = await payload.create({
+    ...yaz(),
+    collection: 'media',
+    locale: 'tr',
+    data: { alt: `${TEST_ONEKI} egitim kapagi` } as never,
+    file: {
+      data: await pngUret(),
+      mimetype: 'image/png',
+      name: `${TEST_ONEKI}-egitim-kapagi.png`,
+      size: 0,
+    },
+  })
+
+  /*
     BAŞVURUYA AÇIK + İLETİŞİM HEDEFLİ bir eğitim.
     İki alan da senaryonun ön koşuludur:
       status = applications-open             -> düğme etkin gelir
@@ -295,6 +314,7 @@ export const tohumla = async (): Promise<TohumSonucu> => {
       certificateType: 'attendance',
       /* 'registration': düğme site içi başvuru formuna gider (Registrations). */
       applicationTarget: { type: 'registration', contactUnit: `${TEST_ONEKI} Eğitim Birimi` },
+      coverImage: egitimKapagi.id,
       _status: 'published',
     } as never,
   })

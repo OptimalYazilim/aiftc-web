@@ -700,6 +700,9 @@ export interface TrainingProgram {
     hadCertificateCeremony?: boolean | null;
     relatedNews?: (number | News)[] | null;
   };
+  /**
+   * Publishing requires a cover image or at least one gallery photo.
+   */
   coverImage?: (number | null) | Media;
   gallery?: (number | Media)[] | null;
   meta?: {

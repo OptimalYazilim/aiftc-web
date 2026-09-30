@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, UploadFieldSingleValidation } from 'payload'
 
 import { canAuthorContent, canDeleteContent, publishedOrAuthenticated } from '@/access'
 import { publishingFields, reviewStatusField, translationStatusField } from '@/fields/publishing'
@@ -663,7 +663,40 @@ enumName: 'enum_tp_custom_status',
         {
           label: { tr: 'Görsel', en: 'Media', ru: 'Медиа' },
           fields: [
-            { name: 'coverImage', type: 'upload', relationTo: 'media', label: { tr: 'Kapak Görseli', en: 'Cover image', ru: 'Обложка' } },
+            /*
+              EN AZ BİR FOTOĞRAF — kurum kararı (29.09.2026).
+              Yayında bir eğitimin kapak görseli YA DA galerisinde en az bir
+              fotoğraf olmalı. Kural yalnızca YAYIMLAMADA işler: Payload
+              taslakları doğrulamaz, editör taslağı fotoğrafsız kaydedip
+              görseli sonra ekleyebilir.
+
+              Yalnızca bir KULLANICI adına yapılan yazmalarda uygulanır
+              (panel/API). Kullanıcısız çalışan seed betikleri örnek eğitimleri
+              görselsiz yazar; kural onları kırsaydı geliştirme ortamı
+              kurulamazdı. Kurumun gerçek içeriği panelden girildiği için
+              kural orada eksiksiz geçerlidir.
+            */
+            {
+              name: 'coverImage',
+              type: 'upload',
+              relationTo: 'media',
+              label: { tr: 'Kapak Görseli', en: 'Cover image', ru: 'Обложка' },
+              admin: {
+                description: {
+                  tr: 'Yayınlamak için kapak görseli ya da galeride en az bir fotoğraf gereklidir.',
+                  en: 'Publishing requires a cover image or at least one gallery photo.',
+                  ru: 'Для публикации нужна обложка или хотя бы одно фото в галерее.',
+                },
+              },
+              validate: ((value, { data, req }) => {
+                if (!req.user) return true
+                const d = data as { _status?: string; gallery?: unknown[] | null } | undefined
+                if (d?._status === 'draft') return true
+                const galeri = Array.isArray(d?.gallery) ? d.gallery.length : 0
+                if (value || galeri > 0) return true
+                return 'Yayınlamak için kapak görseli ya da galeride en az bir fotoğraf ekleyin.'
+              }) satisfies UploadFieldSingleValidation,
+            },
             { name: 'gallery', type: 'upload', relationTo: 'media', hasMany: true, label: { tr: 'Galeri', en: 'Gallery', ru: 'Галерея' } },
           ],
         },
