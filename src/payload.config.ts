@@ -211,6 +211,8 @@ export default buildConfig({
       },
       // Panele giris ekranindaki kisa yonlendirme metni.
       beforeLogin: ['@/components/admin/LoginNotice#LoginNotice'],
+      // Sol menunun ustundeki kurum blogu (bicim: admin-theme.css).
+      beforeNavLinks: ['@/components/admin/NavBrand#NavBrand'],
       /**
        * Kontrol paneli ust bolumu. Payload bu diziyi varsayilan koleksiyon
        * kartlarinin USTUNDE render eder.

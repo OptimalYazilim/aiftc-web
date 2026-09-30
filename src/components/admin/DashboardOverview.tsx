@@ -5,62 +5,55 @@ import configPromise from '@payload-config'
 import { LOCALES, type Locale } from '@/i18n/locales'
 
 /**
- * KONTROL PANELİ — OPERASYON ÖZETİ
+ * KONTROL PANELİ — GENEL BAKIŞ
  * ============================================================================
  * Payload'ın varsayılan kontrol paneli yalnızca koleksiyon kartlarını listeler.
  * Bu bileşen onun üstüne, editörün panele girer girmez göreceği bir durum
- * özeti koyar: kaç eğitim aktif, kaç program yaklaşıyor, kaç form bildirimi
- * beklemede — ve çeviri durumu.
+ * özeti koyar: kaç eğitim aktif, kaç program yaklaşıyor, kaç başvuru ve form
+ * gönderimi karar bekliyor — ve çeviri durumu.
  *
  * SUNUCU BİLEŞENİ — Payload Local API'ye doğrudan erişir; ek HTTP isteği yok.
+ * Biçim admin-theme.css → 9. bölüm (`.aiftc-ozet`, `.aiftc-olcum`, …).
+ * Projenin Tailwind katmanı `/admin` rotalarında ÇALIŞMAZ; sınıflar orada.
+ *
+ * ---------------------------------------------------------------------------
+ * DÜZELTME (2026-10-01): "Form Bildirimleri" sayacı ve "Gelen Başvuruları
+ * İncele" bağlantısı `form-submissions` koleksiyonuna bakıyordu — panelde
+ * adıyla "kullanılmıyor" diye işaretli, BOŞ olan koleksiyona. Gerçek kutular:
+ *   - eğitim başvuruları  → `registrations`
+ *   - iletişim/form       → `form-requests`
+ * Sayaçlar artık oralarda "Bekliyor" durumundaki kayıtları sayar ve
+ * bağlantılar o süzgeçle açılır. KVKK: yalnızca SAYI okunur, içerik okunmaz.
  *
  * ---------------------------------------------------------------------------
  * ÇEVİRİ DURUMU — YALNIZCA ROZET
- * Önceden ayrı bir `TranslationOverview` bileşeni kontrol panelinin ortasında
- * tam genişlikte bir tablo basıyordu; ardından açılır bir blok denendi. İkisi
- * de kaldırıldı: panelde ayrıntı tablosu YOKTUR.
- *
  * Şartname 5 "eksik çeviriler panelde görülebilmelidir" koşulu rozetle
- * karşılanır: eksik varsa rozet sayıyı yazar ve en çok eksiği olan bölümün
- * listesine BAĞLANIR. Editör tek tıkla oraya gider, oradaki "Çeviri Durumu"
- * sütunu hangi kaydın eksik olduğunu gösterir.
- * ---------------------------------------------------------------------------
- *
- * TEMA UYUMU
- * Panel Tailwind KULLANMAZ; projenin Tailwind katmanı `/admin` rotalarında
- * çalışmaz. Biçimlendirme satır içidir, renkler Payload'ın `--theme-*`
- * değişkenlerinden gelir. Kurumsal zümrül yalnızca kontrastı garanti
- * edilebilen yerlerde kullanılır: beyaz metinli dolgun butonlar, sol şerit
- * ve ikonlar. Sayı ve etiketler `--theme-text` ile basılır — koyu temada
- * koyu yeşil metin okunmazdı.
+ * karşılanır: eksik varsa sayıyı yazar ve en çok eksiği olan bölümün
+ * listesine BAĞLANIR; oradaki "Çeviri Durumu" sütunu ayrıntıyı gösterir.
  * ============================================================================
  */
-
-/** Kurumsal zümrüt — globals.css'teki brand-700 / brand-800 ile aynı. */
-const ACCENT = '#0b6b3a'
-const ACCENT_STRONG = '#0a4423'
 
 /* --------------------------------------------------------------------------
    İKONLAR — her biri dekoratif (`aria-hidden`), bilgi metinde.
    -------------------------------------------------------------------------- */
 const iconProps = {
   viewBox: '0 0 24 24',
-  width: 20,
-  height: 20,
+  width: 18,
+  height: 18,
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.7,
+  strokeWidth: 1.8,
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
   'aria-hidden': true,
   focusable: 'false' as const,
 }
 
-/** Açık kitap — eğitimler. */
+/** Kep — eğitimler. */
 const IconTraining = () => (
   <svg {...iconProps}>
-    <path d="M12 7.5C10.5 6.2 8.5 5.5 4 5.5v12c4.5 0 6.5.7 8 2 1.5-1.3 3.5-2 8-2v-12c-4.5 0-6.5.7-8 2Z" />
-    <path d="M12 7.5v12" />
+    <path d="M22 10 12 5 2 10l10 5 10-5Z" />
+    <path d="M6 12.5v4.5c3 2 9 2 12 0v-4.5" />
   </svg>
 )
 
@@ -72,19 +65,20 @@ const IconCalendar = () => (
   </svg>
 )
 
-/** Gazete — haberler ve duyurular. */
-const IconNews = () => (
+/** Pano — başvurular. */
+const IconClipboard = () => (
   <svg {...iconProps}>
-    <path d="M4 5h13a1 1 0 0 1 1 1v13H5a1 1 0 0 1-1-1V5Z" />
-    <path d="M18 9h2v9a1 1 0 0 1-1 1M7.5 9h6M7.5 12.5h6M7.5 16h4" />
+    <path d="M9 3.5h6v3H9z" />
+    <path d="M8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2" />
+    <path d="m9 14 2 2 4-4" />
   </svg>
 )
 
-/** Zarf — gelen form bildirimleri. */
+/** Gelen kutusu — form gönderimleri. */
 const IconInbox = () => (
   <svg {...iconProps}>
-    <rect x="3" y="5" width="18" height="14" rx="2" />
-    <path d="m3.5 7 8.5 6 8.5-6" />
+    <path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />
+    <path d="M3 13h5l1 2h6l1-2h5" />
   </svg>
 )
 
@@ -94,6 +88,8 @@ type Metric = {
   hint?: string | null
   href: string
   icon: React.ReactNode
+  /** Karar bekleyen iş var mı — kart bunu yazıyla da söyler. */
+  attention?: boolean
 }
 
 /** Sayımı güvenli yapar: hata durumunda `null` döner, kart "—" gösterir. */
@@ -109,7 +105,7 @@ const formatDate = (value?: string | null): string | null => {
   if (!value) return null
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
-  return new Intl.DateTimeFormat('tr', { dateStyle: 'long' }).format(date)
+  return new Intl.DateTimeFormat('tr', { dateStyle: 'long', timeZone: 'Europe/Istanbul' }).format(date)
 }
 
 /** Çeviri takibi yapılan koleksiyonlar (Şartname 5). */
@@ -125,64 +121,57 @@ const TRACKED_COLLECTIONS = [
 
 type TranslationRow = { slug: string; label: string; missing: Record<Locale, number> }
 
+const PENDING_QUERY = '?where[status][equals]=pending'
+
 export const DashboardOverview = async () => {
   const payload = await getPayload({ config: configPromise })
   const now = new Date().toISOString()
 
-  const [activeTrainings, upcoming, newsCount, submissions] = await Promise.all([
+  const countPending = (collection: 'registrations' | 'accommodation-requests' | 'form-requests') =>
     safeCount(async () => {
-      const result = await payload.find({
-        collection: 'training-programs',
-        where: {
-          _status: { equals: 'published' },
-          status: { in: ['applications-open', 'ongoing'] },
-        },
-        limit: 1,
-        depth: 0,
+      const result = await payload.count({
+        collection,
+        where: { status: { equals: 'pending' } },
         overrideAccess: true,
       })
       return result.totalDocs
-    }),
+    })
 
-    (async () => {
-      try {
-        const result = await payload.find({
+  const [activeTrainings, upcoming, pendingRegistrations, pendingAccommodation, pendingRequests] =
+    await Promise.all([
+      safeCount(async () => {
+        const result = await payload.count({
           collection: 'training-programs',
-          where: { _status: { equals: 'published' }, startDate: { greater_than_equal: now } },
-          sort: 'startDate',
-          limit: 1,
-          depth: 0,
+          where: {
+            _status: { equals: 'published' },
+            status: { in: ['applications-open', 'ongoing'] },
+          },
           overrideAccess: true,
         })
-        const first = result.docs[0] as { startDate?: string | null } | undefined
-        return { count: result.totalDocs, nextDate: formatDate(first?.startDate) }
-      } catch {
-        return { count: null, nextDate: null }
-      }
-    })(),
+        return result.totalDocs
+      }),
 
-    safeCount(async () => {
-      const result = await payload.find({
-        collection: 'news',
-        where: { _status: { equals: 'published' } },
-        limit: 1,
-        depth: 0,
-        overrideAccess: true,
-      })
-      return result.totalDocs
-    }),
+      (async () => {
+        try {
+          const result = await payload.find({
+            collection: 'training-programs',
+            where: { _status: { equals: 'published' }, startDate: { greater_than_equal: now } },
+            sort: 'startDate',
+            limit: 1,
+            depth: 0,
+            overrideAccess: true,
+          })
+          const first = result.docs[0] as { startDate?: string | null } | undefined
+          return { count: result.totalDocs, nextDate: formatDate(first?.startDate) }
+        } catch {
+          return { count: null, nextDate: null }
+        }
+      })(),
 
-    // KVKK: yalnızca SAYI okunur, gönderim içeriği okunmaz.
-    safeCount(async () => {
-      const result = await payload.find({
-        collection: 'form-submissions',
-        limit: 1,
-        depth: 0,
-        overrideAccess: true,
-      })
-      return result.totalDocs
-    }),
-  ])
+      countPending('registrations'),
+      countPending('accommodation-requests'),
+      countPending('form-requests'),
+    ])
 
   // --- Çeviri durumu -------------------------------------------------------
   const translationRows: TranslationRow[] = []
@@ -220,203 +209,120 @@ export const DashboardOverview = async () => {
 
   const metrics: Metric[] = [
     {
-      label: 'Aktif Eğitimler',
+      label: 'Aktif eğitimler',
       value: activeTrainings,
       hint: 'Başvuruya açık veya devam eden',
       href: '/admin/collections/training-programs',
       icon: <IconTraining />,
     },
     {
-      label: 'Yaklaşan Programlar',
+      label: 'Yaklaşan programlar',
       value: upcoming.count,
-      hint: upcoming.nextDate ? `En yakın: ${upcoming.nextDate}` : 'Planlanmış program yok',
+      hint: upcoming.nextDate ? `En yakını: ${upcoming.nextDate}` : 'Planlanmış program yok',
       href: '/admin/collections/training-programs',
       icon: <IconCalendar />,
     },
     {
-      label: 'Haberler ve Duyurular',
-      value: newsCount,
-      hint: 'Yayımlanmış içerik',
-      href: '/admin/collections/news',
-      icon: <IconNews />,
+      label: 'Bekleyen başvurular',
+      value: pendingRegistrations,
+      hint:
+        pendingAccommodation === null
+          ? 'Karar bekleyen eğitim başvurusu'
+          : `Konaklama talebi: ${pendingAccommodation} bekliyor`,
+      href: `/admin/collections/registrations${PENDING_QUERY}`,
+      icon: <IconClipboard />,
+      attention: Boolean(pendingRegistrations),
     },
     {
-      label: 'Form Bildirimleri',
-      value: submissions,
-      hint: 'Toplam gönderim',
-      href: '/admin/collections/form-submissions',
+      label: 'Bekleyen formlar',
+      value: pendingRequests,
+      hint: 'Yanıt bekleyen iletişim ve bilgi talepleri',
+      href: `/admin/collections/form-requests${PENDING_QUERY}`,
       icon: <IconInbox />,
+      attention: Boolean(pendingRequests),
     },
   ]
 
-  const actions = [
-    { label: 'Yeni Eğitim Ekle', href: '/admin/collections/training-programs/create', primary: true },
-    { label: 'Yeni Haber Yayınla', href: '/admin/collections/news/create', primary: true },
-    { label: 'Gelen Başvuruları İncele', href: '/admin/collections/form-submissions', primary: false },
-  ]
+  const today = new Intl.DateTimeFormat('tr', {
+    dateStyle: 'full',
+    timeZone: 'Europe/Istanbul',
+  }).format(new Date())
+
+  /*
+    Rozet: renk tek başına anlam taşımaz — simge (✓ / ⚠) ve metin de durumu
+    söyler (WCAG 2.2 — 1.4.1). Renk çiftleri admin-theme.css'te ölçülmüştür.
+  */
+  const translationBadge = (() => {
+    if (totalMissing === 0) {
+      return <span className="aiftc-rozet aiftc-rozet--tamam">✓ {LOCALES.length} dil eşit</span>
+    }
+    const worst = [...translationRows].sort(
+      (a, b) =>
+        Object.values(b.missing).reduce((x, y) => x + y, 0) -
+        Object.values(a.missing).reduce((x, y) => x + y, 0),
+    )[0]
+    return (
+      <a className="aiftc-rozet aiftc-rozet--eksik" href={`/admin/collections/${worst.slug}`}>
+        ⚠ {totalMissing} eksik çeviri
+      </a>
+    )
+  })()
 
   return (
-    <section
-      aria-labelledby="dashboard-overview-heading"
-      style={{
-        marginBottom: '2rem',
-        padding: '1.5rem',
-        borderRadius: 10,
-        border: '1px solid var(--theme-elevation-100)',
-        borderLeft: `4px solid ${ACCENT}`,
-        background: 'var(--theme-elevation-0)',
-        boxShadow: '0 1px 3px rgb(0 0 0 / 0.06)',
-      }}
-    >
-      {/* --- Karşılama + çeviri rozeti ----------------------------------- */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: '1rem',
-        }}
-      >
-        <div style={{ maxWidth: '44rem' }}>
-          <h2 id="dashboard-overview-heading" style={{ margin: 0, fontSize: '1.2rem', lineHeight: 1.3 }}>
-            Antalya Uluslararası Ormancılık Eğitim Merkezi — Yönetim Paneli
+    <section className="aiftc-ozet" aria-labelledby="dashboard-overview-heading">
+      <div className="aiftc-ozet__ust">
+        <div>
+          <p className="aiftc-ozet__tarih">{today}</p>
+          <h2 id="dashboard-overview-heading" className="aiftc-ozet__baslik">
+            Genel bakış
           </h2>
-          <p style={{ margin: '.5rem 0 0', fontSize: '.875rem', opacity: 0.75 }}>
-            Eğitim programları, takvim, haber ve duyurular ile başvuru yönlendirmeleri bu panelden
-            yönetilir. Aşağıdaki sayılar yalnızca <strong>yayımlanmış</strong> kayıtları gösterir.
+          <p className="aiftc-ozet__aciklama">
+            Antalya Uluslararası Ormancılık Eğitim Merkezi yönetim paneli. Eğitim sayıları yalnızca{' '}
+            <strong>yayımlanmış</strong> kayıtları gösterir. {translationBadge}
           </p>
         </div>
 
-        {/*
-          ÇEVİRİ DURUMU — YALNIZCA ROZET
-          Ayrıntılı tablo tamamen kaldırıldı; kontrol panelinin ortasında yer
-          kaplayan bir kutu bırakılmadı.
-
-          Şartname 5 "eksik çeviriler panelde görülebilmelidir" der. Bu koşul
-          rozetin KENDİSİYLE karşılanır: eksik varsa sayıyı yazar ve en çok
-          eksiği olan bölümün listesine BAĞLANIR — editör tek tıkla oraya gider.
-
-          Renk tek başına anlam taşımaz: simge (✓ / ⚠) ve metin de durumu
-          söyler (WCAG 2.2 — 1.4.1). Renk çiftleri ölçülmüştür:
-            #0a5c33 / #e7f6ed → 7.26:1
-            #7a4a05 / #fbf1de → 6.67:1
-        */}
-        {(() => {
-          const complete = totalMissing === 0
-
-          const badgeStyle: React.CSSProperties = {
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '.35rem',
-            padding: '.25rem .625rem',
-            borderRadius: 999,
-            fontSize: '.75rem',
-            fontWeight: 500,
-            whiteSpace: 'nowrap',
-            textDecoration: 'none',
-            border: complete ? '1px solid #c3e6d2' : '1px solid #f0dcb4',
-            background: complete ? '#e7f6ed' : '#fbf1de',
-            color: complete ? '#0a5c33' : '#7a4a05',
-          }
-
-          if (complete) {
-            return <span style={badgeStyle}>✓ {LOCALES.length} dil senkronize</span>
-          }
-
-          // En çok eksiği olan bölüm — rozet oraya götürür.
-          const worst = [...translationRows].sort(
-            (a, b) =>
-              Object.values(b.missing).reduce((x, y) => x + y, 0) -
-              Object.values(a.missing).reduce((x, y) => x + y, 0),
-          )[0]
-
-          return (
-            <a href={`/admin/collections/${worst.slug}`} style={badgeStyle}>
-              ⚠ {totalMissing} eksik çeviri
-            </a>
-          )
-        })()}
-      </div>
-
-      {/* --- Metrikler ---------------------------------------------------- */}
-      <dl
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))',
-          gap: '.875rem',
-          margin: '1.5rem 0 0',
-        }}
-      >
-        {metrics.map((metric) => (
-          <div
-            key={metric.label}
-            style={{
-              border: '1px solid var(--theme-elevation-100)',
-              borderRadius: 8,
-              padding: '1rem',
-              background: 'var(--theme-elevation-50)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-              <span style={{ color: ACCENT, display: 'inline-flex' }}>{metric.icon}</span>
-              <dt
-                style={{
-                  fontSize: '.7rem',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '.06em',
-                  opacity: 0.7,
-                }}
-              >
-                {metric.label}
-              </dt>
-            </div>
-
-            <dd style={{ margin: '.5rem 0 0' }}>
-              <a
-                href={metric.href}
-                style={{
-                  fontSize: '1.875rem',
-                  fontWeight: 700,
-                  lineHeight: 1.05,
-                  color: 'var(--theme-text)',
-                  textDecoration: 'none',
-                }}
-              >
-                {/* Sorgu düştüyse sayı uydurulmaz. */}
-                {metric.value === null ? '—' : metric.value}
-              </a>
-              {metric.hint ? (
-                <span style={{ display: 'block', marginTop: '.35rem', fontSize: '.75rem', opacity: 0.65 }}>
-                  {metric.hint}
-                </span>
-              ) : null}
-            </dd>
-          </div>
-        ))}
-      </dl>
-
-      {/* --- Hızlı kısayollar --------------------------------------------- */}
-      <nav aria-label="Hızlı işlemler" style={{ marginTop: '1.5rem' }}>
-        <ul
-          style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', listStyle: 'none', margin: 0, padding: 0 }}
-        >
-          {actions.map((action) => (
-            <li key={action.href}>
-              {/* Hover durumu satır içi stille verilemez; sınıflar
-                  admin-theme.css içinde tanımlıdır. */}
-              <a
-                href={action.href}
-                className={`aiftc-btn ${action.primary ? 'aiftc-btn--primary' : 'aiftc-btn--secondary'}`}
-              >
-                {action.label}
+        <nav aria-label="Hızlı işlemler">
+          <ul className="aiftc-ozet__eylemler">
+            <li>
+              <a className="aiftc-btn aiftc-btn--birincil" href="/admin/collections/training-programs/create">
+                + Yeni eğitim
               </a>
             </li>
-          ))}
-        </ul>
-      </nav>
+            <li>
+              <a className="aiftc-btn aiftc-btn--birincil" href="/admin/collections/news/create">
+                + Yeni haber
+              </a>
+            </li>
+            <li>
+              <a className="aiftc-btn aiftc-btn--ikincil" href={`/admin/collections/registrations${PENDING_QUERY}`}>
+                Başvuruları incele
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
 
+      {/* Her ölçüm kendi listesine giden bir bağlantıdır; bağlantının adı
+          etiket + sayı + ipucudur ("Bekleyen başvurular 3 …"). */}
+      <ul className="aiftc-ozet__olcumler">
+        {metrics.map((metric) => (
+          <li key={metric.label}>
+            <a
+              className={`aiftc-olcum${metric.attention ? ' aiftc-olcum--dikkat' : ''}`}
+              href={metric.href}
+            >
+              <span className="aiftc-olcum__ust">
+                <span className="aiftc-olcum__etiket">{metric.label}</span>
+                <span className="aiftc-olcum__ikon">{metric.icon}</span>
+              </span>
+              {/* Sorgu düştüyse sayı uydurulmaz. */}
+              <strong className="aiftc-olcum__deger">{metric.value === null ? '—' : metric.value}</strong>
+              {metric.hint ? <span className="aiftc-olcum__ipucu">{metric.hint}</span> : null}
+            </a>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

@@ -16,48 +16,19 @@ import { BrandMark } from './BrandIcon'
  * BU RESMÎ AMBLEM DEĞİLDİR — bkz. BrandIcon içindeki not. Kurumun resmî
  * görsel kimlik dosyası geldiğinde işaret onunla değiştirilmelidir.
  *
- * Satır içi `style` kullanılır: panel kendi CSS'ini yükler, projenin
- * Tailwind katmanı admin rotalarında ÇALIŞMAZ. `currentColor` ve
- * `var(--theme-elevation-*)` Payload'ın kendi tema değişkenleridir;
+ * Biçim admin-theme.css → `.aiftc-logo` (projenin Tailwind katmanı admin
+ * rotalarında ÇALIŞMAZ). Renkler Payload'ın tema değişkenlerinden gelir;
  * açık/koyu temada da doğru kontrast verirler.
  * ============================================================================
  */
 export const BrandLogo: React.FC = () => (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.875rem',
-      maxWidth: '22rem',
-      textAlign: 'left',
-    }}
-  >
-    <span style={{ flexShrink: 0, display: 'block' }}>
-      <BrandMark size={32} />
+  <div className="aiftc-logo">
+    <span className="aiftc-logo__isaret" aria-hidden="true">
+      <BrandMark size={26} />
     </span>
-
-    <span style={{ display: 'block' }}>
-      <strong
-        style={{
-          display: 'block',
-          fontSize: '1.05rem',
-          lineHeight: 1.25,
-          fontWeight: 600,
-        }}
-      >
-        Antalya Uluslararası Ormancılık Eğitim Merkezi
-      </strong>
-      <span
-        style={{
-          display: 'block',
-          marginTop: '0.25rem',
-          fontSize: '0.8rem',
-          lineHeight: 1.4,
-          opacity: 0.7,
-        }}
-      >
-        T.C. Tarım ve Orman Bakanlığı — Orman Genel Müdürlüğü
-      </span>
+    <span>
+      <strong className="aiftc-logo__ad">Antalya Uluslararası Ormancılık Eğitim Merkezi</strong>
+      <span className="aiftc-logo__alt">T.C. Tarım ve Orman Bakanlığı — Orman Genel Müdürlüğü</span>
     </span>
   </div>
 )

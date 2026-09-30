@@ -49,6 +49,8 @@ export const translationStatusField: Field = {
   admin: {
     position: 'sidebar',
     readOnly: true,
+    /* Ham JSON yerine dil dil rozet (components/admin/TranslationStatusField.tsx). */
+    components: { Field: '@/components/admin/TranslationStatusField#TranslationStatusField' },
     description: {
       tr: 'Otomatik hesaplanır. Eksik dilleri gösterir.',
       en: 'Calculated automatically. Shows missing locales.',
