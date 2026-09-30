@@ -61,9 +61,9 @@ export const AccommodationSettings: GlobalConfig = {
           admin: {
             width: '33%',
             description: {
-              tr: 'Toplantıda 20 gün konuşuldu; 15 de dile geldi. Kurum kesin değeri teyit etmeli.',
-              en: '20 was discussed; 15 was also mentioned. To be confirmed by the institution.',
-              ru: 'Обсуждалось 20; упоминалось и 15.',
+              tr: 'Bir talepte seçilebilecek en fazla gece sayısı. Konaklama eğitim tarihlerinin dışına taşabilir.',
+              en: 'The most nights a single request may cover. The stay may extend beyond the training dates.',
+              ru: 'Максимальное число ночей в одной заявке. Проживание может выходить за даты обучения.',
             },
           },
         },

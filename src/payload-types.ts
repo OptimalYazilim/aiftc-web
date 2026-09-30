@@ -3985,7 +3985,7 @@ export interface ExternalService {
   };
   edevlet?: {
     /**
-     * When off, the e-Devlet button is hidden and its endpoints return 404. Off by institutional decision (29 Sep 2026).
+     * When off, the e-Devlet button is hidden on the sign-in page and the e-Devlet endpoints return 404. Off by default; turn it on if trainings for citizens are opened.
      */
     citizenLoginEnabled?: boolean | null;
   };
@@ -4103,7 +4103,7 @@ export interface AccommodationSetting {
   id: number;
   enabled?: boolean | null;
   /**
-   * 20 was discussed; 15 was also mentioned. To be confirmed by the institution.
+   * The most nights a single request may cover. The stay may extend beyond the training dates.
    */
   maxNights: number;
   /**

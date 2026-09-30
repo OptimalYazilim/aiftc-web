@@ -248,6 +248,80 @@ export default buildConfig({
   i18n: {
     supportedLanguages: { tr, en, ru },
     fallbackLanguage: 'tr',
+    /*
+      EKLENTI CEVIRILERI — EKSIK DILLER BURADA TAMAMLANIR.
+      Olculdu (2026-09-30): @payloadcms/plugin-redirects yalnizca en, es, fr,
+      ja, pt ve sv cevirisi getiriyor. Panel dili `tr` ve yedek dil de `tr`
+      oldugu icin Yonlendirmeler ekraninda alan adlari yerine HAM ANAHTARLAR
+      basiliyordu ("plugin-redirects:fromUrl" gibi). Eklenti kendi cevirilerini
+      bu nesneyle birlestirir; burada verilen tr/ru metinleri korunur.
+
+      Form olusturucu eklentisinin kendi tr/ru cevirileri var ama bazilari
+      yanlis ("Submit Button Label" -> "Düğme Etiketini Gönder", "Country
+      Fields" -> "Деревенские поля"). Yalnizca yanlis olanlar burada
+      duzeltilir; eklenti bu nesneyi kendi cevirilerinin USTUNE yazar.
+    */
+    translations: {
+      tr: {
+        'plugin-form-builder': {
+          checkedByDefault: 'Varsayılan olarak işaretli',
+          condition: 'Koşul',
+          emailFrom: 'Gönderen (Kimden)',
+          emailTo: 'Alıcı (Kime)',
+          radioOptions: 'Seçenekler',
+          radioPlural: 'Tekli Seçim Alanları',
+          radioSingular: 'Tekli seçim',
+          replyTo: 'Yanıt adresi',
+          required: 'Zorunlu',
+          selectOptions: 'Seçenekler',
+          selectPlural: 'Açılır Liste Alanları',
+          selectSingular: 'Açılır liste',
+          submitButton: 'Gönder düğmesinin metni',
+          textareaPlural: 'Çok Satırlı Metin Alanları',
+          textareaSingular: 'Çok satırlı metin',
+          uploadCollection: 'Dosyaların saklanacağı koleksiyon',
+          uploadFieldPlural: 'Dosya Yükleme Alanları',
+          uploadFieldSingular: 'Dosya yükleme',
+        },
+        'plugin-redirects': {
+          customUrl: 'Özel adres (URL)',
+          documentToRedirect: 'Yönlendirilecek içerik',
+          fromUrl: 'Kaynak adres (URL)',
+          internalLink: 'Site içi bağlantı',
+          redirectType: 'Yönlendirme türü',
+          toUrlType: 'Hedef türü',
+        },
+      },
+      ru: {
+        'plugin-form-builder': {
+          checkedByDefault: 'Отмечено по умолчанию',
+          condition: 'Условие',
+          countryPlural: 'Поля страны',
+          emailFrom: 'От кого',
+          emailTo: 'Кому',
+          label: 'Подпись',
+          numberSingular: 'Число',
+          radioPlural: 'Поля-переключатели',
+          radioSingular: 'Переключатель',
+          replyTo: 'Адрес для ответа',
+          selectOptions: 'Варианты',
+          selectPlural: 'Поля выбора',
+          selectSingular: 'Выбор',
+          submitButton: 'Текст кнопки отправки',
+          uploadCollection: 'Коллекция для файлов',
+          uploadFieldPlural: 'Поля загрузки файлов',
+          uploadFieldSingular: 'Загрузка файла',
+        },
+        'plugin-redirects': {
+          customUrl: 'Произвольный URL',
+          documentToRedirect: 'Документ для перенаправления',
+          fromUrl: 'Исходный URL',
+          internalLink: 'Внутренняя ссылка',
+          redirectType: 'Тип перенаправления',
+          toUrlType: 'Тип целевого адреса',
+        },
+      },
+    },
   },
 
   // ==========================================================================
@@ -459,9 +533,19 @@ export default buildConfig({
         },
       },
       formOverrides: {
+        /* Eklenti koleksiyona etiket vermiyor; panelde "Forms" diye İngilizce görünüyordu. */
+        labels: {
+          singular: { tr: 'Form', en: 'Form', ru: 'Форма' },
+          plural: { tr: 'Formlar', en: 'Forms', ru: 'Формы' },
+        },
         admin: { group: { tr: 'Genel Ayarlar', en: 'Site settings', ru: 'Настройки сайта' } },
         fields: ({ defaultFields }) => [
-          ...defaultFields,
+          /* `emails` alanının etiketi yok; Payload addan "Emails" üretiyordu. */
+          ...defaultFields.map((alan) =>
+            'name' in alan && alan.name === 'emails'
+              ? { ...alan, label: { tr: 'E-posta bildirimleri', en: 'Email notifications', ru: 'Уведомления по электронной почте' } }
+              : alan,
+          ),
           {
             name: 'consentText',
             type: 'textarea',
@@ -490,6 +574,11 @@ export default buildConfig({
     redirectsPlugin({
       collections: ['pages', 'news', 'training-programs'],
       overrides: {
+        /* Eklenti etiket vermiyor; panelde "Redirects" diye İngilizce görünüyordu. Alan adları: yukarıda `i18n.translations`. */
+        labels: {
+          singular: { tr: 'Yönlendirme', en: 'Redirect', ru: 'Перенаправление' },
+          plural: { tr: 'Yönlendirmeler', en: 'Redirects', ru: 'Перенаправления' },
+        },
         admin: { group: { tr: 'Genel Ayarlar', en: 'Site settings', ru: 'Настройки сайта' } },
       },
     }),

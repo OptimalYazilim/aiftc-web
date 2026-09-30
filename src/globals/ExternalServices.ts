@@ -322,9 +322,9 @@ dbName: 'feat_cols',
                   },
                   admin: {
                     description: {
-                      tr: 'Kapalıyken giriş sayfasında e-Devlet düğmesi görünmez ve e-Devlet uçları 404 döner. Kurum kararıyla (29.09.2026) kapalıdır; vatandaş eğitimleri açılırsa işaretleyin.',
-                      en: 'When off, the e-Devlet button is hidden and its endpoints return 404. Off by institutional decision (29 Sep 2026).',
-                      ru: 'Если выключено, кнопка e-Devlet скрыта, а её адреса возвращают 404.',
+                      tr: 'Kapalıyken giriş sayfasında e-Devlet düğmesi görünmez ve e-Devlet uçları 404 döner. Varsayılan olarak kapalıdır; vatandaşlara yönelik eğitimler açılırsa işaretleyin.',
+                      en: 'When off, the e-Devlet button is hidden on the sign-in page and the e-Devlet endpoints return 404. Off by default; turn it on if trainings for citizens are opened.',
+                      ru: 'Если выключено, кнопка e-Devlet на странице входа скрыта, а адреса e-Devlet возвращают 404. По умолчанию выключено; включите, если откроется обучение для граждан.',
                     },
                   },
                 },
