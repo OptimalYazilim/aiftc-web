@@ -189,7 +189,13 @@ export default buildConfig({
       titleSuffix: ' — Yönetim Paneli',
       description:
         'Antalya Uluslararası Ormancılık Eğitim Merkezi içerik yönetim sistemi. Yalnızca yetkili personel erişebilir.',
-      icons: [{ rel: 'icon', type: 'image/png', url: '/favicon.png' }],
+      /*
+        `/favicon.png` diye bir dosya YOKTU; her panel sayfası 404 alıyordu
+        (ölçüldü, 2026-09-30). Panel meta'sı sabittir, sitedeki gibi Genel Site
+        Ayarları'ndaki Favicon alanını okuyamaz; bu yüzden nötr geçici işaret
+        kullanılır (public/favicon.svg — resmî amblem değil).
+      */
+      icons: [{ rel: 'icon', type: 'image/svg+xml', url: '/favicon.svg' }],
     },
     components: {
       /**

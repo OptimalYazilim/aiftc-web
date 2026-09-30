@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    GEÇİCİ FAVİCON — RESMÎ AMBLEM DEĞİLDİR.
+    Paneldeki nötr ormancılık işaretinin aynısıdır (components/admin/BrandIcon.tsx).
+    Kurum kendi ikonunu Genel Site Ayarları → Kurum Kimliği → Favicon alanına
+    yüklediğinde site onu kullanır; bu dosya yalnızca o alan boşken gösterilir.
+  -->
+  <path d="M16 28v-8" fill="none" stroke="#189a5a" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M16 3 7.5 15h4.5L6 22h20l-6-7h4.5L16 3Z" fill="#189a5a"/>
+</svg>

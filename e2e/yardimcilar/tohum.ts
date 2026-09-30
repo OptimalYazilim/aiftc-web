@@ -235,7 +235,7 @@ export const tohumla = async (): Promise<TohumSonucu> => {
     PANEL ANAHTARLARI BİLİNEN DURUMDAN BAŞLAR.
     Bazı senaryolar global ayarları açıp kapatır ve sonda eski hâline getirir
     (07: vatandaş e-Devlet girişi, 13: konaklama ön başvurusu, 15: genel
-    kayıt). Koşu yarıda kesilirse — süreç öldürülür ya da çökerse; bu makinede
+    kayıt, 16: favicon). Koşu yarıda kesilirse — süreç öldürülür ya da çökerse; bu makinede
     2026-09-30'da koşular bellek yetersizliğinden birkaç kez durduruldu —
     `afterAll` hiç çalışmaz ve anahtar AÇIK kalabilir. Global ayarlar
     `temizle`nin sildiği kayıtlardan değildir; açık kalan anahtar sonraki
@@ -258,7 +258,8 @@ export const tohumla = async (): Promise<TohumSonucu> => {
   })
   await payload.updateGlobal({
     slug: 'site-settings',
-    data: { accounts: { publicRegistrationEnabled: false } },
+    /* 16: favicon — yarıda kalan koşu seçili bir görsel bırakmasın. */
+    data: { accounts: { publicRegistrationEnabled: false }, logos: { favicon: null } },
     context: ctx(),
     overrideAccess: true,
   })

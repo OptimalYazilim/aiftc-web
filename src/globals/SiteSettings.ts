@@ -74,7 +74,19 @@ export const SiteSettings: GlobalConfig = {
               fields: [
                 { name: 'primary', type: 'upload', relationTo: 'media', label: { tr: 'Ana Logo', en: 'Primary logo', ru: 'Основной логотип' } },
                 { name: 'primaryDark', type: 'upload', relationTo: 'media', label: { tr: 'Koyu Zemin Logosu', en: 'Logo on dark', ru: 'Логотип на тёмном' } },
-                { name: 'favicon', type: 'upload', relationTo: 'media', label: { tr: 'Favicon', en: 'Favicon', ru: 'Favicon' } },
+                {
+                  name: 'favicon',
+                  type: 'upload',
+                  relationTo: 'media',
+                  label: { tr: 'Favicon', en: 'Favicon', ru: 'Favicon' },
+                  admin: {
+                    description: {
+                      tr: 'Tarayıcı sekmesinde görünen site ikonu. Kare PNG ya da SVG önerilir (en az 48×48 piksel). Boşsa geçici nötr bir işaret gösterilir. Yönetim panelinin kendi ikonu değişmez.',
+                      en: 'The site icon shown in the browser tab. A square PNG or SVG is recommended (at least 48×48 pixels). While empty, a neutral placeholder mark is shown. The admin panel keeps its own icon.',
+                      ru: 'Значок сайта во вкладке браузера. Рекомендуется квадратный PNG или SVG (не меньше 48×48 пикселей). Пока поле пустое, показывается нейтральный временный знак. Значок панели управления не меняется.',
+                    },
+                  },
+                },
                 { name: 'ogImage', type: 'upload', relationTo: 'media', label: { tr: 'Paylaşım Görseli (1200×630)', en: 'Social share image', ru: 'Изображение для соцсетей' } },
                 {
                   name: 'partnerLogos',

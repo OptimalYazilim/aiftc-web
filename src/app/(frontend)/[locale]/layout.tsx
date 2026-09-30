@@ -16,6 +16,7 @@ import { SiteHeader } from '@/components/layout/SiteHeader'
 import { buildAlternates, getLocaleMeta, isLocale, LOCALE_CODES } from '@/i18n/locales'
 import { href, pageHref } from '@/i18n/routes'
 import { getSiteSettings } from '@/lib/queries'
+import type { Media } from '@/payload-types'
 
 import '../globals.css'
 
@@ -42,6 +43,31 @@ type Props = {
 }
 
 /**
+ * FAVİCON — PANELDEN YÖNETİLİR
+ * ============================================================================
+ * Kaynak: Genel Site Ayarları → Kurum Kimliği → Logolar → Favicon. Alan boşsa
+ * `public/favicon.svg` basılır: paneldeki nötr ormancılık işareti, resmî amblem
+ * DEĞİLDİR (bkz. components/admin/BrandIcon.tsx). Kurum ikonunu yüklediği an
+ * site onu kullanır; kod değişikliği gerekmez.
+ *
+ * ÖLÇÜLMÜŞ SORUN (2026-09-30): sitede hiç ikon tanımı yoktu. Tarayıcı her
+ * sayfada `/favicon.ico` isteyip 404 alıyordu; alan panelde vardı ama hiçbir
+ * yer okumuyordu.
+ *
+ * `/favicon.ico` AYRICA VAR (public/favicon.ico, aynı işaretin ICO hâli):
+ * bazı istemciler sayfadaki bağlantıya bakmadan o adresi ister — ölçüldü,
+ * bağlantı eklendikten sonra da istek gelmeye devam etti. HTML sayfalarında
+ * panelden yüklenen ikon her zaman önce gelir.
+ */
+const faviconOf = (settings: unknown): NonNullable<Metadata['icons']> => {
+  const favicon = (settings as { logos?: { favicon?: Media | number | null } }).logos?.favicon
+  if (favicon && typeof favicon === 'object' && favicon.url) {
+    return { icon: [{ url: favicon.url, ...(favicon.mimeType ? { type: favicon.mimeType } : {}) }] }
+  }
+  return { icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }] }
+}
+
+/**
  * Uluslararası SEO (Şartname 3.5): her sayfa üç dilin tamamına hreflang
  * verir ve x-default varsayılan dile işaret eder.
  */
@@ -63,6 +89,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'website',
     },
     robots: { index: true, follow: true },
+    icons: faviconOf(settings),
   }
 }
 

@@ -3493,6 +3493,9 @@ export interface SiteSetting {
   logos?: {
     primary?: (number | null) | Media;
     primaryDark?: (number | null) | Media;
+    /**
+     * The site icon shown in the browser tab. A square PNG or SVG is recommended (at least 48×48 pixels). While empty, a neutral placeholder mark is shown. The admin panel keeps its own icon.
+     */
     favicon?: (number | null) | Media;
     ogImage?: (number | null) | Media;
     partnerLogos?:
