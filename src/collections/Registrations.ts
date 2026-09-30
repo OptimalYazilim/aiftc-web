@@ -250,6 +250,26 @@ export const Registrations: CollectionConfig = {
         },
       },
     },
+    /*
+      EĞİTİME ÖZEL SORULARIN CEVAPLARI — soru METNİYLE birlikte anlık görüntü
+      (lib/applicationQuestions.ts). Eğitimdeki soru sonradan değişse de
+      kayıt, kişiye ne sorulduğunu gösterir. Elle değiştirilemez: başvuranın
+      beyanıdır.
+    */
+    {
+      name: 'extraAnswers',
+      type: 'array',
+      label: { tr: 'Eğitime Özel Sorular', en: 'Training-specific answers', ru: 'Ответы на вопросы' },
+      access: { update: () => false },
+      admin: {
+        readOnly: true,
+        condition: (data) => Array.isArray(data?.extraAnswers) && data.extraAnswers.length > 0,
+      },
+      fields: [
+        { name: 'question', type: 'text', label: { tr: 'Soru', en: 'Question', ru: 'Вопрос' } },
+        { name: 'answer', type: 'textarea', label: { tr: 'Cevap', en: 'Answer', ru: 'Ответ' } },
+      ],
+    },
 
     // --- Değerlendirme (yalnızca personel) -----------------------------------
     {

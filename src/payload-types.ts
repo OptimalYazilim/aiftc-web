@@ -576,6 +576,24 @@ export interface TrainingProgram {
     email?: string | null;
     contactUnit?: string | null;
   };
+  /**
+   * Extra questions asked only for this training on the application form. General fields (name, e-mail, organisation) are already on the form.
+   */
+  applicationQuestions?:
+    | {
+        label: string;
+        type: 'text' | 'textarea' | 'select' | 'checkbox';
+        required?: boolean | null;
+        options?:
+          | {
+              label: string;
+              id?: string | null;
+            }[]
+          | null;
+        help?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   objective?: {
     root: {
       type: string;
@@ -968,6 +986,13 @@ export interface Registration {
    * Anything the applicant added on the form (motivation, special needs, etc.).
    */
   notes?: string | null;
+  extraAnswers?:
+    | {
+        question?: string | null;
+        answer?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * The applicant cannot see this note.
    */
@@ -2395,6 +2420,21 @@ export interface TrainingProgramsSelect<T extends boolean = true> {
         email?: T;
         contactUnit?: T;
       };
+  applicationQuestions?:
+    | T
+    | {
+        label?: T;
+        type?: T;
+        required?: T;
+        options?:
+          | T
+          | {
+              label?: T;
+              id?: T;
+            };
+        help?: T;
+        id?: T;
+      };
   objective?: T;
   learningOutcomes?:
     | T
@@ -2479,6 +2519,13 @@ export interface RegistrationsSelect<T extends boolean = true> {
   organization?: T;
   country?: T;
   notes?: T;
+  extraAnswers?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
   adminNotes?: T;
   reviewedBy?: T;
   reviewedAt?: T;

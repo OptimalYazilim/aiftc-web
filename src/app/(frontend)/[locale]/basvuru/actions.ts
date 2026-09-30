@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { FOCUS_COUNTRIES } from '@/fields/options'
 import { isLocale, type Locale } from '@/i18n/locales'
+import { EK_ALAN_ONEKI, ekCevaplariDogrula, sorulariCoz, type EkCevap } from '@/lib/applicationQuestions'
 import { CONTACT_FORM_TITLE } from '@/lib/contactForm'
 import { payloadClient } from '@/lib/queries'
 import { REGISTRATION_FORM_TITLE } from '@/lib/registrationForm'
@@ -49,6 +50,27 @@ export type RegistrationFormState = {
   status: 'idle' | 'success' | 'error'
   fieldErrors?: Record<string, string>
   message?: string
+  /**
+   * HATADA GÖNDERİLEN DEĞERLER GERİ DÖNER — ölçülmüş kusur (2026-09-30).
+   * React 19, `action` alan formu eylem bitince SIFIRLAR; sunucu bir hata
+   * döndürdüğünde kişinin yazdığı her şey siliniyordu (ad, e-posta, rıza,
+   * cevaplar). Form bu değerleri `defaultValue` olarak kullanır; sıfırlama
+   * onlara döner. Yalnızca formun kendi alan adları, kırpılmış ve sınırlı
+   * uzunlukta döner.
+   */
+  values?: Record<string, string>
+}
+
+/** Hata dönüşünde formu geri doldurmak için gönderilen değerler. */
+const gonderilenDegerler = (formData: FormData): Record<string, string> => {
+  const sonuc: Record<string, string> = {}
+  for (const [ad, deger] of formData.entries()) {
+    if (typeof deger !== 'string') continue
+    if (ad === 'website' || ad.startsWith('$')) continue
+    const bilinen = ad in LIMITS || ['training', 'country', 'consent'].includes(ad) || ad.startsWith(EK_ALAN_ONEKI)
+    if (bilinen) sonuc[ad] = deger.slice(0, 2000)
+  }
+  return sonuc
 }
 
 const LIMITS: Record<string, number> = {
@@ -107,10 +129,12 @@ export const submitRegistration = async (
   /* --- Eğitim: var mı, yayında mı, başvuruya açık mı ----------------------- */
   const rawTraining = String(formData.get('training') ?? '').trim()
   let trainingId: number | null = null
+  let extraAnswers: EkCevap[] = []
 
   if (/^\d+$/.test(rawTraining)) {
     const found = await payload.find({
       collection: 'training-programs',
+      locale,
       where: {
         id: { equals: Number(rawTraining) },
         _status: { equals: 'published' },
@@ -118,14 +142,30 @@ export const submitRegistration = async (
       },
       limit: 1,
       depth: 0,
-      select: {} as never,
+      select: { applicationQuestions: true } as never,
     })
-    if (found.docs.length > 0) trainingId = Number(rawTraining)
+    if (found.docs.length > 0) {
+      trainingId = Number(rawTraining)
+      /*
+        Eğitime özel sorular SUNUCUDA, kayıttan yeniden okunur; istemcinin
+        gönderdiği alan listesine güvenilmez (lib/applicationQuestions.ts).
+      */
+      const sorular = sorulariCoz((found.docs[0] as { applicationQuestions?: unknown }).applicationQuestions)
+      const { cevaplar, hatalar } = ekCevaplariDogrula(sorular, formData, {
+        zorunlu: t('errorRequired'),
+        uzun: (max) => t('errorTooLong', { max }),
+        secim: t('errorChoice'),
+        evet: t('answerYes'),
+        hayir: t('answerNo'),
+      })
+      extraAnswers = cevaplar
+      Object.assign(fieldErrors, hatalar)
+    }
   }
   if (!trainingId) fieldErrors.training = t('errorTraining')
 
   if (Object.keys(fieldErrors).length > 0) {
-    return { status: 'error', fieldErrors, message: t('formErrorSummary') }
+    return { status: 'error', fieldErrors, message: t('formErrorSummary'), values: gonderilenDegerler(formData) }
   }
 
   const eposta = values.email.toLowerCase()
@@ -142,7 +182,12 @@ export const submitRegistration = async (
     depth: 0,
   })
   if (mevcut.totalDocs > 0) {
-    return { status: 'error', fieldErrors: { email: t('errorDuplicate') }, message: t('errorDuplicate') }
+    return {
+      status: 'error',
+      fieldErrors: { email: t('errorDuplicate') },
+      message: t('errorDuplicate'),
+      values: gonderilenDegerler(formData),
+    }
   }
 
   try {
@@ -184,6 +229,7 @@ export const submitRegistration = async (
         position: values.position || undefined,
         country: country || undefined,
         notes: values.notes || undefined,
+        extraAnswers: extraAnswers.length > 0 ? extraAnswers : undefined,
         consentAcceptedAt: new Date().toISOString(),
         consentSnapshot,
         locale,
@@ -193,6 +239,6 @@ export const submitRegistration = async (
     return { status: 'success', message: t('formSuccess') }
   } catch {
     /* Ayrıntı kullanıcıya sızdırılmaz; Payload sunucu günlüğüne yazar. */
-    return { status: 'error', message: t('formFailed') }
+    return { status: 'error', message: t('formFailed'), values: gonderilenDegerler(formData) }
   }
 }

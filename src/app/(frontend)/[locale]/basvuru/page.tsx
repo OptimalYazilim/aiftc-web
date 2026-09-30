@@ -7,6 +7,7 @@ import { RegistrationForm, type TrainingOption } from '@/components/registration
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { isLocale, type Locale } from '@/i18n/locales'
 import { ROUTES } from '@/i18n/routes'
+import { sorulariCoz } from '@/lib/applicationQuestions'
 import { CONTACT_FORM_TITLE } from '@/lib/contactForm'
 import { buildMetadata } from '@/lib/metadata'
 import { payloadClient } from '@/lib/queries'
@@ -82,7 +83,7 @@ export default async function RegistrationPage({ params, searchParams }: Props) 
       limit: 100,
       depth: 0,
       sort: '-startDate',
-      select: { title: true } as never,
+      select: { title: true, applicationQuestions: true } as never,
     }),
     payload.find({
       collection: 'forms',
@@ -93,11 +94,21 @@ export default async function RegistrationPage({ params, searchParams }: Props) 
     payload.auth({ headers: await headers() }),
   ])
 
+  /*
+    Sorular yalnızca GÖSTERMEK için forma gider; sunucu eylemi zorunluluğu ve
+    geçerli seçenekleri eğitim kaydından yeniden okur (lib/applicationQuestions).
+  */
   const trainings: TrainingOption[] = (
-    egitimler.docs as unknown as { id: number; title?: string | null }[]
+    egitimler.docs as unknown as {
+      id: number
+      title?: string | null
+      applicationQuestions?: unknown
+    }[]
   )
-    .filter((d): d is { id: number; title: string } => Boolean(d.title))
-    .map((d) => ({ id: d.id, title: d.title }))
+    .filter((d): d is { id: number; title: string; applicationQuestions?: unknown } =>
+      Boolean(d.title),
+    )
+    .map((d) => ({ id: d.id, title: d.title, questions: sorulariCoz(d.applicationQuestions) }))
 
   /*
     AÇIK RIZA METNİ — ÜÇ KADEMELİ YEDEK, İLETİŞİM FORMUYLA AYNI

@@ -691,6 +691,10 @@
     "approvalEmailGreeting": "Dear {name},",
     "approvalEmailBody": "Your application for the training \"{training}\" has been approved.",
     "approvalEmailProfileLine": "You can follow your applications on the profile page of your account: {url}",
-    "approvalEmailFooter": "This is an automated message."
+    "approvalEmailFooter": "This is an automated message.",
+    "groupQuestions": "Questions for this training",
+    "errorChoice": "Choose an option from the list.",
+    "answerYes": "Yes",
+    "answerNo": "No"
   }
 }

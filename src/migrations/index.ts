@@ -14,6 +14,7 @@ import * as migration_20260930_091923_edevlet_vatandas_anahtari from './20260930
 import * as migration_20260930_092850_basvuru_onay_epostasi from './20260930_092850_basvuru_onay_epostasi';
 import * as migration_20260930_100600_kutuphane_kategorileri from './20260930_100600_kutuphane_kategorileri';
 import * as migration_20260930_101849_daire_bazli_erisim from './20260930_101849_daire_bazli_erisim';
+import * as migration_20260930_103718_egitim_basvuru_sorulari from './20260930_103718_egitim_basvuru_sorulari';
 
 export const migrations = [
   {
@@ -95,5 +96,10 @@ export const migrations = [
     up: migration_20260930_101849_daire_bazli_erisim.up,
     down: migration_20260930_101849_daire_bazli_erisim.down,
     name: '20260930_101849_daire_bazli_erisim'
+  },
+  {
+    up: migration_20260930_103718_egitim_basvuru_sorulari.up,
+    down: migration_20260930_103718_egitim_basvuru_sorulari.down,
+    name: '20260930_103718_egitim_basvuru_sorulari'
   },
 ];

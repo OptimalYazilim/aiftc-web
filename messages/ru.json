@@ -691,6 +691,10 @@
     "approvalEmailGreeting": "Здравствуйте, {name}!",
     "approvalEmailBody": "Ваша заявка на обучение «{training}» одобрена.",
     "approvalEmailProfileLine": "Следить за своими заявками можно на странице профиля в вашей учётной записи: {url}",
-    "approvalEmailFooter": "Это сообщение отправлено автоматически."
+    "approvalEmailFooter": "Это сообщение отправлено автоматически.",
+    "groupQuestions": "Вопросы по этому обучению",
+    "errorChoice": "Выберите вариант из списка.",
+    "answerYes": "Да",
+    "answerNo": "Нет"
   }
 }

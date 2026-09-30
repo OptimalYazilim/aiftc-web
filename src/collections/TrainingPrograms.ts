@@ -387,6 +387,85 @@ enumName: 'enum_tp_custom_status',
                 },
               ],
             },
+            /*
+              EĞİTİME ÖZEL BAŞVURU SORULARI — kurum kararı (29.09.2026):
+              formda OGM'den gelen kişi bilgilerine ek olarak her eğitim için
+              ayrıca sorular sorulabilir. Yalnızca site içi başvuru formunda
+              anlamlıdır. Sunucu soruları buradan yeniden okur; cevap soru
+              metniyle birlikte başvuruya yazılır (lib/applicationQuestions.ts).
+            */
+            {
+              name: 'applicationQuestions',
+              type: 'array',
+              /* Postgres ad sınırı (63): sürüm tablosundaki iç içe dizi adı aşıyordu. */
+              dbName: 'tp_basvuru_soru',
+              label: { tr: 'Başvuru Soruları', en: 'Application questions', ru: 'Вопросы анкеты' },
+              labels: {
+                singular: { tr: 'Soru', en: 'Question', ru: 'Вопрос' },
+                plural: { tr: 'Sorular', en: 'Questions', ru: 'Вопросы' },
+              },
+              admin: {
+                condition: (data) => (data?.applicationTarget?.type ?? 'registration') === 'registration',
+                description: {
+                  tr: 'Başvuru formunda bu eğitime özel olarak sorulacak ek sorular. Ad, e-posta, kurum gibi genel alanlar zaten formdadır; burada yalnızca bu eğitime özgü bilgileri isteyin.',
+                  en: 'Extra questions asked only for this training on the application form. General fields (name, e-mail, organisation) are already on the form.',
+                  ru: 'Дополнительные вопросы для этого обучения в форме заявки.',
+                },
+                initCollapsed: true,
+              },
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'label',
+                      type: 'text',
+                      required: true,
+                      localized: true,
+                      label: { tr: 'Soru', en: 'Question', ru: 'Вопрос' },
+                      admin: { width: '60%' },
+                    },
+                    {
+                      name: 'type',
+                      type: 'select',
+                      required: true,
+                      defaultValue: 'text',
+                      label: { tr: 'Cevap Türü', en: 'Answer type', ru: 'Тип ответа' },
+                      options: [
+                        { value: 'text', label: { tr: 'Kısa metin', en: 'Short text', ru: 'Короткий текст' } },
+                        { value: 'textarea', label: { tr: 'Uzun metin', en: 'Long text', ru: 'Длинный текст' } },
+                        { value: 'select', label: { tr: 'Seçim listesi', en: 'Choice list', ru: 'Список' } },
+                        { value: 'checkbox', label: { tr: 'Onay kutusu (evet/hayır)', en: 'Checkbox (yes/no)', ru: 'Флажок (да/нет)' } },
+                      ],
+                      admin: { width: '25%' },
+                    },
+                    {
+                      name: 'required',
+                      type: 'checkbox',
+                      defaultValue: false,
+                      label: { tr: 'Zorunlu', en: 'Required', ru: 'Обязательно' },
+                      admin: { width: '15%' },
+                    },
+                  ],
+                },
+                {
+                  name: 'options',
+                  type: 'array',
+                  dbName: 'tp_basvuru_secenek',
+                  label: { tr: 'Seçenekler', en: 'Options', ru: 'Варианты' },
+                  admin: { condition: (_, sibling) => sibling?.type === 'select' },
+                  fields: [
+                    { name: 'label', type: 'text', required: true, localized: true, label: { tr: 'Seçenek', en: 'Option', ru: 'Вариант' } },
+                  ],
+                },
+                {
+                  name: 'help',
+                  type: 'text',
+                  localized: true,
+                  label: { tr: 'Açıklama (isteğe bağlı)', en: 'Help text (optional)', ru: 'Подсказка' },
+                },
+              ],
+            },
           ],
         },
 

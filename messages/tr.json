@@ -691,6 +691,10 @@
     "approvalEmailGreeting": "Sayın {name},",
     "approvalEmailBody": "\"{training}\" eğitimine yaptığınız başvuru onaylanmıştır.",
     "approvalEmailProfileLine": "Başvurularınızı hesabınızdaki profil sayfasından izleyebilirsiniz: {url}",
-    "approvalEmailFooter": "Bu ileti otomatik olarak gönderilmiştir."
+    "approvalEmailFooter": "Bu ileti otomatik olarak gönderilmiştir.",
+    "groupQuestions": "Eğitime özel sorular",
+    "errorChoice": "Listeden bir seçenek seçin.",
+    "answerYes": "Evet",
+    "answerNo": "Hayır"
   }
 }

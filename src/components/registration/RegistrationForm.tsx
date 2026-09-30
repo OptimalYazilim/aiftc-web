@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import React, { useActionState, useId } from 'react'
+import React, { useActionState, useId, useState } from 'react'
 
 import {
   submitRegistration,
@@ -13,6 +13,7 @@ import { SelectField, TextField } from '@/components/ui/FormField'
 import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
 import { LiveRegion } from '@/components/ui/LiveRegion'
 import { FOCUS_COUNTRIES } from '@/fields/options'
+import { ekAlanAdi, type BasvuruSorusu } from '@/lib/applicationQuestions'
 import type { Locale } from '@/i18n/locales'
 import { optionLabel } from '@/lib/optionLabel'
 
@@ -40,7 +41,7 @@ import { optionLabel } from '@/lib/optionLabel'
 
 const INITIAL_STATE: RegistrationFormState = { status: 'idle' }
 
-export type TrainingOption = { id: number; title: string }
+export type TrainingOption = { id: number; title: string; questions?: BasvuruSorusu[] }
 
 type Props = {
   locale: Locale
@@ -64,8 +65,22 @@ export const RegistrationForm: React.FC<Props> = ({
   const base = useId()
 
   const errors = state.fieldErrors ?? {}
+  /* Sunucu hatasında gönderilen değerler (bkz. RegistrationFormState.values). */
+  const g = state.values ?? {}
+
+  /*
+    SEÇİLİ EĞİTİM DURUMDA TUTULUR — sorular ona göre değişir. Hook'lar erken
+    dönüşlerden ÖNCE çağrılmalı; başlangıç değeri de bu yüzden burada.
+  */
+  const [secilenEgitim, setSecilenEgitim] = useState(
+    defaultTrainingId && trainings.some((e) => e.id === defaultTrainingId)
+      ? String(defaultTrainingId)
+      : '',
+  )
+  const sorular = trainings.find((e) => String(e.id) === secilenEgitim)?.questions ?? []
 
   const etiketler: Record<string, string> = {
+    ...Object.fromEntries(sorular.map((s) => [ekAlanAdi(s.id), s.label])),
     training: t('fieldTraining'),
     fullName: t('fieldFullName'),
     email: t('fieldEmail'),
@@ -119,11 +134,6 @@ export const RegistrationForm: React.FC<Props> = ({
     )
   }
 
-  const onSecili =
-    defaultTrainingId && trainings.some((e) => e.id === defaultTrainingId)
-      ? String(defaultTrainingId)
-      : ''
-
   return (
     <form action={formAction} noValidate={false} className="space-y-8">
       <FormErrorSummary
@@ -155,7 +165,8 @@ export const RegistrationForm: React.FC<Props> = ({
           requiredHint={t('requiredHint')}
           hint={t('fieldTrainingHint')}
           error={errors.training}
-          defaultValue={onSecili}
+          value={secilenEgitim}
+          onChange={setSecilenEgitim}
         >
           <option value="">{t('optionChoose')}</option>
           {trainings.map((egitim) => (
@@ -166,6 +177,99 @@ export const RegistrationForm: React.FC<Props> = ({
         </SelectField>
       </FieldGroup>
 
+      {/*
+        EĞİTİME ÖZEL SORULAR — yalnızca seçili eğitimin soruları. Eğitim
+        değişince grup yeniden kurulur (`key`), önceki eğitimin cevapları
+        sessizce gönderilmez. Alanlar diğer alanlarla aynı erişilebilirlik
+        kalıbını kullanır: görünür etiket, programatik zorunluluk, hata
+        `aria-describedby` ile bağlı ve hata özetinde listelenir.
+      */}
+      {sorular.length > 0 ? (
+        <FieldGroup key={secilenEgitim} baslik={t('groupQuestions')} className="space-y-5">
+          {sorular.map((soru) => {
+            const ad = ekAlanAdi(soru.id)
+            const id = `${base}-${ad}`
+            if (soru.type === 'checkbox') {
+              const hataId = `${id}-error`
+              const ipucuId = `${id}-hint`
+              const tarif = [errors[ad] ? hataId : null, soru.help ? ipucuId : null].filter(Boolean).join(' ')
+              return (
+                <div key={soru.id}>
+                  <div className="flex items-start gap-3">
+                    <input
+                      id={id}
+                      name={ad}
+                      type="checkbox"
+                      defaultChecked={g[ad] === 'on'}
+                      required={soru.required}
+                      aria-required={soru.required || undefined}
+                      aria-invalid={errors[ad] ? true : undefined}
+                      aria-describedby={tarif || undefined}
+                      className="mt-1 h-5 w-5 shrink-0 accent-brand-700"
+                    />
+                    <label htmlFor={id} className="text-ink-700">
+                      {soru.label}
+                      {soru.required ? (
+                        <span aria-hidden="true" className="ms-1 text-ink-600">
+                          ({t('requiredHint')})
+                        </span>
+                      ) : null}
+                    </label>
+                  </div>
+                  {soru.help ? (
+                    <p id={ipucuId} className="mt-1 text-sm text-ink-600">
+                      {soru.help}
+                    </p>
+                  ) : null}
+                  {errors[ad] ? (
+                    <p id={hataId} className="mt-1 text-sm font-medium text-danger-700">
+                      {errors[ad]}
+                    </p>
+                  ) : null}
+                </div>
+              )
+            }
+            if (soru.type === 'select') {
+              return (
+                <SelectField
+                  key={soru.id}
+                  id={id}
+                  name={ad}
+                  label={soru.label}
+                  required={soru.required}
+                  requiredHint={t('requiredHint')}
+                  hint={soru.help ?? undefined}
+                  error={errors[ad]}
+                  defaultValue={g[ad] ?? ''}
+                >
+                  <option value="">{t('optionChoose')}</option>
+                  {soru.options?.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </SelectField>
+              )
+            }
+            return (
+              <TextField
+                key={soru.id}
+                id={id}
+                name={ad}
+                label={soru.label}
+                required={soru.required}
+                requiredHint={t('requiredHint')}
+                multiline={soru.type === 'textarea'}
+                maxLength={soru.type === 'textarea' ? 2000 : 300}
+                hint={soru.help ?? undefined}
+                error={errors[ad]}
+                defaultValue={g[ad]}
+              />
+            )
+          })}
+        </FieldGroup>
+      ) : null}
+
       <FieldGroup baslik={t('groupApplicant')} className="space-y-5">
         <TextField
           id={`${base}-fullName`}
@@ -175,7 +279,7 @@ export const RegistrationForm: React.FC<Props> = ({
           requiredHint={t('requiredHint')}
           autoComplete="name"
           maxLength={120}
-          defaultValue={varsayilan?.fullName ?? undefined}
+          defaultValue={g.fullName ?? varsayilan?.fullName ?? undefined}
           error={errors.fullName}
         />
         <TextField
@@ -187,7 +291,7 @@ export const RegistrationForm: React.FC<Props> = ({
           requiredHint={t('requiredHint')}
           autoComplete="email"
           maxLength={200}
-          defaultValue={varsayilan?.email ?? undefined}
+          defaultValue={g.email ?? varsayilan?.email ?? undefined}
           error={errors.email}
         />
         <div className="grid gap-5 sm:grid-cols-2">
@@ -198,6 +302,7 @@ export const RegistrationForm: React.FC<Props> = ({
             label={t('fieldPhone')}
             requiredHint={t('requiredHint')}
             autoComplete="tel"
+            defaultValue={g.phone}
             maxLength={40}
             hint={t('fieldPhoneHint')}
             error={errors.phone}
@@ -208,6 +313,7 @@ export const RegistrationForm: React.FC<Props> = ({
             label={t('fieldPosition')}
             requiredHint={t('requiredHint')}
             autoComplete="organization-title"
+            defaultValue={g.position}
             maxLength={120}
             error={errors.position}
           />
@@ -219,6 +325,7 @@ export const RegistrationForm: React.FC<Props> = ({
             label={t('fieldOrganization')}
             requiredHint={t('requiredHint')}
             autoComplete="organization"
+            defaultValue={g.organization}
             maxLength={160}
             error={errors.organization}
           />
@@ -227,7 +334,7 @@ export const RegistrationForm: React.FC<Props> = ({
             name="country"
             label={t('fieldCountry')}
             requiredHint={t('requiredHint')}
-            defaultValue=""
+            defaultValue={g.country ?? ''}
             error={errors.country}
           >
             <option value="">{t('optionNotSpecified')}</option>
@@ -246,6 +353,7 @@ export const RegistrationForm: React.FC<Props> = ({
           multiline
           maxLength={2000}
           hint={t('fieldNotesHint')}
+          defaultValue={g.notes}
           error={errors.notes}
         />
       </FieldGroup>
@@ -256,6 +364,7 @@ export const RegistrationForm: React.FC<Props> = ({
             id={`${base}-consent`}
             name="consent"
             type="checkbox"
+            defaultChecked={g.consent === 'on'}
             required
             aria-required="true"
             aria-invalid={errors.consent ? true : undefined}
