@@ -70,6 +70,7 @@ export interface Config {
     'training-topics': TrainingTopic;
     'training-programs': TrainingProgram;
     registrations: Registration;
+    'accommodation-requests': AccommodationRequest;
     'simulation-systems': SimulationSystem;
     'virtual-classrooms': VirtualClassroom;
     news: News;
@@ -97,11 +98,16 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    registrations: {
+      accommodationRequests: 'accommodation-requests';
+    };
+  };
   collectionsSelect: {
     'training-topics': TrainingTopicsSelect<false> | TrainingTopicsSelect<true>;
     'training-programs': TrainingProgramsSelect<false> | TrainingProgramsSelect<true>;
     registrations: RegistrationsSelect<false> | RegistrationsSelect<true>;
+    'accommodation-requests': AccommodationRequestsSelect<false> | AccommodationRequestsSelect<true>;
     'simulation-systems': SimulationSystemsSelect<false> | SimulationSystemsSelect<true>;
     'virtual-classrooms': VirtualClassroomsSelect<false> | VirtualClassroomsSelect<true>;
     news: NewsSelect<false> | NewsSelect<true>;
@@ -139,6 +145,7 @@ export interface Config {
     homepage: Homepage;
     'external-services': ExternalService;
     'simulation-center': SimulationCenter;
+    'accommodation-settings': AccommodationSetting;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -146,6 +153,7 @@ export interface Config {
     homepage: HomepageSelect<false> | HomepageSelect<true>;
     'external-services': ExternalServicesSelect<false> | ExternalServicesSelect<true>;
     'simulation-center': SimulationCenterSelect<false> | SimulationCenterSelect<true>;
+    'accommodation-settings': AccommodationSettingsSelect<false> | AccommodationSettingsSelect<true>;
   };
   locale: 'tr' | 'en' | 'ru';
   widgets: {
@@ -993,6 +1001,11 @@ export interface Registration {
         id?: string | null;
       }[]
     | null;
+  accommodationRequests?: {
+    docs?: (number | AccommodationRequest)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * The applicant cannot see this note.
    */
@@ -1132,6 +1145,37 @@ export interface SubscriptionPlan {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * Accommodation pre-applications made with a training application. Check availability, approve or reject, and contact the person; no online payment.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accommodation-requests".
+ */
+export interface AccommodationRequest {
+  id: number;
+  /**
+   * Only approved requests count towards occupancy. If a nightly capacity is set, a request overlapping a full night cannot be approved.
+   */
+  status: 'pending' | 'approved' | 'rejected';
+  staffNote?: string | null;
+  fullName?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  registration?: (number | null) | Registration;
+  training?: (number | null) | TrainingProgram;
+  checkIn: string;
+  checkOut: string;
+  nights?: number | null;
+  nightsInTraining?: number | null;
+  nightsOutside?: number | null;
+  /**
+   * At the rates in force when applying. Empty = no rates were set.
+   */
+  estimatedCost?: number | null;
+  currency?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Live session rooms. Passwords are visible to admin/editor roles only.
@@ -2218,6 +2262,10 @@ export interface PayloadLockedDocument {
         value: number | Registration;
       } | null)
     | ({
+        relationTo: 'accommodation-requests';
+        value: number | AccommodationRequest;
+      } | null)
+    | ({
         relationTo: 'simulation-systems';
         value: number | SimulationSystem;
       } | null)
@@ -2526,6 +2574,7 @@ export interface RegistrationsSelect<T extends boolean = true> {
         answer?: T;
         id?: T;
       };
+  accommodationRequests?: T;
   adminNotes?: T;
   reviewedBy?: T;
   reviewedAt?: T;
@@ -2540,6 +2589,28 @@ export interface RegistrationsSelect<T extends boolean = true> {
   consentAcceptedAt?: T;
   consentSnapshot?: T;
   locale?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accommodation-requests_select".
+ */
+export interface AccommodationRequestsSelect<T extends boolean = true> {
+  status?: T;
+  staffNote?: T;
+  fullName?: T;
+  phone?: T;
+  email?: T;
+  registration?: T;
+  training?: T;
+  checkIn?: T;
+  checkOut?: T;
+  nights?: T;
+  nightsInTraining?: T;
+  nightsOutside?: T;
+  estimatedCost?: T;
+  currency?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -4017,6 +4088,40 @@ export interface SimulationCenter {
   createdAt?: string | null;
 }
 /**
+ * Rules for the accommodation pre-application on the training form. No online payment; requests arrive in "Accommodation requests" and staff call the applicant.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accommodation-settings".
+ */
+export interface AccommodationSetting {
+  id: number;
+  enabled?: boolean | null;
+  /**
+   * 20 was discussed; 15 was also mentioned. To be confirmed by the institution.
+   */
+  maxNights: number;
+  /**
+   * Most approved requests per night. Empty = occupancy not enforced.
+   */
+  capacity?: number | null;
+  currency?: ('TRY' | 'EUR' | 'USD') | null;
+  rateInTraining?: number | null;
+  rateOutsideTraining?: number | null;
+  /**
+   * No accommodation can be requested for nights within these dates (inclusive).
+   */
+  closedPeriods?:
+    | {
+        from: string;
+        to: string;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
@@ -4337,6 +4442,29 @@ export interface SimulationCenterSelect<T extends boolean = true> {
         baseUrl?: T;
       };
   _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "accommodation-settings_select".
+ */
+export interface AccommodationSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  maxNights?: T;
+  capacity?: T;
+  currency?: T;
+  rateInTraining?: T;
+  rateOutsideTraining?: T;
+  closedPeriods?:
+    | T
+    | {
+        from?: T;
+        to?: T;
+        note?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

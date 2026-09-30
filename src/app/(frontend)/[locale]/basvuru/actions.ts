@@ -5,6 +5,15 @@ import { getTranslations } from 'next-intl/server'
 
 import { FOCUS_COUNTRIES } from '@/fields/options'
 import { isLocale, type Locale } from '@/i18n/locales'
+import {
+  ayarlariCoz,
+  bugunIstanbul,
+  doluGeceler,
+  gunOf,
+  konaklamaDogrula,
+  konaklamaHesapla,
+  type KonaklamaHesabi,
+} from '@/lib/accommodation'
 import { EK_ALAN_ONEKI, ekCevaplariDogrula, sorulariCoz, type EkCevap } from '@/lib/applicationQuestions'
 import { CONTACT_FORM_TITLE } from '@/lib/contactForm'
 import { payloadClient } from '@/lib/queries'
@@ -67,7 +76,10 @@ const gonderilenDegerler = (formData: FormData): Record<string, string> => {
   for (const [ad, deger] of formData.entries()) {
     if (typeof deger !== 'string') continue
     if (ad === 'website' || ad.startsWith('$')) continue
-    const bilinen = ad in LIMITS || ['training', 'country', 'consent'].includes(ad) || ad.startsWith(EK_ALAN_ONEKI)
+    const bilinen =
+      ad in LIMITS ||
+      ['training', 'country', 'consent', 'accRequested', 'accCheckIn', 'accCheckOut'].includes(ad) ||
+      ad.startsWith(EK_ALAN_ONEKI)
     if (bilinen) sonuc[ad] = deger.slice(0, 2000)
   }
   return sonuc
@@ -130,6 +142,7 @@ export const submitRegistration = async (
   const rawTraining = String(formData.get('training') ?? '').trim()
   let trainingId: number | null = null
   let extraAnswers: EkCevap[] = []
+  let egitimTarihleri: { start: string | null; end: string | null } = { start: null, end: null }
 
   if (/^\d+$/.test(rawTraining)) {
     const found = await payload.find({
@@ -142,10 +155,12 @@ export const submitRegistration = async (
       },
       limit: 1,
       depth: 0,
-      select: { applicationQuestions: true } as never,
+      select: { applicationQuestions: true, startDate: true, endDate: true } as never,
     })
     if (found.docs.length > 0) {
       trainingId = Number(rawTraining)
+      const egitimDoc = found.docs[0] as { startDate?: string | null; endDate?: string | null }
+      egitimTarihleri = { start: gunOf(egitimDoc.startDate), end: gunOf(egitimDoc.endDate) }
       /*
         Eğitime özel sorular SUNUCUDA, kayıttan yeniden okunur; istemcinin
         gönderdiği alan listesine güvenilmez (lib/applicationQuestions.ts).
@@ -163,6 +178,67 @@ export const submitRegistration = async (
     }
   }
   if (!trainingId) fieldErrors.training = t('errorTraining')
+
+  /*
+    KONAKLAMA — yalnızca kurum özelliği açtıysa ve kişi işaretlediyse. Kural,
+    ayarlar ve doluluk SUNUCUDA yeniden okunur; form yalnızca yardım gösterir
+    (lib/accommodation.ts). Özellik kapalıyken gelen alanlar yok sayılır.
+  */
+  let konaklama: (KonaklamaHesabi & { checkIn: string; checkOut: string; currency: string }) | null = null
+  if (formData.get('accRequested') === 'on') {
+    const ayar = ayarlariCoz(await payload.findGlobal({ slug: 'accommodation-settings', depth: 0 }).catch(() => null))
+    if (ayar.enabled) {
+      const bugun = bugunIstanbul()
+      const onayli = await payload.find({
+        collection: 'accommodation-requests',
+        where: { status: { equals: 'approved' }, checkOut: { greater_than_equal: bugun } },
+        limit: 2000,
+        depth: 0,
+        select: { checkIn: true, checkOut: true } as never,
+      })
+      const dolu = doluGeceler(
+        (onayli.docs as unknown as { checkIn?: string; checkOut?: string }[])
+          .map((d) => ({ checkIn: gunOf(d.checkIn), checkOut: gunOf(d.checkOut) }))
+          .filter((d): d is { checkIn: string; checkOut: string } => Boolean(d.checkIn && d.checkOut)),
+        ayar.capacity,
+      )
+      const girisHam = String(formData.get('accCheckIn') ?? '').trim()
+      const cikisHam = String(formData.get('accCheckOut') ?? '').trim()
+      const hata = konaklamaDogrula(girisHam, cikisHam, ayar, bugun, dolu)
+      if (hata) {
+        const tarih = (gun: string) =>
+          new Date(`${gun}T00:00:00Z`).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })
+        const metin = (() => {
+          switch (hata.kod) {
+            case 'zorunlu':
+              return t('errorRequired')
+            case 'gecersiz':
+              return t('accErrInvalid')
+            case 'gecmis':
+              return t('accErrPast')
+            case 'sira':
+              return t('accErrOrder')
+            case 'uzun':
+              return t('accErrTooLong', { max: hata.max })
+            case 'kapali':
+              return t('accErrClosed', { from: tarih(hata.from), to: tarih(hata.to) })
+            case 'dolu':
+              return t('accErrFull', { night: tarih(hata.gece) })
+          }
+        })()
+        fieldErrors[hata.alan] = metin
+      } else {
+        const checkIn = gunOf(girisHam)!
+        const checkOut = gunOf(cikisHam)!
+        konaklama = {
+          ...konaklamaHesapla(checkIn, checkOut, egitimTarihleri, ayar),
+          checkIn,
+          checkOut,
+          currency: ayar.currency,
+        }
+      }
+    }
+  }
 
   if (Object.keys(fieldErrors).length > 0) {
     return { status: 'error', fieldErrors, message: t('formErrorSummary'), values: gonderilenDegerler(formData) }
@@ -215,7 +291,7 @@ export const submitRegistration = async (
       formlar.find((f) => f.title === CONTACT_FORM_TITLE)?.consentText ??
       null
 
-    await payload.create({
+    const basvuru = await payload.create({
       collection: 'registrations',
       /* Koleksiyonun `create` erişimi kapalı; Local API bunu aşar (bkz. Registrations.ts). */
       data: {
@@ -235,6 +311,45 @@ export const submitRegistration = async (
         locale,
       } as never,
     })
+
+    /*
+      Konaklama talebi başvuruya bağlı açılır (panelde ayrı bölüm). Açılamazsa
+      başvuru da GERİ ALINIR: kişi "alındı" görüp konaklama talebinin
+      kaybolması, başvurunun hiç düşmemesinden daha kötüdür — hata dönünce
+      form değerleriyle geri gelir ve kişi yeniden gönderebilir.
+    */
+    if (konaklama) {
+      try {
+        await payload.create({
+          collection: 'accommodation-requests',
+          data: {
+            status: 'pending',
+            registration: basvuru.id,
+            training: trainingId,
+            fullName: values.fullName,
+            email: eposta,
+            phone: values.phone || undefined,
+            /*
+              ÖĞLEN SAATİYLE yazılır (UTC 12:00). Yalın "YYYY-AA-GG" UTC gece
+              yarısı olarak saklanır; UTC'nin gerisindeki bir saat diliminde
+              açılan panel o değeri BİR GÜN ÖNCE gösterirdi. Öğlen, hangi saat
+              diliminden bakılırsa bakılsın aynı güne düşer; `gunOf` okurken
+              yine doğru günü verir (lib/accommodation.ts).
+            */
+            checkIn: `${konaklama.checkIn}T12:00:00.000Z`,
+            checkOut: `${konaklama.checkOut}T12:00:00.000Z`,
+            nights: konaklama.nights,
+            nightsInTraining: konaklama.nightsInTraining,
+            nightsOutside: konaklama.nightsOutside,
+            estimatedCost: konaklama.estimatedCost ?? undefined,
+            currency: konaklama.currency,
+          } as never,
+        })
+      } catch (err) {
+        await payload.delete({ collection: 'registrations', id: basvuru.id }).catch(() => undefined)
+        throw err
+      }
+    }
 
     return { status: 'success', message: t('formSuccess') }
   } catch {

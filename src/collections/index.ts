@@ -13,6 +13,7 @@ import { News } from './News'
 import { Pages } from './Pages'
 import { Projects } from './Projects'
 import { Quotes } from './Quotes'
+import { AccommodationRequests } from './AccommodationRequests'
 import { Registrations } from './Registrations'
 import { SimulationSystems } from './SimulationSystems'
 import { SubscriptionPlans } from './SubscriptionPlans'
@@ -30,6 +31,7 @@ export const collections: CollectionConfig[] = [
   TrainingTopics,
   TrainingPrograms,
   Registrations,
+  AccommodationRequests,
   SimulationSystems,
   VirtualClassrooms,
 

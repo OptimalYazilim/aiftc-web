@@ -270,6 +270,19 @@ export const Registrations: CollectionConfig = {
         { name: 'answer', type: 'textarea', label: { tr: 'Cevap', en: 'Answer', ru: 'Ответ' } },
       ],
     },
+    /*
+      KONAKLAMA TALEBİ — kurum kararı: konaklama bilgisi eğitim başvurusunda
+      da görünür. Veri AccommodationRequests'te durur; burası yalnızca onu
+      gösteren bir birleştirmedir (sütun açmaz).
+    */
+    {
+      name: 'accommodationRequests',
+      type: 'join',
+      collection: 'accommodation-requests',
+      on: 'registration',
+      label: { tr: 'Konaklama Talebi', en: 'Accommodation request', ru: 'Запрос на проживание' },
+      admin: { defaultColumns: ['checkIn', 'checkOut', 'nights', 'status'] },
+    },
 
     // --- Değerlendirme (yalnızca personel) -----------------------------------
     {

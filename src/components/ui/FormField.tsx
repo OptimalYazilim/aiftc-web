@@ -38,6 +38,15 @@ export type TextFieldProps = OrtakProps & {
   maxLength?: number
   multiline?: boolean
   defaultValue?: string
+  /** Tarih/sayı alanları için alt sınır (ör. bugünden önceki gün seçilmesin). */
+  min?: string
+  /**
+   * KONTROLLÜ KULLANIM — SelectField ile aynı kalıp: `onChange` verilirse
+   * alan `value` ile kontrol edilir, verilmezse `defaultValue` ile eskisi gibi
+   * kontrolsüz kalır. Mevcut kullanımlar değişmez.
+   */
+  value?: string
+  onChange?: (value: string) => void
 }
 
 const ALAN_SINIFI = (hatali: boolean) =>
@@ -94,6 +103,9 @@ export const TextField: React.FC<TextFieldProps> = ({
   multiline,
   hint,
   defaultValue,
+  min,
+  value,
+  onChange,
 }) => {
   const errorId = `${id}-error`
   const hintId = `${id}-hint`
@@ -105,7 +117,13 @@ export const TextField: React.FC<TextFieldProps> = ({
     required,
     maxLength,
     autoComplete,
-    defaultValue,
+    min,
+    ...(onChange
+      ? {
+          value: value ?? '',
+          onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value),
+        }
+      : { defaultValue }),
     'aria-required': required || undefined,
     'aria-invalid': error ? true : undefined,
     'aria-describedby': describedBy || undefined,

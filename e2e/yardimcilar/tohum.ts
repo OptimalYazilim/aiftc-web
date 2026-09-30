@@ -569,6 +569,8 @@ export const temizle = async (secenek: { egitimleriKoru?: boolean } = {}): Promi
     ile kırılır. Üretimde aynı durumu guardRegistrations kancası anlaşılır
     bir mesajla durdurur; burada sıra doğru kurulur.
   */
+  /* Konaklama talepleri başvuruya bağlıdır; önce onlar (bağ set null olsa da artık kalmasın). */
+  await sil('accommodation-requests', { email: { like: TEST_ONEKI } })
   await sil('registrations', { email: { like: TEST_ONEKI } })
   /*
     Koşu BAŞINDA eğitim ve konu korunur (id sabit kalsın — gerekçe tohumla

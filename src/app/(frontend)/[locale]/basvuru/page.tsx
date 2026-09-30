@@ -3,10 +3,15 @@ import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
-import { RegistrationForm, type TrainingOption } from '@/components/registration/RegistrationForm'
+import {
+  RegistrationForm,
+  type KonaklamaProp,
+  type TrainingOption,
+} from '@/components/registration/RegistrationForm'
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs'
 import { isLocale, type Locale } from '@/i18n/locales'
 import { ROUTES } from '@/i18n/routes'
+import { ayarlariCoz, bugunIstanbul, doluGeceler, gunOf } from '@/lib/accommodation'
 import { sorulariCoz } from '@/lib/applicationQuestions'
 import { CONTACT_FORM_TITLE } from '@/lib/contactForm'
 import { buildMetadata } from '@/lib/metadata'
@@ -83,7 +88,7 @@ export default async function RegistrationPage({ params, searchParams }: Props) 
       limit: 100,
       depth: 0,
       sort: '-startDate',
-      select: { title: true, applicationQuestions: true } as never,
+      select: { title: true, applicationQuestions: true, startDate: true, endDate: true } as never,
     }),
     payload.find({
       collection: 'forms',
@@ -98,17 +103,57 @@ export default async function RegistrationPage({ params, searchParams }: Props) 
     Sorular yalnızca GÖSTERMEK için forma gider; sunucu eylemi zorunluluğu ve
     geçerli seçenekleri eğitim kaydından yeniden okur (lib/applicationQuestions).
   */
-  const trainings: TrainingOption[] = (
-    egitimler.docs as unknown as {
-      id: number
-      title?: string | null
-      applicationQuestions?: unknown
-    }[]
+  type EgitimSatiri = {
+    id: number
+    title: string
+    applicationQuestions?: unknown
+    startDate?: string | null
+    endDate?: string | null
+  }
+  const trainings: TrainingOption[] = (egitimler.docs as unknown as Partial<EgitimSatiri>[])
+    .filter((d): d is EgitimSatiri => Boolean(d.id && d.title))
+    .map((d) => ({
+      id: d.id,
+      title: d.title,
+      questions: sorulariCoz(d.applicationQuestions),
+      start: gunOf(d.startDate),
+      end: gunOf(d.endDate),
+    }))
+
+  /*
+    KONAKLAMA ÖN BAŞVURUSU — kurum özelliği açtıysa. Doluluk ONAYLI taleplerden
+    hesaplanır; yalnızca bugünden sonraki dolu geceler gönderilir. Kapalı
+    dönemlerin iç notu istemciye GİTMEZ (Local API erişim kuralını aştığı için
+    sayfada okunur; burada ayıklanır).
+  */
+  const konaklamaAyar = ayarlariCoz(
+    await payload.findGlobal({ slug: 'accommodation-settings', depth: 0 }).catch(() => null),
   )
-    .filter((d): d is { id: number; title: string; applicationQuestions?: unknown } =>
-      Boolean(d.title),
-    )
-    .map((d) => ({ id: d.id, title: d.title, questions: sorulariCoz(d.applicationQuestions) }))
+  let konaklama: KonaklamaProp | null = null
+  if (konaklamaAyar.enabled) {
+    const bugun = bugunIstanbul()
+    const onayli = await payload.find({
+      collection: 'accommodation-requests',
+      where: { status: { equals: 'approved' }, checkOut: { greater_than_equal: bugun } },
+      limit: 2000,
+      depth: 0,
+      select: { checkIn: true, checkOut: true } as never,
+    })
+    const talepler = (onayli.docs as unknown as { checkIn?: string; checkOut?: string }[])
+      .map((d) => ({ checkIn: gunOf(d.checkIn), checkOut: gunOf(d.checkOut) }))
+      .filter((d): d is { checkIn: string; checkOut: string } => Boolean(d.checkIn && d.checkOut))
+    konaklama = {
+      bugun,
+      doluGeceler: [...doluGeceler(talepler, konaklamaAyar.capacity)].filter((g) => g >= bugun).sort(),
+      ayar: {
+        maxNights: konaklamaAyar.maxNights,
+        rateInTraining: konaklamaAyar.rateInTraining,
+        rateOutsideTraining: konaklamaAyar.rateOutsideTraining,
+        currency: konaklamaAyar.currency,
+        closedPeriods: konaklamaAyar.closedPeriods.map(({ from, to }) => ({ from, to })),
+      },
+    }
+  }
 
   /*
     AÇIK RIZA METNİ — ÜÇ KADEMELİ YEDEK, İLETİŞİM FORMUYLA AYNI
@@ -152,6 +197,7 @@ export default async function RegistrationPage({ params, searchParams }: Props) 
             consentText={consentText}
             trainings={trainings}
             defaultTrainingId={defaultTrainingId}
+            konaklama={konaklama}
             varsayilan={
               user
                 ? {

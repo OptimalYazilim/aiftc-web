@@ -17,6 +17,8 @@ import { ekAlanAdi, type BasvuruSorusu } from '@/lib/applicationQuestions'
 import type { Locale } from '@/i18n/locales'
 import { optionLabel } from '@/lib/optionLabel'
 
+import { AccommodationSection, type KonaklamaFormAyari } from './AccommodationSection'
+
 /**
  * EĞİTİM BAŞVURU FORMU
  * ============================================================================
@@ -41,7 +43,17 @@ import { optionLabel } from '@/lib/optionLabel'
 
 const INITIAL_STATE: RegistrationFormState = { status: 'idle' }
 
-export type TrainingOption = { id: number; title: string; questions?: BasvuruSorusu[] }
+export type TrainingOption = {
+  id: number
+  title: string
+  questions?: BasvuruSorusu[]
+  /** Eğitim tarihleri ("YYYY-AA-GG") — konaklamada gece dağılımı için. */
+  start?: string | null
+  end?: string | null
+}
+
+/** Konaklama ön başvurusu açıksa sayfa bunu verir; kapalıysa bölüm basılmaz. */
+export type KonaklamaProp = { ayar: KonaklamaFormAyari; doluGeceler: string[]; bugun: string }
 
 type Props = {
   locale: Locale
@@ -51,6 +63,7 @@ type Props = {
   /** `?egitim=<id>` ile gelindiğinde ön seçim. */
   defaultTrainingId?: number | null
   varsayilan?: { fullName?: string | null; email?: string | null }
+  konaklama?: KonaklamaProp | null
 }
 
 export const RegistrationForm: React.FC<Props> = ({
@@ -59,6 +72,7 @@ export const RegistrationForm: React.FC<Props> = ({
   trainings,
   defaultTrainingId,
   varsayilan,
+  konaklama,
 }) => {
   const t = useTranslations('registration')
   const [state, formAction, pending] = useActionState(submitRegistration, INITIAL_STATE)
@@ -82,6 +96,8 @@ export const RegistrationForm: React.FC<Props> = ({
   const etiketler: Record<string, string> = {
     ...Object.fromEntries(sorular.map((s) => [ekAlanAdi(s.id), s.label])),
     training: t('fieldTraining'),
+    accCheckIn: t('accCheckIn'),
+    accCheckOut: t('accCheckOut'),
     fullName: t('fieldFullName'),
     email: t('fieldEmail'),
     phone: t('fieldPhone'),
@@ -268,6 +284,28 @@ export const RegistrationForm: React.FC<Props> = ({
             )
           })}
         </FieldGroup>
+      ) : null}
+
+      {/*
+        KONAKLAMA ÖN BAŞVURUSU — yalnızca kurum özelliği açtıysa (Konaklama
+        Ayarları). Eğitim + konaklama ya da konaklamasız eğitim; yalnız
+        konaklama başvurusu yoktur (onaylı liste, 29.09.2026).
+      */}
+      {konaklama ? (
+        <AccommodationSection
+          base={base}
+          locale={locale}
+          ayar={konaklama.ayar}
+          doluGeceler={konaklama.doluGeceler}
+          bugun={konaklama.bugun}
+          egitim={{
+            start: trainings.find((e) => String(e.id) === secilenEgitim)?.start ?? null,
+            end: trainings.find((e) => String(e.id) === secilenEgitim)?.end ?? null,
+          }}
+          errors={errors}
+          g={g}
+          requiredHint={t('requiredHint')}
+        />
       ) : null}
 
       <FieldGroup baslik={t('groupApplicant')} className="space-y-5">

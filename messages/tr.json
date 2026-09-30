@@ -695,6 +695,25 @@
     "groupQuestions": "Eğitime özel sorular",
     "errorChoice": "Listeden bir seçenek seçin.",
     "answerYes": "Evet",
-    "answerNo": "Hayır"
+    "answerNo": "Hayır",
+    "groupAccommodation": "Konaklama",
+    "accRequest": "Eğitim merkezinde konaklamak istiyorum",
+    "accNote": "Bu bir ön başvurudur; ödeme alınmaz. Talebiniz müsaitliğe göre değerlendirilir ve merkez sizinle iletişime geçer. Konaklama eğitim tarihlerinin dışına taşabilir; en fazla {max} gece seçilebilir.",
+    "accCheckIn": "Giriş tarihi",
+    "accCheckOut": "Çıkış tarihi",
+    "accPickDates": "Giriş ve çıkış tarihlerini seçtiğinizde gece sayısı ve tahmini ücret burada görünür.",
+    "accSummary": "{nights} gece ({inTraining} eğitim süresince, {outside} eğitim dışında)",
+    "accCost": "Tahmini ücret: {cost}",
+    "accCostUnknown": "Ücret bilgisi merkez tarafından bildirilecektir.",
+    "accUnavailable": "Konaklama yapılamayan tarihler:",
+    "accClosedItem": "{from} – {to} (kapalı)",
+    "accFullItemOne": "{night} gecesi (dolu)",
+    "accFullItemRange": "{from} – {to} geceleri (dolu)",
+    "accErrInvalid": "Geçerli bir tarih girin.",
+    "accErrPast": "Geçmiş bir tarih seçilemez.",
+    "accErrOrder": "Çıkış tarihi giriş tarihinden sonra olmalıdır.",
+    "accErrTooLong": "En fazla {max} gece seçebilirsiniz.",
+    "accErrClosed": "Seçtiğiniz tarihler {from} – {to} kapalı dönemine denk geliyor.",
+    "accErrFull": "{night} gecesi dolu; başka tarih seçin."
   }
 }

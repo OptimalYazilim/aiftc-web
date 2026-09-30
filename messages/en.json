@@ -695,6 +695,25 @@
     "groupQuestions": "Questions for this training",
     "errorChoice": "Choose an option from the list.",
     "answerYes": "Yes",
-    "answerNo": "No"
+    "answerNo": "No",
+    "groupAccommodation": "Accommodation",
+    "accRequest": "I would like to stay at the training centre",
+    "accNote": "This is a pre-application; no payment is taken. Your request is assessed against availability and the centre will contact you. Your stay may extend beyond the training dates; up to {max} nights can be chosen.",
+    "accCheckIn": "Check-in date",
+    "accCheckOut": "Check-out date",
+    "accPickDates": "Once you choose check-in and check-out dates, the number of nights and the estimated cost appear here.",
+    "accSummary": "{nights} nights ({inTraining} during the training, {outside} outside it)",
+    "accCost": "Estimated cost: {cost}",
+    "accCostUnknown": "The centre will let you know the cost.",
+    "accUnavailable": "Dates without accommodation:",
+    "accClosedItem": "{from} – {to} (closed)",
+    "accFullItemOne": "Night of {night} (full)",
+    "accFullItemRange": "Nights of {from} – {to} (full)",
+    "accErrInvalid": "Enter a valid date.",
+    "accErrPast": "A past date cannot be chosen.",
+    "accErrOrder": "Check-out must be after check-in.",
+    "accErrTooLong": "You can choose up to {max} nights.",
+    "accErrClosed": "Your dates fall within the closed period {from} – {to}.",
+    "accErrFull": "The night of {night} is full; please choose other dates."
   }
 }
