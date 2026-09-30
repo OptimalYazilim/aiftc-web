@@ -149,7 +149,11 @@
     "noMaterialsForTraining": "No material has been linked to this training yet. Clear the filter to see the whole library.",
     "homeTotalLabel": "records available",
     "filterByCategory": "Category",
-    "allCategories": "All"
+    "allCategories": "All",
+    "filterByAccess": "Access",
+    "accessAll": "All",
+    "accessPublic": "Public",
+    "accessRestricted": "Restricted access"
   },
   "training": {
     "statusLabel": "Training status",

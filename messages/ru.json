@@ -149,7 +149,11 @@
     "noMaterialsForTraining": "К этому обучению пока не привязаны материалы. Снимите фильтр, чтобы увидеть всю библиотеку.",
     "homeTotalLabel": "записей в открытом доступе",
     "filterByCategory": "Категория",
-    "allCategories": "Все"
+    "allCategories": "Все",
+    "filterByAccess": "Доступ",
+    "accessAll": "Все",
+    "accessPublic": "Открытый доступ",
+    "accessRestricted": "Ограниченный доступ"
   },
   "training": {
     "statusLabel": "Статус обучения",

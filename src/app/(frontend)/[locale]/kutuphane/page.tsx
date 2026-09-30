@@ -290,6 +290,8 @@ export default async function LibraryPage({ params, searchParams }: Props) {
       categoryTitles: categoryPathOf(doc.category)
         .map((kat) => kat.title)
         .filter((title): title is string => Boolean(title)),
+      /* Liste zaten erişim kuralından geçti; bu yalnızca süzgeç içindir. */
+      restricted: doc.accessLevel !== 'public',
     }
   })
 

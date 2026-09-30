@@ -30,8 +30,13 @@ import { LibraryResourceCard, type LibraryResourceItem } from './LibraryResource
  * dönmelidir; sınır burada belgelenmiştir.
  *
  * ---------------------------------------------------------------------------
- * İKİ FİLTRE EKSENİ
+ * FİLTRE EKSENLERİ
  * ---------------------------------------------------------------------------
+ *   Erişim        → TEK SEÇİMLİ; yalnızca ziyaretçi herkese açık OLMAYAN en
+ *                   az bir içerik görebiliyorsa basılır (kütüphanenin iki
+ *                   bölümü: herkese açık / yetkiyle erişilen).
+ *   Kategori      → TEK SEÇİMLİ; ana başlık seçilince alt başlıkları da
+ *                   kapsar. Hiç kategori yoksa basılmaz.
  *   Doküman türü  → "Tümü" dahil TEK SEÇİMLİ (radyo mantığı). Bir yayın aynı
  *                   anda hem rapor hem sunum olamaz; çoklu seçim sunmak
  *                   ziyaretçiye anlamsız bir özgürlük verirdi.
@@ -75,6 +80,17 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, categori
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedAccess, setSelectedAccess] = useState<'public' | 'restricted' | null>(null)
+
+  /*
+    KÜTÜPHANENİN İKİ BÖLÜMÜ — kurum kararı (29.09.2026): herkese açık içerik
+    (kamu spotu, farkındalık) ve personelin dairesine göre yetkiyle eriştiği
+    eğitim içerikleri. Ayrımı YAPAN erişim kuralıdır ve sunucudadır; buradaki
+    süzgeç yalnızca, yetkili içeriği GÖREBİLEN kişinin iki bölümü ayrı ayrı
+    listeleyebilmesini sağlar. Listede yetkili içerik yoksa (anonim ziyaretçi)
+    grup hiç basılmaz — sayfa onun için eskisi gibidir.
+  */
+  const restrictedCount = useMemo(() => items.filter((item) => item.restricted).length, [items])
 
   const searchId = useId()
 
@@ -88,6 +104,9 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, categori
   const filtered = useMemo(() => {
     return items.filter((item) => {
       if (selectedType && item.resourceType !== selectedType) return false
+
+      if (selectedAccess === 'public' && item.restricted) return false
+      if (selectedAccess === 'restricted' && !item.restricted) return false
 
       /* Ana başlık seçiliyse alt başlıklarındaki içerik de eşleşir (yol). */
       if (selectedCategory && !item.categoryPath.includes(selectedCategory)) return false
@@ -113,16 +132,21 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, categori
         ...item.categoryTitles,
       ])
     })
-  }, [items, deferredQuery, selectedType, selectedTopics, selectedCategory])
+  }, [items, deferredQuery, selectedType, selectedTopics, selectedCategory, selectedAccess])
 
   const hasFilters =
-    query.length > 0 || selectedType !== null || selectedTopics.length > 0 || selectedCategory !== null
+    query.length > 0 ||
+    selectedType !== null ||
+    selectedTopics.length > 0 ||
+    selectedCategory !== null ||
+    selectedAccess !== null
 
   const clearAll = () => {
     setQuery('')
     setSelectedType(null)
     setSelectedTopics([])
     setSelectedCategory(null)
+    setSelectedAccess(null)
   }
 
   return (
@@ -148,6 +172,30 @@ export const LibraryCatalog: React.FC<Props> = ({ items, types, topics, categori
         />
 
         <ConsoleDivider>
+          {/*
+            ERİŞİM — iki bölüm (gerekçe yukarıda, `restrictedCount`). Tek
+            seçimli: bir içerik ya herkese açıktır ya da değildir.
+          */}
+          {restrictedCount > 0 ? (
+            <FilterGroup legend={t('filterByAccess')}>
+              {(
+                [
+                  { value: null, label: t('accessAll'), count: items.length },
+                  { value: 'public', label: t('accessPublic'), count: items.length - restrictedCount },
+                  { value: 'restricted', label: t('accessRestricted'), count: restrictedCount },
+                ] as const
+              ).map((option) => (
+                <FilterPill
+                  key={option.value ?? 'all'}
+                  label={option.label}
+                  count={option.count}
+                  active={selectedAccess === option.value}
+                  onClick={() => setSelectedAccess(option.value)}
+                />
+              ))}
+            </FilterGroup>
+          ) : null}
+
           {/*
             KATEGORİ — birincil sınıflandırma (kurum kararı, 29.09.2026).
             Tek seçimli: bir içerik tek kategoriye bağlıdır. Hiç kategori

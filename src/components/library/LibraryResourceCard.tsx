@@ -138,6 +138,13 @@ export type LibraryResourceItem = {
   categoryPath: string[]
   /** Aramada kategori adları da eşleşsin. */
   categoryTitles: string[]
+  /**
+   * Kayıt herkese açık DEĞİLSE true. Ziyaretçi böyle bir kaydı ancak yetkisi
+   * olduğu için görür — erişim kuralı SUNUCUDA zorlanır (access/index.ts);
+   * bu alan hiçbir şeyi korumaz, yalnızca katalogdaki "Erişim" süzgecinin iki
+   * bölümü ayırabilmesi için taşınır.
+   */
+  restricted: boolean
 }
 
 /**

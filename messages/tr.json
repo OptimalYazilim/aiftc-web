@@ -149,7 +149,11 @@
     "noMaterialsForTraining": "Bu eğitime bağlı bir materyal henüz eklenmemiş. Kütüphanenin tamamını görmek için süzgeci kaldırabilirsiniz.",
     "homeTotalLabel": "kayıt erişime açık",
     "filterByCategory": "Kategori",
-    "allCategories": "Tümü"
+    "allCategories": "Tümü",
+    "filterByAccess": "Erişim",
+    "accessAll": "Tümü",
+    "accessPublic": "Herkese açık",
+    "accessRestricted": "Yalnızca yetkililere açık"
   },
   "training": {
     "statusLabel": "Eğitim durumu",
