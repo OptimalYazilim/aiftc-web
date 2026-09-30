@@ -6,6 +6,7 @@ import { slugField } from '@/fields/slug'
 import { TRAINING_LEVELS, TRAINING_TOPIC_CATEGORIES } from '@/fields/options'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * EGITIM KONULARI  (Sartname EK-1 / 6.3)
@@ -47,7 +48,7 @@ export const TrainingTopics: CollectionConfig = {
   defaultSort: 'order',
   hooks: {
     afterChange: [
-      syncTranslationStatus(['title', 'summary']),
+      syncTranslationStatus([...IZLENEN_ALANLAR['training-topics']]),
       revalidateCollection('/egitim-konulari'),
     ],
     afterDelete: [revalidateOnDelete('/egitim-konulari')],

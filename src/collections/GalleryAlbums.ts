@@ -5,6 +5,7 @@ import { translationStatusField } from '@/fields/publishing'
 import { slugField } from '@/fields/slug'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * GALERI VE MEDYA  (Sartname EK-1 / 6.8)
@@ -31,7 +32,7 @@ export const GalleryAlbums: CollectionConfig = {
   versions: { drafts: { autosave: false } },
   defaultSort: '-date',
   hooks: {
-    afterChange: [syncTranslationStatus(['title']), revalidateCollection('/galeri')],
+    afterChange: [syncTranslationStatus([...IZLENEN_ALANLAR['gallery-albums']]), revalidateCollection('/galeri')],
     afterDelete: [revalidateOnDelete('/galeri')],
   },
   fields: [

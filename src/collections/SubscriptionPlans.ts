@@ -5,6 +5,7 @@ import { BILLING_PERIODS, CURRENCIES } from '@/fields/options'
 import { translationStatusField } from '@/fields/publishing'
 import { slugField } from '@/fields/slug'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * ABONELİK SEVİYELERİ  (Commerce — B2B)
@@ -79,7 +80,7 @@ export const SubscriptionPlans: CollectionConfig = {
   versions: { drafts: { autosave: false }, maxPerDoc: 20 },
   defaultSort: 'order',
   hooks: {
-    afterChange: [syncTranslationStatus(['name', 'description'])],
+    afterChange: [syncTranslationStatus([...IZLENEN_ALANLAR['subscription-plans']])],
   },
   fields: [
     slugField({ from: 'name' }),

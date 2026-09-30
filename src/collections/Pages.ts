@@ -5,6 +5,7 @@ import { publishingFields, translationStatusField } from '@/fields/publishing'
 import { slugField } from '@/fields/slug'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * SERBEST SAYFALAR  (Sartname EK-1 / 6.1, 6.2, 6.9, 12.2, 12.3)
@@ -72,7 +73,7 @@ export const Pages: CollectionConfig = {
   },
   versions: { drafts: { autosave: false, schedulePublish: true }, maxPerDoc: 30 },
   hooks: {
-    afterChange: [syncTranslationStatus(['title']), revalidateCollection('')],
+    afterChange: [syncTranslationStatus([...IZLENEN_ALANLAR['pages']]), revalidateCollection('')],
     afterDelete: [revalidateOnDelete('')],
   },
   fields: [

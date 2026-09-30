@@ -1,12 +1,6 @@
 import type { CollectionAfterChangeHook } from 'payload'
 
-import { LOCALE_CODES, type Locale } from '@/i18n/locales'
-
-type TranslationStatus = {
-  complete: Locale[]
-  missing: Locale[]
-  updatedAt: string
-}
+import { ceviriDurumuHesapla, type TranslationStatus } from '@/lib/translationStatus'
 
 /**
  * Sartname 5. madde:
@@ -60,27 +54,9 @@ export const syncTranslationStatus =
         req.locale = originalLocale
       }
 
-      const complete: Locale[] = []
-      const missing: Locale[] = []
-
-      for (const locale of LOCALE_CODES) {
-        const filled = watchedFields.every((fieldName) => {
-          const perLocale = (full as Record<string, unknown>)[fieldName] as
-            | Record<string, unknown>
-            | undefined
-          const value = perLocale?.[locale]
-          return typeof value === 'string' ? value.trim().length > 0 : Boolean(value)
-        })
-
-        if (filled) complete.push(locale)
-        else missing.push(locale)
-      }
-
-      const status: TranslationStatus = {
-        complete,
-        missing,
-        updatedAt: new Date().toISOString(),
-      }
+      /* Kural ve gerekçesi: lib/translationStatus.ts (kaynak dile göre, zengin metin içeriği). */
+      const status = ceviriDurumuHesapla(full as Record<string, unknown>, watchedFields)
+      const { complete, missing } = status
 
       const previous = (full as Record<string, unknown>).translationStatus as
         | TranslationStatus

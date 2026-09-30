@@ -8,6 +8,7 @@ import type { Project } from '@/payload-types'
 
 import { ExternalLink } from '@/components/ui/ExternalLink'
 import { HeroChip, PageHero } from '@/components/ui/PageHero'
+import { TranslationNotice } from '@/components/ui/TranslationNotice'
 import { RichTextBlock, hasRichTextContent, richTextExcerpt } from '@/components/ui/RichTextBlock'
 import { FOCUS_COUNTRIES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -179,6 +180,8 @@ export default async function ProjectDetailPage({ params }: Props) {
         meta={donem ? <HeroChip>{donem}</HeroChip> : null}
         title={doc.title}
       />
+
+      <TranslationNotice locale={locale} status={doc.translationStatus} />
 
       {/* --- Gövde: içerik + künye rayı ----------------------------------- */}
       <div className="container-page section-block">

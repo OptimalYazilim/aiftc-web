@@ -33,7 +33,8 @@
     "opensInNewTab": "(yeni pencerede açılır)",
     "search": "Ara",
     "noResults": "Henüz içerik eklenmedi.",
-    "summary": "Özet"
+    "summary": "Özet",
+    "translationMissingNotice": "Bu sayfanın bazı bölümleri henüz çevrilmedi ve Türkçe aslıyla gösteriliyor."
   },
   "home": {
     "metaTitle": "Ana Sayfa",

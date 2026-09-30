@@ -6,6 +6,7 @@ import { slugField } from '@/fields/slug'
 import { FOCUS_COUNTRIES, NEWS_CATEGORIES } from '@/fields/options'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * HABERLER VE DUYURULAR  (Sartname EK-1 / 6.7 ve 10.3)
@@ -43,7 +44,7 @@ export const News: CollectionConfig = {
   },
   defaultSort: '-publishedAt',
   hooks: {
-    afterChange: [syncTranslationStatus(['title', 'summary']), revalidateCollection('/haberler')],
+    afterChange: [syncTranslationStatus([...IZLENEN_ALANLAR['news']]), revalidateCollection('/haberler')],
     afterDelete: [revalidateOnDelete('/haberler')],
   },
   fields: [

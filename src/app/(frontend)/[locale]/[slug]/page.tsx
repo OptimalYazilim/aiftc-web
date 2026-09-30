@@ -6,6 +6,7 @@ import type { Page } from '@/payload-types'
 
 import { PageBlocks } from '@/components/pages/PageBlocks'
 import { PageHero } from '@/components/ui/PageHero'
+import { TranslationNotice } from '@/components/ui/TranslationNotice'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { ROUTES, pageHref } from '@/i18n/routes'
 import { resolveMedia } from '@/lib/media'
@@ -216,6 +217,8 @@ export default async function FreePage({ params }: Props) {
         intro={doc.subtitle || null}
         image={cover}
       />
+
+      <TranslationNotice locale={locale} status={doc.translationStatus} />
 
       <div className="section-block">
         <PageBlocks blocks={doc.layout} locale={locale} />

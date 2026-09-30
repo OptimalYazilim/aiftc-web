@@ -6,6 +6,7 @@ import { slugField } from '@/fields/slug'
 import { FOCUS_COUNTRIES } from '@/fields/options'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * ULUSLARARASI KATILIMCI REHBERI  (Sartname EK-1 / 8.1 ve 8.2)
@@ -49,7 +50,7 @@ export const InternationalGuide: CollectionConfig = {
   defaultSort: 'order',
   hooks: {
     afterChange: [
-      syncTranslationStatus(['title', 'content']),
+      syncTranslationStatus([...IZLENEN_ALANLAR['international-guide']]),
       revalidateCollection('/uluslararasi-katilimcilar'),
     ],
     afterDelete: [revalidateOnDelete('/uluslararasi-katilimcilar')],

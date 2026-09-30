@@ -13,6 +13,7 @@ import {
 } from '@/components/library/LibraryDetailActions'
 import { formatOf } from '@/components/library/LibraryResourceCard'
 import { PageHero } from '@/components/ui/PageHero'
+import { TranslationNotice } from '@/components/ui/TranslationNotice'
 import {
   FOCUS_COUNTRIES,
   INSTRUCTION_LANGUAGES,
@@ -366,6 +367,8 @@ export default async function LibraryDetailPage({ params }: Props) {
             : null
         }
       />
+
+      <TranslationNotice locale={locale} status={doc.translationStatus} />
 
       {/* --- Gövde: sol içerik + sağ künye rayı --------------------------- */}
       <div className="container-page section-block">

@@ -7,6 +7,7 @@ import type { TrainingTopic } from '@/payload-types'
 
 import { TrainingCard, type TrainingCardItem } from '@/components/training/TrainingCard'
 import { PageHero } from '@/components/ui/PageHero'
+import { TranslationNotice } from '@/components/ui/TranslationNotice'
 import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { TRAINING_LEVELS, TRAINING_TOPIC_CATEGORIES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -204,6 +205,8 @@ export default async function TrainingTopicPage({ params }: Props) {
         intro={doc.summary || null}
         image={cover}
       />
+
+      <TranslationNotice locale={locale} status={doc.translationStatus} />
 
       <div className="container-page section-block">
         <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1fr)_18rem]">

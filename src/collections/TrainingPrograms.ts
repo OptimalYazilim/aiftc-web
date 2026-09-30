@@ -15,6 +15,7 @@ import { guardRegistrations } from '@/hooks/guardRegistrations'
 import { guardVirtualClassrooms } from '@/hooks/guardVirtualClassrooms'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * EGITIMLER VE EGITIM PROGRAMLARI  (Sartname EK-1 / 6.4, 7.1 + EK-2 / 2.1-2.4)
@@ -61,7 +62,7 @@ export const TrainingPrograms: CollectionConfig = {
   defaultSort: '-startDate',
   hooks: {
     afterChange: [
-      syncTranslationStatus(['title', 'summary']),
+      syncTranslationStatus([...IZLENEN_ALANLAR['training-programs']]),
       revalidateCollection('/egitim-programlari'),
     ],
     // Bagli sanal sinif ya da basvuru varsa silmeyi anlasilir bir mesajla durdurur.

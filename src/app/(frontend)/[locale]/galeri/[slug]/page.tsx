@@ -9,6 +9,7 @@ import type { GalleryAlbum } from '@/payload-types'
 import { AlbumGallery, type AlbumGalleryLabels } from '@/components/gallery/AlbumGallery'
 import { ExternalLink } from '@/components/ui/ExternalLink'
 import { HeroChip, PageHero } from '@/components/ui/PageHero'
+import { TranslationNotice } from '@/components/ui/TranslationNotice'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { DETAIL_ROUTES, detailHref, href } from '@/i18n/routes'
 import { formatDate } from '@/lib/dates'
@@ -207,6 +208,8 @@ export default async function GalleryAlbumPage({ params }: Props) {
         intro={doc.description || null}
         image={resolveMedia(doc.coverImage, 'hero')}
       />
+
+      <TranslationNotice locale={locale} status={doc.translationStatus} />
 
       <div className="container-page section-block">
         {images.length === 0 && videos.length === 0 ? (

@@ -6,6 +6,7 @@ import { slugField } from '@/fields/slug'
 import { FOCUS_COUNTRIES } from '@/fields/options'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * PROJELER  (Sartname EK-1 / 10.1 "Proje Bilgi Alani")
@@ -32,7 +33,7 @@ export const Projects: CollectionConfig = {
   },
   versions: { drafts: { autosave: false } },
   hooks: {
-    afterChange: [syncTranslationStatus(['title', 'objective']), revalidateCollection('/projeler')],
+    afterChange: [syncTranslationStatus([...IZLENEN_ALANLAR['projects']]), revalidateCollection('/projeler')],
     afterDelete: [revalidateOnDelete('/projeler')],
   },
   fields: [

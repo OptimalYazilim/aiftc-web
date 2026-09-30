@@ -8,6 +8,7 @@ import type { ExternalService, TrainingProgram, TrainingTopic } from '@/payload-
 
 import { TrainingSidebar } from '@/components/training/TrainingSidebar'
 import { PageHero } from '@/components/ui/PageHero'
+import { TranslationNotice } from '@/components/ui/TranslationNotice'
 import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { DELIVERY_MODES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -267,6 +268,8 @@ export default async function TrainingDetailPage({ params }: Props) {
           ) : null}
         </dl>
       </PageHero>
+
+      <TranslationNotice locale={locale} status={doc.translationStatus} />
 
       {/* --- İki kolonlu asimetrik yerleşim -------------------------------- */}
       <div className="container-page section-block grid gap-10 lg:grid-cols-12">

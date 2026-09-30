@@ -5,6 +5,7 @@ import { translationStatusField } from '@/fields/publishing'
 import { slugField } from '@/fields/slug'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * SIMULASYON MERKEZI - SISTEMLER  (Sartname EK-1 / 6.5 ve 9.1-9.3)
@@ -47,7 +48,7 @@ export const SimulationSystems: CollectionConfig = {
   defaultSort: 'order',
   hooks: {
     afterChange: [
-      syncTranslationStatus(['title', 'summary']),
+      syncTranslationStatus([...IZLENEN_ALANLAR['simulation-systems']]),
       revalidateCollection('/simulasyon-merkezi'),
     ],
     afterDelete: [revalidateOnDelete('/simulasyon-merkezi')],

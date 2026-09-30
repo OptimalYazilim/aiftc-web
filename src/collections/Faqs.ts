@@ -4,6 +4,7 @@ import { canAuthorContent, canDeleteContent, publishedOrAuthenticated } from '@/
 import { translationStatusField } from '@/fields/publishing'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * SIK SORULAN SORULAR  (Sartname EK-1 / 8.3, 11.2)
@@ -32,7 +33,7 @@ export const Faqs: CollectionConfig = {
   defaultSort: 'order',
   hooks: {
     afterChange: [
-      syncTranslationStatus(['question', 'answer']),
+      syncTranslationStatus([...IZLENEN_ALANLAR['faqs']]),
       revalidateCollection('/uluslararasi-katilimcilar'),
     ],
     afterDelete: [revalidateOnDelete('/uluslararasi-katilimcilar')],

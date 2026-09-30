@@ -8,6 +8,7 @@ import type { News } from '@/payload-types'
 
 import { NewsCard, type NewsCardItem } from '@/components/news/NewsCard'
 import { HeroChip, PageHero } from '@/components/ui/PageHero'
+import { TranslationNotice } from '@/components/ui/TranslationNotice'
 import { RichTextBlock } from '@/components/ui/RichTextBlock'
 import { NEWS_CATEGORIES } from '@/fields/options'
 import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
@@ -213,6 +214,8 @@ export default async function NewsDetailPage({ params }: Props) {
         }
         title={doc.title}
       />
+
+      <TranslationNotice locale={locale} status={doc.translationStatus} />
 
       {/* --- Gövde --------------------------------------------------------- */}
       <article className="container-page section-block">

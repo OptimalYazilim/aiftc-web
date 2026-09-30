@@ -15,6 +15,7 @@ import { publishingFields, reviewStatusField, translationStatusField } from '@/f
 import { slugField } from '@/fields/slug'
 import { revalidateCollection, revalidateOnDelete } from '@/hooks/revalidate'
 import { syncTranslationStatus } from '@/hooks/syncTranslationStatus'
+import { IZLENEN_ALANLAR } from '@/lib/translationStatus'
 
 /**
  * DİJİTAL KÜTÜPHANE KAYITLARI  (Şartname 6.6 / EK-2)
@@ -112,7 +113,7 @@ export const LibraryResources: CollectionConfig = {
   defaultSort: '-publicationYear',
   hooks: {
     afterChange: [
-      syncTranslationStatus(['title', 'description']),
+      syncTranslationStatus([...IZLENEN_ALANLAR['library-resources']]),
       revalidateCollection('/kutuphane'),
     ],
     afterDelete: [revalidateOnDelete('/kutuphane')],

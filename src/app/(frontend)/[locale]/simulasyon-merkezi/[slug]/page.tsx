@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { PageHero } from '@/components/ui/PageHero'
+import { TranslationNotice } from '@/components/ui/TranslationNotice'
 import { RichTextBlock, hasRichTextContent } from '@/components/ui/RichTextBlock'
 import { isLocale, LOCALE_CODES, type Locale } from '@/i18n/locales'
 import { DETAIL_ROUTES, detailHref, href } from '@/i18n/routes'
@@ -183,6 +184,8 @@ export default async function SimulationSystemPage({ params }: Props) {
         title={doc.title}
         intro={doc.summary || null}
       />
+
+      <TranslationNotice locale={locale} status={(doc as { translationStatus?: unknown }).translationStatus} />
 
       <div className="container-page section-block grid gap-10 lg:grid-cols-12 lg:gap-12">
         {/* --- Ana kolon --------------------------------------------------- */}
