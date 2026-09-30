@@ -577,7 +577,8 @@
     "edevletErrorTitle": "e-Devlet ile giriş tamamlanamadı",
     "edevletErrorEmailTaken": "Bu e-posta adresi zaten bir hesapta kullanılıyor. Güvenlik gereği hesaplar e-posta üzerinden otomatik birleştirilmez: lütfen e-posta ve parolanızla giriş yapın.",
     "edevletErrorNotConfigured": "e-Devlet Kapısı bağlantısı bu ortamda tanımlı değil. Lütfen e-posta ve parolanızla giriş yapın.",
-    "edevletErrorGeneric": "Giriş tamamlanamadı. Lütfen tekrar deneyin; sorun sürerse e-posta ve parolanızla giriş yapın."
+    "edevletErrorGeneric": "Giriş tamamlanamadı. Lütfen tekrar deneyin; sorun sürerse e-posta ve parolanızla giriş yapın.",
+    "errorRegistrationClosed": "Hesap oluşturma şu anda kapalıdır. Hesabınızın açılması için kurumla iletişime geçin."
   },
   "subscription": {
     "expiredTitle": "Abonelik süreniz doldu",
@@ -652,7 +653,7 @@
     "metaTitle": "Eğitim Başvurusu",
     "eyebrow": "Eğitim programları",
     "title": "Eğitim başvurusu",
-    "intro": "Başvuruya açık bir eğitim programına katılmak için aşağıdaki formu doldurun. Başvurunuz merkez tarafından değerlendirilir; sonucu bu sitedeki profil sayfanızdan ve e-posta ile öğrenirsiniz.",
+    "intro": "Başvuruya açık bir eğitim programına katılmak için aşağıdaki formu doldurun. Başvurunuz merkez tarafından değerlendirilir; onaylandığında e-posta ile bilgilendirilirsiniz. Hesabınız varsa durumu profil sayfanızdan da izleyebilirsiniz.",
     "signedInNote": "Oturumunuz açık: ad ve e-posta bilgileriniz hesabınızdan dolduruldu, başvuru hesabınıza bağlanacak. Alanları düzenleyebilirsiniz.",
     "groupTraining": "Eğitim",
     "groupApplicant": "Başvuran bilgileri",
@@ -675,7 +676,7 @@
     "formSubmit": "Başvuruyu Gönder",
     "formSending": "Gönderiliyor…",
     "formSuccessTitle": "Başvurunuz alındı",
-    "formSuccess": "Başvurunuz kaydedildi ve değerlendirmeye alındı. Sonuç belirlendiğinde profil sayfanızda görünür; oturumunuz yoksa e-posta ile bilgilendirilirsiniz.",
+    "formSuccess": "Başvurunuz kaydedildi ve değerlendirmeye alındı. Onaylandığında e-posta ile bilgilendirilirsiniz; hesabınız varsa durumu profil sayfanızdan da izleyebilirsiniz.",
     "formErrorSummary": "Formda düzeltilmesi gereken alanlar var.",
     "formFailedTitle": "Başvuru gönderilemedi",
     "formFailed": "Başvurunuz kaydedilemedi. Lütfen daha sonra tekrar deneyin.",
@@ -688,7 +689,7 @@
     "errorTooLong": "En fazla {max} karakter olmalıdır.",
     "errorConsent": "Devam etmek için açık rıza onayı gereklidir.",
     "errorTraining": "Başvuruya açık bir eğitim seçin.",
-    "errorDuplicate": "Bu e-posta adresiyle bu eğitime zaten başvurulmuş. Durumu profil sayfanızdan izleyebilirsiniz.",
+    "errorDuplicate": "Bu e-posta adresiyle bu eğitime zaten başvurulmuş. Hesabınız varsa durumu profil sayfanızdan izleyebilirsiniz.",
     "errorSummaryCount": "Formda {sayi} hata var. Düzeltmek için aşağıdaki bağlantıya tıklayın.",
     "errorTitlePrefix": "({sayi} hata)",
     "approvalEmailSubject": "Eğitim başvurunuz onaylandı: {training}",

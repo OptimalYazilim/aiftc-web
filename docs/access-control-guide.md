@@ -307,12 +307,23 @@ uymazsa veriyi sessizce kaybeder.
 
 ### 5.2 Ziyaretçi kayıt / giriş ekranı — **KURULDU (2026-09-07)**
 
-Ekranlar yayında:
+> **GENEL KAYIT VARSAYILAN KAPALI (proje kararı, 30.09.2026).** Gerekçe
+> 29.09.2026 kurum toplantısının sonuçlarıdır: merkez vatandaşa eğitim
+> vermiyor, personel OGM hesabıyla girecek; yurt dışı katılımcılar ise
+> başvuru formunu hesap açmadan dolduruyor. Anahtar:
+> `Genel Site Ayarları → Hesaplar → Genel kayıt` (yalnızca sistem yöneticisi
+> değiştirir). Kapalıyken kayıt sayfası 404 döner, giriş ekranındaki "Kayıt
+> olun" bağlantısı basılmaz ve `POST /api/users` anonim isteği
+> `403 kayit_kapali` ile reddeder. Aşağıdaki kayıt akışı anahtar AÇIKKEN
+> geçerlidir. Tek karar noktası: `src/lib/publicRegistration.ts`;
+> ölçüm: `e2e/15-genel-kayit.spec.ts`.
+
+Ekranlar:
 
 | Sayfa | TR · EN · RU |
 |---|---|
 | Giriş | `/giris` · `/login` · `/vhod` |
-| Kayıt | `/kayit` · `/register` · `/registratsiya` |
+| Kayıt (yalnızca genel kayıt açıkken) | `/kayit` · `/register` · `/registratsiya` |
 
 Bağlantı üst hizmet şeridindedir (menüde değil — gerekçe: `TopUtilityBar.tsx`).
 Sayfalar `robots: noindex` taşır ve sitemap'e girmez.
@@ -791,17 +802,55 @@ role=trainee     -> "in_review"  RED (yazma yetkisi yok)
 | `approved` — Onaylandı | ✅ | Yönetici/personel onaylar; panelden açılan hesaplar doğrudan |
 | `suspended` — Askıya Alındı | ❌ | Yönetici/personel askıya alır |
 
-### Dışarıdan kayıt nasıl güvenli tutuluyor
+### Kim hesap açabilir
 
-`users` koleksiyonunun `create` erişimi **herkese açıktır**. Güvenlik üç
-katmanda sağlanır:
+| Kim | Hesap açabilir mi |
+|---|---|
+| Panel yöneticisi (`roles` içinde `admin`) | ✅ her zaman; istediği rolle, varsayılan `approved` |
+| Oturumsuz ziyaretçi | Yalnızca **genel kayıt açıksa** (varsayılan kapalı); hesap `trainee` + `pending` doğar |
+| Oturumlu ama yönetici olmayan (katılımcı, eğitmen, personel, editör) | ❌ hiçbir zaman |
 
-1. **Alan düzeyi erişim** — `roles`, `role`, `accountStatus` alanlarını
+Personel (`staff`) hesapları **onaylar** ama açamaz.
+
+#### ÖLÇÜLMÜŞ AÇIK — **KAPATILDI (2026-09-30)**
+
+`create` erişimi eskiden **herkese açıktı** (`() => true`) ve güvenlik kancaya
+bırakılmıştı. Kanca ise "istekte kullanıcı varsa hesabı açan yöneticidir"
+varsayıyordu. Oturum açmış **sıradan bir katılımcı** `POST /api/users`
+çağırdığında ölçülen sonuç:
+
+```
+gonderilen : role=admin  roles=[admin]  accountStatus=approved
+olusan     : role=staff  roles=[]       accountStatus=approved
+```
+
+Panel rolleri doğru biçimde boşaltılıyordu, ama erişim rolü alanın
+**varsayılanına (`staff`)** düşüyor ve hesap **onaylı** doğuyordu:
+katılımcıdan personele yetki yükseltme. Personel hesabı seviyeli içeriği
+görür, hesap ve başvuru onaylar.
+
+Düzeltme iki katmandır; biri bozulursa öteki tutar:
+
+1. **`canRegister`** — oturumlu ve yönetici olmayan hiç kimse hesap açamaz;
+   oturumsuz istek yalnızca genel kayıt açıkken geçer.
+2. **`beforeValidate`** — ölçüt artık "kullanıcı var mı" değil, "kullanıcı
+   panel yöneticisi mi". Değilse değerler ZORLANIR (erişim aşılmış bir iç
+   çağrıda bile).
+
+CAPTCHA muafiyeti de aynı ölçüte çekildi: yalnızca panel yöneticisi ve
+`overrideAccess` ile yapılan iç çağrılar muaftır.
+
+### Dışarıdan kayıt (genel kayıt açıkken) nasıl güvenli tutuluyor
+
+Güvenlik dört katmanda sağlanır:
+
+1. **`canRegister`** — yukarıdaki tablo.
+2. **Alan düzeyi erişim** — `roles`, `role`, `accountStatus` alanlarını
    yetkisiz istek yazamaz; Payload alanı **sessizce düşürür**.
-2. **`beforeValidate` kancası** — oturumsuz kayıtta değerleri ZORLAR:
-   `roles=[]`, `role=trainee`, `accountStatus=pending`. İstemcinin ne
-   gönderdiğine bakılmaz.
-3. **`beforeLogin` kancası** — onaysız hesap doğru parolayla bile giremez.
+3. **`beforeValidate` kancası** — panel yöneticisinden gelmeyen her kayıtta
+   değerleri ZORLAR: `roles=[]`, `role=trainee`, `accountStatus=pending`.
+   İstemcinin ne gönderdiğine bakılmaz.
+4. **`beforeLogin` kancası** — onaysız hesap doğru parolayla bile giremez.
 
 Ölçülen davranış — kayıt isteği kendini yönetici yapmaya çalıştı:
 

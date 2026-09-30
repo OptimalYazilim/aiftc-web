@@ -8,6 +8,8 @@ import { LOCALE_CODES, isLocale, type Locale } from '@/i18n/locales'
 import { AUTH_ROUTES } from '@/i18n/routes'
 import { captchaSiteAnahtari } from '@/lib/captcha'
 import { buildMetadata } from '@/lib/metadata'
+import { genelKayitAcik } from '@/lib/publicRegistration'
+import { payloadClient } from '@/lib/queries'
 
 /**
  * KAYIT SAYFASI  (Şartname 1.7 · Kılavuz 5.2)
@@ -15,9 +17,14 @@ import { buildMetadata } from '@/lib/metadata'
  * ROTA: klasör adı `kayit`, `AUTH_ROUTES.register.tr` ile HARF HARF aynıdır.
  * /tr/kayit · /en/register · /ru/registratsiya
  *
- * Kayıt ucu (`POST /api/users`) anonim isteğe açıktır ama gönderilen rol ve
- * durum yok sayılır: her dış kayıt `trainee` + `pending` doğar. Gerekçe ve
- * ölçüm: components/auth/RegisterForm.tsx
+ * GENEL KAYIT VARSAYILAN KAPALIDIR (proje kararı, 30.09.2026). Kapalıyken bu
+ * sayfa 404 döner ve kayıt ucu da istekleri reddeder; ikisi aynı anahtarı
+ * okur (lib/publicRegistration.ts). Anahtar `Genel Site Ayarları → Hesaplar`
+ * altındadır ve yalnızca sistem yöneticisi değiştirir.
+ *
+ * Açıkken: kayıt ucu (`POST /api/users`) anonim isteği kabul eder ama
+ * gönderilen rol ve durum yok sayılır: her dış kayıt `trainee` + `pending`
+ * doğar. Gerekçe ve ölçüm: components/auth/RegisterForm.tsx
  *
  * Giriş sayfasıyla aynı gerekçelerle arama motoruna kapalıdır.
  *
@@ -84,6 +91,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RegisterPage({ params }: Props) {
   const { locale } = await params
   if (!isLocale(locale)) notFound()
+
+  /*
+    403 yerine 404: kapalı bir kaydın VARLIĞINI duyurmanın ziyaretçiye faydası
+    yok (e-Devlet uçlarıyla aynı karar). Sayfa `force-dynamic` olduğu için
+    anahtar değişince bir sonraki istekte geçerli olur.
+  */
+  if (!(await genelKayitAcik(await payloadClient()))) notFound()
 
   setRequestLocale(locale)
 

@@ -107,7 +107,13 @@ export const LoginForm: React.FC<{
   edevletHata?: string | null
   /** Akış kum havuzu kipinde mi? Yalnızca "GELİŞTİRME KİPİ" uyarısını gösterir. */
   edevletKumHavuzu?: boolean
-}> = ({ locale, edevletAktif = false, edevletHata = null, edevletKumHavuzu = false }) => {
+  /**
+   * Genel kayıt açık mı? Sunucuda okunur (lib/publicRegistration.ts). Kapalıyken
+   * kayıt sayfası 404 döner; "Kayıt olun" bağlantısı da basılmaz. Varsayılan
+   * `false`: değer geçilmezse bağlantı GÖSTERİLMEZ — kapalı tarafa düşer.
+   */
+  kayitAcik?: boolean
+}> = ({ locale, edevletAktif = false, edevletHata = null, edevletKumHavuzu = false, kayitAcik = false }) => {
   const t = useTranslations('auth')
 
   /** Hata ozetinde kullanilacak GORUNUR etiketler (Madde 89). */
@@ -436,6 +442,9 @@ export const LoginForm: React.FC<{
         "Parolamı unuttum" giriş denemesinden SONRA aranır; bu yüzden
         düğmenin altındadır, üstünde değil. Kayıt bağlantısı da aynı yerde
         durur — ikisi de "buradan çıkamıyorum" anındaki çıkış kapılarıdır.
+
+        Kayıt bağlantısı yalnızca genel kayıt AÇIKKEN basılır (varsayılan
+        kapalı; gerekçe `kayitAcik` özelliğinde).
       */}
       <div className="space-y-2 border-t border-line-soft pt-5 text-sm text-ink-600">
         <p>
@@ -446,14 +455,16 @@ export const LoginForm: React.FC<{
             {t('toForgot')}
           </Link>
         </p>
-        <p>
-          <Link
-            href={authHref('register', locale)}
-            className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
-          >
-            {t('toRegister')}
-          </Link>
-        </p>
+        {kayitAcik ? (
+          <p>
+            <Link
+              href={authHref('register', locale)}
+              className="font-semibold text-brand-800 underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-brand-700 focus-visible:decoration-brand-700"
+            >
+              {t('toRegister')}
+            </Link>
+          </p>
+        ) : null}
       </div>
     </form>
   )

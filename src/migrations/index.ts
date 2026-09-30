@@ -16,6 +16,7 @@ import * as migration_20260930_100600_kutuphane_kategorileri from './20260930_10
 import * as migration_20260930_101849_daire_bazli_erisim from './20260930_101849_daire_bazli_erisim';
 import * as migration_20260930_103718_egitim_basvuru_sorulari from './20260930_103718_egitim_basvuru_sorulari';
 import * as migration_20260930_110025_konaklama_on_basvurusu from './20260930_110025_konaklama_on_basvurusu';
+import * as migration_20260930_130257_genel_kayit_anahtari from './20260930_130257_genel_kayit_anahtari';
 
 export const migrations = [
   {
@@ -107,5 +108,10 @@ export const migrations = [
     up: migration_20260930_110025_konaklama_on_basvurusu.up,
     down: migration_20260930_110025_konaklama_on_basvurusu.down,
     name: '20260930_110025_konaklama_on_basvurusu'
+  },
+  {
+    up: migration_20260930_130257_genel_kayit_anahtari.up,
+    down: migration_20260930_130257_genel_kayit_anahtari.down,
+    name: '20260930_130257_genel_kayit_anahtari'
   },
 ];

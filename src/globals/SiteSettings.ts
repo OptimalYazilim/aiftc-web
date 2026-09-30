@@ -290,6 +290,47 @@ export const SiteSettings: GlobalConfig = {
             },
           ],
         },
+
+        // ------------------------------------------------------------------
+        /*
+          HESAPLAR — GENEL KAYIT VARSAYILAN KAPALI  (proje kararı, 30.09.2026)
+          Gerekçe 29.09.2026 kurum toplantısının sonuçlarıdır: merkez vatandaşa
+          eğitim vermiyor, personel OGM hesabıyla girecek; yurt dışı
+          katılımcılar ise başvuru formunu hesap açmadan dolduruyor.
+          Anahtar yalnızca sayfayı değil `POST /api/users` ucunu da kapatır
+          (lib/publicRegistration.ts). Yalnızca SİSTEM YÖNETİCİSİ değiştirir:
+          kaydı dışarıya açmak bir güvenlik kararıdır, içerik ayarı değil.
+        */
+        {
+          label: { tr: 'Hesaplar', en: 'Accounts', ru: 'Учётные записи' },
+          fields: [
+            {
+              name: 'accounts',
+              type: 'group',
+              label: false,
+              access: { update: isAdminFieldLevel },
+              fields: [
+                {
+                  name: 'publicRegistrationEnabled',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  label: {
+                    tr: 'Genel kayıt sayfasını aç (dışarıdan hesap oluşturma)',
+                    en: 'Open public registration (self-service sign-up)',
+                    ru: 'Открыть общую регистрацию (самостоятельное создание учётных записей)',
+                  },
+                  admin: {
+                    description: {
+                      tr: 'Kapalıyken kayıt sayfası 404 döner, giriş ekranında "Kayıt olun" bağlantısı görünmez ve kayıt ucu istekleri reddeder. Hesapları yönetici panelden açar. Açıldığında dışarıdan açılan her hesap yine "katılımcı" ve "onay bekliyor" doğar. Varsayılan olarak kapalıdır.',
+                      en: 'When off, the registration page returns 404, the sign-up link is hidden and the registration endpoint rejects requests. Admins create accounts in the panel. When on, self-registered accounts are still created as pending participants. Off by default.',
+                      ru: 'Если выключено, страница регистрации возвращает 404, ссылка «Зарегистрироваться» скрыта, а запросы на регистрацию отклоняются. Учётные записи создаёт администратор в панели. Если включено, самостоятельно созданные учётные записи всё равно получают роль «участник» и статус «ожидает подтверждения». По умолчанию выключено.',
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
       ],
     },
   ],

@@ -5,6 +5,7 @@ import {
   canApproveAccounts,
   canRegister,
   canManageAccounts,
+  hasRole,
   isAdmin,
   isAdminFieldLevel,
   isAdminOrSelf,
@@ -13,6 +14,7 @@ import { AUDIENCE_ROLES } from '@/fields/options'
 import { captchaAcikMi, captchaDogrula } from '@/lib/captcha'
 import { forgotPasswordHTML, forgotPasswordSubject } from '@/lib/forgotPasswordEmail'
 import { MIN_PAROLA, PAROLA_KISA_KODU, parolaGecerliMi } from '@/lib/passwordPolicy'
+import { KAYIT_KAPALI_KODU, genelKayitAcik } from '@/lib/publicRegistration'
 
 /**
  * Yonetim paneli kullanicilari (Sartname 11.2 + 12.1 rol tabanli yetkilendirme).
@@ -79,9 +81,11 @@ export const Users: CollectionConfig = {
   access: {
     read: isAdminOrSelf,
     /*
-      DISARIDAN KAYDA ACIK — ama guvenli. Anonim istek `beforeChange`
-      kancasindan gecer ve rolu/durumu ZORLA katilimci+onay bekliyor yapilir
-      (bkz. asagidaki hooks blogu). Gerekce: access/index.ts -> canRegister
+      Hesabı panel yöneticisi açar. Dışarıdan kayıt yalnızca "genel kayıt"
+      anahtarı açıkken mümkündür (varsayılan kapalı, 30.09.2026); o yolda
+      da istek aşağıdaki kancadan geçer ve rol/durum ZORLA katılımcı + onay
+      bekliyor yapılır. Oturumlu ama yönetici olmayan hiç kimse hesap açamaz.
+      Gerekçe ve ölçülmüş açık: access/index.ts -> canRegister
     */
     create: canRegister,
     update: canManageAccounts,
@@ -393,24 +397,41 @@ export const Users: CollectionConfig = {
 
       HANGİ İSTEKLER DENETLENİR
       ----------------------------------------------------------------------
-      Yalnızca DIŞARIDAN gelen kayıt: `create` + oturum YOK + erişim
-      denetimi aşılmamış (`overrideAccess !== true`). Bu üç koşul birlikte
-      "internetten gelen anonim kayıt" demektir.
+      Panel yöneticisinden GELMEYEN her `create`, erişim denetimi aşılmamışsa
+      (`overrideAccess !== true`).
 
       Dışarıda kalanlar bilinçlidir:
-        - yöneticinin panelden hesap açması (`req.user` var),
+        - PANEL YÖNETİCİSİNİN hesap açması (`roles` içinde admin),
         - seed/göç betikleri ve iç çağrılar (`overrideAccess: true`),
         - her türlü `update` (parola değiştirme, onaylama).
       Bunlara CAPTCHA istemek, insan operatörü ve otomasyonu bir bot gibi
       cezalandırırdı.
 
-      ANAHTAR TANIMLI DEĞİLSE KANCA HİÇ ÇALIŞMAZ — gerekçesi ve bunun bedeli
-      lib/captcha.ts başındaki "ÜÇ DURUM" notunda.
+      DÜZELTME (2026-09-30): muafiyet eskiden "istekte kullanıcı VARSA" idi.
+      "Kullanıcı var = yönetici" varsayımı yanlıştır — oturum açmış bir
+      katılımcı da kullanıcıdır — ve aynı varsayım aşağıdaki kancada ölçülmüş
+      bir yetki yükseltmeye yol açmıştı (access/index.ts → canRegister).
+
+      GENEL KAYIT KAPALIYSA CAPTCHA'YA BİLE GİDİLMEZ
+      ----------------------------------------------------------------------
+      Genel kayıt varsayılan olarak kapalıdır (karar ve gerekçe: lib/
+      publicRegistration.ts). Bağlayıcı kural `access.create`tir, ama o
+      BU kancadan SONRA çalışır: kapalıyken istek önce Cloudflare'e jeton
+      doğrulatır, sonra reddedilirdi. Burada erken ve makine-okunur bir kodla
+      reddedilir; boş yere dış servise gidilmez ve istemci nedeni bilir.
+
+      ANAHTAR TANIMLI DEĞİLSE CAPTCHA KISMI ÇALIŞMAZ — gerekçesi ve bunun
+      bedeli lib/captcha.ts başındaki "ÜÇ DURUM" notunda.
     */
     beforeOperation: [
       async ({ args, operation, req, overrideAccess }) => {
         if (operation !== 'create') return args
-        if (overrideAccess === true || req.user) return args
+        if (overrideAccess === true || hasRole('admin')(req.user)) return args
+
+        if (!(await genelKayitAcik(req.payload))) {
+          throw new APIError('Hesap oluşturma şu anda kapalıdır.', 403, { code: KAYIT_KAPALI_KODU }, true)
+        }
+
         if (!captchaAcikMi()) return args
 
         const veri = (args as { data?: Record<string, unknown> }).data ?? {}
@@ -455,16 +476,26 @@ export const Users: CollectionConfig = {
       betiği veya iç çağrı yanlışlıkla erişimi aştığında bu kanca son
       savunma hattıdır.
 
-      OTURUM YOKSA (dışarıdan kayıt):
+      HESABI AÇAN PANEL YÖNETİCİSİ DEĞİLSE (dışarıdan kayıt, iç çağrı, ya da
+      yönetici olmayan oturumlu kullanıcı):
         roles          → []          panel yetkisi VERİLMEZ
         role           → trainee     katılımcı
         accountStatus  → pending     yönetici onayı bekler
       İstemcinin ne gönderdiğine BAKILMAZ.
 
-      YÖNETİCİ PANELDEN AÇIYORSA:
+      PANEL YÖNETİCİSİ AÇIYORSA (`roles` içinde admin):
         accountStatus  → approved    (açıkça başka değer verilmediyse)
       Gerekçe: yönetici zaten kimin hesabını açtığını biliyor; kendi açtığı
       hesabı ayrıca onaylatmak anlamsız bir adım olurdu.
+
+      ÖLÇÜLMÜŞ AÇIK (2026-09-30) — KOŞUL NEDEN `!req.user` DEĞİL
+      ----------------------------------------------------------------------
+      Koşul eskiden "istekte kullanıcı YOKSA zorla" idi; kullanıcı VARSA hesap
+      yönetici açmış sayılıp `approved` doğuyordu. Oturum açmış sıradan bir
+      katılımcı da kullanıcıdır: `role` alanını gönderemez (alan erişimi
+      düşürür), alan VARSAYILANINA (`staff`) düşer ve sonuç onaylı bir
+      PERSONEL hesabı olurdu. Artık ölçüt "kullanıcı var mı" değil,
+      "kullanıcı PANEL YÖNETİCİSİ mi"dir.
     */
     beforeValidate: [
       ({ data, req, operation }) => {
@@ -503,7 +534,7 @@ export const Users: CollectionConfig = {
 
         if (operation !== 'create' || !data) return data
 
-        if (!req.user) {
+        if (!hasRole('admin')(req.user)) {
           return {
             ...data,
             roles: [],

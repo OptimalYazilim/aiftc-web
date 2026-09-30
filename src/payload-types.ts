@@ -3588,6 +3588,12 @@ export interface SiteSetting {
     enabled?: boolean | null;
     message?: string | null;
   };
+  accounts?: {
+    /**
+     * When off, the registration page returns 404, the sign-up link is hidden and the registration endpoint rejects requests. Admins create accounts in the panel. When on, self-registered accounts are still created as pending participants. Off by default.
+     */
+    publicRegistrationEnabled?: boolean | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -4196,6 +4202,11 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         enabled?: T;
         message?: T;
+      };
+  accounts?:
+    | T
+    | {
+        publicRegistrationEnabled?: T;
       };
   updatedAt?: T;
   createdAt?: T;

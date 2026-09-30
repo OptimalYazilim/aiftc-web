@@ -577,7 +577,8 @@
     "edevletErrorTitle": "e-Devlet sign-in could not be completed",
     "edevletErrorEmailTaken": "This e-mail address already belongs to an account. For security reasons accounts are not merged automatically by e-mail: please sign in with your e-mail address and password.",
     "edevletErrorNotConfigured": "The e-Devlet gateway is not configured in this environment. Please sign in with your e-mail address and password.",
-    "edevletErrorGeneric": "Sign-in could not be completed. Please try again; if the problem persists, sign in with your e-mail address and password."
+    "edevletErrorGeneric": "Sign-in could not be completed. Please try again; if the problem persists, sign in with your e-mail address and password.",
+    "errorRegistrationClosed": "Account creation is currently closed. Please contact the institution to have an account opened."
   },
   "subscription": {
     "expiredTitle": "Your subscription has expired",
@@ -652,7 +653,7 @@
     "metaTitle": "Training application",
     "eyebrow": "Training programmes",
     "title": "Training application",
-    "intro": "Fill in the form below to apply for a programme that is open for applications. The centre reviews every application; you will see the outcome on your profile page on this site and by e-mail.",
+    "intro": "Fill in the form below to apply for a programme that is open for applications. The centre reviews every application; you will be informed by e-mail when yours is approved. If you have an account, you can also follow its status on your profile page.",
     "signedInNote": "You are signed in: your name and e-mail were filled from your account and the application will be linked to it. You can still edit the fields.",
     "groupTraining": "Training",
     "groupApplicant": "Applicant details",
@@ -675,7 +676,7 @@
     "formSubmit": "Submit application",
     "formSending": "Sending…",
     "formSuccessTitle": "Application received",
-    "formSuccess": "Your application has been recorded and is under review. The outcome will appear on your profile page; if you are not signed in you will be informed by e-mail.",
+    "formSuccess": "Your application has been recorded and is under review. You will be informed by e-mail when it is approved; if you have an account, you can also follow its status on your profile page.",
     "formErrorSummary": "Some fields need to be corrected.",
     "formFailedTitle": "The application could not be sent",
     "formFailed": "Your application could not be saved. Please try again later.",
@@ -688,7 +689,7 @@
     "errorTooLong": "Must be at most {max} characters.",
     "errorConsent": "Explicit consent is required to continue.",
     "errorTraining": "Choose a programme that is open for applications.",
-    "errorDuplicate": "An application for this programme already exists with this e-mail address. You can follow its status on your profile page.",
+    "errorDuplicate": "An application for this programme already exists with this e-mail address. If you have an account, you can follow its status on your profile page.",
     "errorSummaryCount": "The form has {sayi} error(s). Use the links below to fix them.",
     "errorTitlePrefix": "({sayi} errors)",
     "approvalEmailSubject": "Your training application has been approved: {training}",

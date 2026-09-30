@@ -1,6 +1,7 @@
 import type { Access, FieldAccess, Where } from 'payload'
 
 import { ACCESS_LEVEL_TO_ROLE, DOCUMENT_ACCESS_LEVEL_TO_ROLES } from '@/fields/options'
+import { genelKayitAcik } from '@/lib/publicRegistration'
 import { aboneligiEksik } from '@/lib/subscription'
 import type { User } from '@/payload-types'
 
@@ -441,22 +442,42 @@ export const canApproveAccounts: FieldAccess = ({ req: { user } }) => {
 }
 
 /**
- * DISARIDAN KAYIT  (Sartname 1.7 — katilimci kaydi)
+ * HESAP OLUŞTURMA  (Şartname 1.7)
  * ===========================================================================
- * Koleksiyon `create` erisimi HERKESE aciktir; guvenlik alan duzeyinde ve
- * `beforeChange` kancasinda saglanir (bkz. collections/Users.ts):
- *   - `roles` (panel yetkisi) anonim istekte ZORLA bosaltilir
- *   - `role` zorla `trainee`, `accountStatus` zorla `pending` yapilir
- *   - `beforeLogin` onaysiz hesabin girisini engeller
+ *   panel yöneticisi (`roles` içinde admin) -> her zaman
+ *   oturumsuz ziyaretçi                     -> YALNIZCA genel kayıt açıksa
+ *   oturumlu ama yönetici olmayan           -> HİÇBİR ZAMAN
  *
- * ACIK MADDE — SPAM
- * Uygulama katmaninda CAPTCHA ve hiz sinirlama YOKTUR. Bir bot bu uctan
- * sinirsiz sayida `pending` hesap acabilir. Erisim acisindan zararsizdir
- * (hicbiri giris yapamaz) ama yonetici listesini kirletir ve veritabanini
- * sisirir. Ters vekil / WAF katmaninda sinirlama ZORUNLUDUR.
- * Ayrintili not: docs/access-control-guide.md
+ * ÖLÇÜLMÜŞ AÇIK (2026-09-30) — NEDEN "HERKESE AÇIK" DEĞİL
+ * ---------------------------------------------------------------------------
+ * Bu kural `() => true` idi ve güvenlik kancaya bırakılmıştı. Kanca ise
+ * "istekte kullanıcı varsa hesabı açan yöneticidir" varsayıyordu. Oturum açmış
+ * SIRADAN bir katılımcı `POST /api/users` çağırdığında:
+ *
+ *     role = staff (alanın varsayılanı)   accountStatus = approved
+ *
+ * doğan bir hesap elde ediyordu: katılımcıdan PERSONELE yetki yükseltme
+ * (personel; seviyeli içeriği görür, hesap ve başvuru onaylar). Panel rolleri
+ * (`roles`) doğru biçimde boşaltılıyordu; açık, erişim rolü eksenindeydi.
+ *
+ * İki katmanda kapatıldı — biri bozulursa öteki tutsun diye:
+ *   1. BU KURAL: oturumlu ve yönetici olmayan hiç kimse hesap açamaz.
+ *   2. `Users.beforeValidate`: hesabı açan panel yöneticisi DEĞİLSE rol ve
+ *      durum her koşulda `trainee` + `pending` olarak zorlanır.
+ *
+ * GENEL KAYIT — proje kararıyla (30.09.2026) varsayılan KAPALI; anahtar ve
+ * gerekçesi lib/publicRegistration.ts. Açıkken dışarıdan kayıt yine kancadan
+ * geçer (`trainee` + `pending`), CAPTCHA ve hız sınırıyla korunur
+ * (lib/captcha.ts, middleware.ts) ve `beforeLogin` onaysız hesabı içeri almaz.
+ *
+ * Panelde hesap açmak yöneticinin işidir; personel (erişim rolü `staff`)
+ * hesapları ONAYLAR (`canApproveAccounts`) ama açamaz.
+ * Ayrıntılı not: docs/access-control-guide.md
  */
-export const canRegister: Access = () => true
+export const canRegister: Access = async ({ req }) => {
+  if (req.user) return hasRole('admin')(req.user)
+  return genelKayitAcik(req.payload)
+}
 
 /**
  * HESAP KAYDINI GUNCELLEYEBILENLER

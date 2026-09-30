@@ -9,6 +9,8 @@ import { AUTH_ROUTES } from '@/i18n/routes'
 import { mockModuAktif } from '@/lib/edevlet'
 import { edevletSitedeAcik } from '@/lib/edevletSite'
 import { buildMetadata } from '@/lib/metadata'
+import { genelKayitAcik } from '@/lib/publicRegistration'
+import { payloadClient } from '@/lib/queries'
 
 /**
  * GİRİŞ SAYFASI  (Şartname 1.7 · Kılavuz 5.2)
@@ -101,6 +103,13 @@ export default async function LoginPage({ params, searchParams }: Props) {
   */
   const edevletAktif = await edevletSitedeAcik()
 
+  /*
+    "Kayıt olun" bağlantısı yalnızca genel kayıt açıkken basılır (varsayılan
+    kapalı; lib/publicRegistration.ts). Kapalıyken bağlantı 404'e giderdi;
+    olmayan bir sayfaya davet etmek yerine bağlantı hiç gösterilmez.
+  */
+  const kayitAcik = await genelKayitAcik(await payloadClient())
+
   return (
     <>
       <PageHero variant="record" eyebrow={t('loginEyebrow')} title={t('loginTitle')} intro={t('loginIntro')} />
@@ -118,6 +127,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
             edevletAktif={edevletAktif}
             edevletHata={edevletHata}
             edevletKumHavuzu={mockModuAktif()}
+            kayitAcik={kayitAcik}
           />
         </div>
       </div>

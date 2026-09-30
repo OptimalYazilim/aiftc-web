@@ -8,6 +8,7 @@ import type { Locale } from '@/i18n/locales'
 import { authHref } from '@/i18n/routes'
 
 import { MIN_PAROLA } from '@/lib/passwordPolicy'
+import { KAYIT_KAPALI_KODU } from '@/lib/publicRegistration'
 
 import { FieldGroup } from '@/components/ui/FieldGroup'
 import { FormErrorSummary } from '@/components/ui/FormErrorSummary'
@@ -19,9 +20,14 @@ import { useTurnstile } from './useTurnstile'
 /**
  * KAYIT FORMU  (Şartname 1.7 · Kılavuz 5.2)
  * ============================================================================
- * `POST /api/users` — anonim isteğe AÇIKTIR (`access.create = canRegister`),
- * ama gönderilen rol ve durum DİKKATE ALINMAZ. `Users.beforeValidate`
- * kancası oturumsuz her kaydı zorla şu hâle getirir:
+ * GENEL KAYIT VARSAYILAN KAPALIDIR (proje kararı, 30.09.2026). Bu form yalnızca
+ * sistem yöneticisi kaydı açtığında erişilebilir; kapalıyken sayfa 404 döner
+ * ve uç `kayit_kapali` koduyla reddeder (lib/publicRegistration.ts).
+ *
+ * Açıkken `POST /api/users` anonim isteği kabul eder (`access.create =
+ * canRegister`), ama gönderilen rol ve durum DİKKATE ALINMAZ.
+ * `Users.beforeValidate` kancası, panel yöneticisinden gelmeyen her kaydı
+ * zorla şu hâle getirir:
  *
  *     roles: []            panel yetkisi yok
  *     role: 'trainee'      katılımcı
@@ -98,7 +104,7 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
   })
   const [hatalar, setHatalar] = useState<Hatalar>({})
   const [durum, setDurum] = useState<'bos' | 'gonderiliyor' | 'basarili'>('bos')
-  const [sonuc, setSonuc] = useState<'ag' | 'genel' | 'limit' | 'captcha' | null>(null)
+  const [sonuc, setSonuc] = useState<'ag' | 'genel' | 'limit' | 'captcha' | 'kapali' | null>(null)
 
   const turnstile = useTurnstile(captchaSiteKey, locale)
 
@@ -210,6 +216,12 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
       if (cevap.status === 429) {
         /* Hız sınırı — middleware'den gelir (bkz. lib/rateLimit.ts). */
         setSonuc('limit')
+      } else if (hataKodu(govde) === KAYIT_KAPALI_KODU) {
+        /*
+          Genel kayıt, sayfa AÇIKKEN kapatılmış (sayfa normalde 404 döner).
+          "Tekrar deneyin" demek yanlış olurdu: denemek sonucu değiştirmez.
+        */
+        setSonuc('kapali')
       } else if (alanHatasi(govde, 'email')) {
         setHatalar({ email: t('errorEmailTaken') })
       } else if (hataKodu(govde) === 'password_too_short') {
@@ -270,9 +282,11 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
               ? t('errorRateLimited')
               : sonuc === 'captcha'
                 ? t('errorCaptcha')
-                : sonuc
-                  ? t('errorGeneric')
-                  : ''
+                : sonuc === 'kapali'
+                  ? t('errorRegistrationClosed')
+                  : sonuc
+                    ? t('errorGeneric')
+                    : ''
         }
       />
 
@@ -284,7 +298,9 @@ export const RegisterForm: React.FC<{ locale: Locale; captchaSiteKey: string | n
               ? t('errorRateLimited')
               : sonuc === 'captcha'
                 ? t('errorCaptcha')
-                : t('errorGeneric')}
+                : sonuc === 'kapali'
+                  ? t('errorRegistrationClosed')
+                  : t('errorGeneric')}
         </AuthNotice>
       ) : null}
 
