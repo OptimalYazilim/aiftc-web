@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
 
 import { isLocale, type Locale } from '@/i18n/locales'
+import { girisiKaydet, onayliBasvuruBul, type Kullanici } from '@/lib/classroomAccess'
 import { payloadClient } from '@/lib/queries'
 import {
   classroomCookieName,
@@ -29,6 +30,15 @@ import {
  * ROL AYRIMI
  * Eğitmen şifresi girilirse jeton `moderator`, katılımcı şifresi girilirse
  * `attendee` rolüyle üretilir. Rol imzalıdır; istemci yükseltemez.
+ *
+ * İKİ GİRİŞ YOLU (2026-10-01)
+ *   1. HESAPLA (`enterWithAccount`): oturum açmış, o eğitime onaylı başvurusu
+ *      olan kişi şifresiz girer; rolü her zaman `attendee`dır.
+ *   2. ŞİFREYLE (`enterVirtualClassroom`): YEDEK yol — hesabı olmayan
+ *      katılımcılar ve eğitmen. Oturum açıksa kişi yine kaydedilir.
+ * İkisi de her başarılı girişi `classroom-attendance`a yazar
+ * (lib/classroomAccess.ts → girisiKaydet). Oda/zaman denetimi ikisinde de
+ * AYNIDIR: hesapla giriş, kapalı odaya ya da saati dışına kapı açmaz.
  *
  * ---------------------------------------------------------------------------
  * KABA KUVVET KORUMASI — SINIRLARI AÇIKÇA YAZILMIŞTIR
@@ -86,6 +96,7 @@ export type ClassroomFormState = {
 
 type RoomSecrets = {
   id: number
+  training?: number | { id: number } | null
   roomStatus?: string | null
   startsAt?: string | null
   endsAt?: string | null
@@ -165,6 +176,30 @@ export const enterVirtualClassroom = async (
 
   if (!role) return { status: 'error', message: t('errorWrongCode') }
 
+  await jetonuYaz(room, role)
+
+  /* Oturum açıksa kişi bilinir; değilse satır anonimdir (şifre ortaktır). */
+  const kullanici = await oturumdakiKullanici()
+  await girisiKaydet(payload, {
+    odaId: room.id,
+    egitimId: egitimIdOf(room),
+    yol: 'code',
+    rol: role,
+    kullanici,
+    basvuru: null,
+  })
+
+  return { status: 'success' }
+}
+
+const egitimIdOf = (room: RoomSecrets): number | null =>
+  typeof room.training === 'object' && room.training !== null
+    ? room.training.id
+    : typeof room.training === 'number'
+      ? room.training
+      : null
+
+const jetonuYaz = async (room: RoomSecrets, role: ClassroomRole) => {
   const token = issueClassroomToken(room.id, role, tokenTtlSeconds(room.endsAt))
   const cookieStore = await cookies()
 
@@ -174,6 +209,75 @@ export const enterVirtualClassroom = async (
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: tokenTtlSeconds(room.endsAt),
+  })
+}
+
+/** Sitenin oturumu (Payload çerezi). Yoksa null; hata da null'dur. */
+const oturumdakiKullanici = async (): Promise<Kullanici | null> => {
+  try {
+    const payload = await payloadClient()
+    const { user } = await payload.auth({ headers: await headers() })
+    if (!user) return null
+    const u = user as { id: number | string; email?: string | null; name?: string | null }
+    return { id: u.id, email: u.email ?? null, name: u.name ?? null }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * HESAPLA GİRİŞ — şifresiz. Karar burada, sunucuda verilir; sayfadaki düğme
+ * yalnızca bir davettir. Düğmeyi elle çağıran biri de aynı denetimlerden
+ * geçer: oturum, onaylı KENDİ başvurusu, açık oda, oturum saati.
+ */
+export const enterWithAccount = async (
+  _previous: ClassroomFormState,
+  formData: FormData,
+): Promise<ClassroomFormState> => {
+  const rawLocale = String(formData.get('locale') ?? '')
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : 'tr'
+  const t = await getTranslations({ locale, namespace: 'classroom' })
+
+  const roomId = String(formData.get('roomId') ?? '').trim()
+  if (!/^\d+$/.test(roomId)) return { status: 'error', message: t('errorGeneric') }
+
+  const kullanici = await oturumdakiKullanici()
+  if (!kullanici) return { status: 'error', message: t('errorLoginRequired') }
+
+  const payload = await payloadClient()
+  let room: RoomSecrets | null = null
+  try {
+    room = (await payload.findByID({
+      collection: 'virtual-classrooms',
+      id: Number(roomId),
+      depth: 0,
+    })) as unknown as RoomSecrets
+  } catch {
+    return { status: 'error', message: t('errorGeneric') }
+  }
+  if (!room) return { status: 'error', message: t('errorGeneric') }
+
+  if (room.roomStatus !== 'active') return { status: 'error', message: t('errorRoomClosed') }
+  const windowState = classroomWindow(room.startsAt, room.endsAt, room.joinWindowMinutes)
+  if (windowState !== 'open') {
+    return {
+      status: 'error',
+      message: windowState === 'after' ? t('errorSessionEnded') : t('errorNotStarted'),
+    }
+  }
+
+  const egitimId = egitimIdOf(room)
+  const basvuru = egitimId ? await onayliBasvuruBul(payload, kullanici, egitimId) : null
+  if (!basvuru) return { status: 'error', message: t('errorNotRegistered') }
+
+  await jetonuYaz(room, 'attendee')
+  await girisiKaydet(payload, {
+    odaId: room.id,
+    egitimId,
+    yol: 'account',
+    rol: 'attendee',
+    kullanici,
+    basvuru,
   })
 
   return { status: 'success' }

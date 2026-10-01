@@ -238,7 +238,18 @@
     "leaveRoom": "Leave the room",
     "ctaHeading": "Live session",
     "joinButton": "Join the virtual classroom",
-    "ctaNote": "You will need the access code you were given."
+    "ctaNote": "Participants with an approved registration join by signing in; others use the access code they were given.",
+    "accountTitle": "Enter with your account",
+    "accountIntro": "You have an approved registration for this training. You can join without a code; your entry is recorded.",
+    "accountSubmit": "Join with my account",
+    "accountSubmitting": "Joining…",
+    "accountNotRegistered": "You are signed in, but there is no approved registration for this training on your account. If you received an access code, you can use it below.",
+    "accountLoginHint": "If you have an account with an approved registration for this training, sign in to join without a code.",
+    "accountLoginLink": "Sign in",
+    "gateFallbackTitle": "Join with an access code",
+    "gateFallbackIntro": "You can also use the access code you were given instead of your account.",
+    "errorLoginRequired": "You need to sign in for this.",
+    "errorNotRegistered": "No approved registration for this training was found on your account. You can join with an access code."
   },
   "cookies": {
     "regionLabel": "Cookie preferences",
@@ -630,7 +641,8 @@
     "certificatesIntro": "Trainings marked as completed.",
     "certificatesEmpty": "You have no completed trainings yet.",
     "completedOn": "Completed",
-    "certificateNote": "The certificate or attendance document itself is not stored in this system; contact the centre for your document."
+    "certificateNote": "The certificate or attendance document itself is not stored in this system; contact the centre for your document.",
+    "liveSessionLink": "Join live session: {title}"
   },
   "edevletMock": {
     "sandboxHeadline": "This is a test (sandbox) environment — not the real e-Devlet gateway",
@@ -719,6 +731,8 @@
     "accErrOrder": "Check-out must be after check-in.",
     "accErrTooLong": "You can choose up to {max} nights.",
     "accErrClosed": "Your dates fall within the closed period {from} – {to}.",
-    "accErrFull": "The night of {night} is full; please choose other dates."
+    "accErrFull": "The night of {night} is full; please choose other dates.",
+    "approvalEmailClassroomAccount": "You can join the live session without a code by signing in to your account: {url}",
+    "approvalEmailClassroomCode": "Live session page: {url} — the page will ask for your access code."
   }
 }

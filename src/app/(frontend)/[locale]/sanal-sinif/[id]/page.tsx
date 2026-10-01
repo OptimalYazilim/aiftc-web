@@ -1,14 +1,16 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
+import { ClassroomAccountEntry } from '@/components/classroom/ClassroomAccountEntry'
 import { ClassroomGate } from '@/components/classroom/ClassroomGate'
 import { ClassroomStage } from '@/components/classroom/ClassroomStage'
 import { PageHero } from '@/components/ui/PageHero'
 import { isLocale, type Locale } from '@/i18n/locales'
-import { detailHref, href } from '@/i18n/routes'
+import { authHref, classroomHref, detailHref, href } from '@/i18n/routes'
+import { onayliBasvuruBul } from '@/lib/classroomAccess'
 import { formatDateRange } from '@/lib/dates'
 import { payloadClient } from '@/lib/queries'
 import {
@@ -33,6 +35,11 @@ import {
  * `cookies()` çağrısı sayfayı DİNAMİK yapar; bu yüzden `revalidate` yoktur ve
  * olmamalıdır: önbelleğe alınmış bir katılım sayfası, bir kullanıcının
  * jetonuyla üretilmiş HTML'i başkasına gösterebilirdi.
+ *
+ * HESAPLA GİRİŞ (2026-10-01): oturum açmış ve eğitime onaylı başvurusu olan
+ * kişiye şifresiz giriş düğmesi gösterilir; şifre formu YEDEK olarak altında
+ * kalır (hesabı olmayan katılımcılar, eğitmen). Düğme yalnızca davettir;
+ * karar sunucu eyleminde yeniden verilir (actions.ts → enterWithAccount).
  *
  * ARAMA MOTORU: sayfa `noindex`. Sitemap'e de eklenmez (bkz. sitemap.ts).
  * ============================================================================
@@ -169,6 +176,23 @@ export default async function VirtualClassroomPage({ params }: Props) {
   */
   const admitted = role !== null && isActive && windowState === 'open'
 
+  /*
+    HESAP DURUMU — yalnızca oda açık ve saati içindeyse sorulur; aksi hâlde
+    zaten kapı gösterilmez. Sonuç düğmeyi göstermek içindir, yetki vermez.
+  */
+  let hesap: 'anonim' | 'onayli' | 'onaysiz' = 'anonim'
+  if (!admitted && isActive && windowState === 'open') {
+    const payload = await payloadClient()
+    const { user } = await payload.auth({ headers: await headers() }).catch(() => ({ user: null }))
+    if (user) {
+      const u = user as { id: number | string; email?: string | null }
+      const basvuru = training?.id
+        ? await onayliBasvuruBul(payload, { id: u.id, email: u.email ?? null }, training.id)
+        : null
+      hesap = basvuru ? 'onayli' : 'onaysiz'
+    }
+  }
+
   let secrets: RoomSecrets | null = null
   if (admitted) {
     const payload = await payloadClient()
@@ -271,7 +295,31 @@ export default async function VirtualClassroomPage({ params }: Props) {
             {t('notStartedYet')}
           </p>
         ) : (
-          <ClassroomGate locale={locale} roomId={room.id} instructions={room.instructions} />
+          <div className="space-y-6">
+            {hesap === 'onayli' ? (
+              <ClassroomAccountEntry locale={locale} roomId={room.id} />
+            ) : hesap === 'onaysiz' ? (
+              <p role="status" className="rounded-card border border-line bg-surface-alt p-5 text-ink-700">
+                {t('accountNotRegistered')}
+              </p>
+            ) : (
+              <p className="rounded-card border border-line bg-surface-alt p-5 text-ink-700">
+                {t('accountLoginHint')}{' '}
+                <Link
+                  href={`${authHref('login', locale)}?donus=${encodeURIComponent(classroomHref(locale, room.id))}`}
+                  className="font-semibold text-brand-800 underline underline-offset-4"
+                >
+                  {t('accountLoginLink')}
+                </Link>
+              </p>
+            )}
+            <ClassroomGate
+              locale={locale}
+              roomId={room.id}
+              instructions={room.instructions}
+              yedek={hesap === 'onayli'}
+            />
+          </div>
         )}
 
         {training?.slug ? (

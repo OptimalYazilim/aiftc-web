@@ -1,7 +1,7 @@
 import type { CollectionAfterChangeHook } from 'payload'
 
 import { isLocale, type Locale } from '@/i18n/locales'
-import { authHref } from '@/i18n/routes'
+import { authHref, classroomHref } from '@/i18n/routes'
 
 import en from '../../messages/en.json' with { type: 'json' }
 import ru from '../../messages/ru.json' with { type: 'json' }
@@ -35,7 +35,13 @@ import tr from '../../messages/tr.json' with { type: 'json' }
  * METİN
  * ---------------------------------------------------------------------------
  * Nötr bir bildirimdir, söz vermez ("sizinle iletişime geçilecek" gibi bir
- * taahhüt içermez). Metinler `messages/*.json → registration.approvalEmail*`
+ * taahhüt içermez).
+ *
+ * CANLI OTURUM BAĞLANTISI (2026-10-01): eğitimin henüz bitmemiş sanal sınıf
+ * odaları varsa bağlantıları eklenir. Başvuru bir hesaba bağlıysa "oturum
+ * açarak şifresiz katılın", değilse "sayfa katılım şifresini ister" denir.
+ * Şifrenin KENDİSİ e-postaya yazılmaz; onu koordinatör iletir. Oda henüz
+ * tanımlanmadıysa satır eklenmez (bağlantı eğitim sayfasında belirir). Metinler `messages/*.json → registration.approvalEmail*`
  * altındadır; kurum farklı bir ifade isterse orada değiştirilir. Dil,
  * başvurunun yapıldığı dildir (`locale` alanı).
  * ============================================================================
@@ -76,8 +82,8 @@ export const registrationApprovalEmail: CollectionAfterChangeHook = async ({
   const m = METINLER[dil]
 
   let egitimAdi = ''
+  const egitimId = typeof kayit.training === 'object' ? kayit.training?.id : kayit.training
   try {
-    const egitimId = typeof kayit.training === 'object' ? kayit.training?.id : kayit.training
     if (egitimId) {
       const egitim = await req.payload.findByID({
         collection: 'training-programs',
@@ -101,6 +107,29 @@ export const registrationApprovalEmail: CollectionAfterChangeHook = async ({
   ]
   if (kayit.user && taban) {
     satirlar.push('', doldur(m.approvalEmailProfileLine, { url: `${taban}${authHref('profile', dil)}` }))
+  }
+
+  if (egitimId && taban) {
+    try {
+      const odalar = await req.payload.find({
+        collection: 'virtual-classrooms',
+        where: {
+          and: [{ training: { equals: egitimId } }, { endsAt: { greater_than_equal: new Date().toISOString() } }],
+        },
+        sort: 'startsAt',
+        limit: 5,
+        depth: 0,
+        select: { id: true } as never,
+        req,
+        overrideAccess: true,
+      })
+      const sablon = kayit.user ? m.approvalEmailClassroomAccount : m.approvalEmailClassroomCode
+      for (const oda of odalar.docs as unknown as { id: number }[]) {
+        satirlar.push('', doldur(sablon, { url: `${taban}${classroomHref(dil, oda.id)}` }))
+      }
+    } catch {
+      /* Oda okunamazsa ileti yine gider; bağlantı eğitim sayfasında görünür. */
+    }
   }
   satirlar.push('', m.approvalEmailFooter)
 

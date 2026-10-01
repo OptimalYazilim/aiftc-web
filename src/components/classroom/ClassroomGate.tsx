@@ -35,9 +35,14 @@ type Props = {
   roomId: number
   /** Panelden girilen katılım yönergesi. Şifre BURAYA yazılmaz (şema notu). */
   instructions?: string | null
+  /**
+   * Hesapla giriş düğmesi üstte gösteriliyorsa şifre formu YEDEK yoldur;
+   * başlık ve giriş metni buna göre değişir (form aynıdır).
+   */
+  yedek?: boolean
 }
 
-export const ClassroomGate: React.FC<Props> = ({ locale, roomId, instructions }) => {
+export const ClassroomGate: React.FC<Props> = ({ locale, roomId, instructions, yedek = false }) => {
   const t = useTranslations('classroom')
   const [state, formAction, pending] = useActionState(enterVirtualClassroom, INITIAL_STATE)
   const base = useId()
@@ -47,8 +52,10 @@ export const ClassroomGate: React.FC<Props> = ({ locale, roomId, instructions })
 
   return (
     <div className="rounded-card border border-line bg-surface p-6 sm:p-8">
-      <h2 className="text-xl font-bold tracking-tight text-ink-900">{t('gateTitle')}</h2>
-      <p className="mt-2 text-ink-700">{t('gateIntro')}</p>
+      <h2 className="text-xl font-bold tracking-tight text-ink-900">
+        {yedek ? t('gateFallbackTitle') : t('gateTitle')}
+      </h2>
+      <p className="mt-2 text-ink-700">{yedek ? t('gateFallbackIntro') : t('gateIntro')}</p>
 
       {instructions ? (
         <p className="mt-4 whitespace-pre-line rounded border border-line bg-surface-alt p-4 text-ink-700">

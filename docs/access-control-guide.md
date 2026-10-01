@@ -1069,8 +1069,9 @@ panelde ikinciyi silmek yeterli). Oturum varsa kayıt hesaba bağlanır.
 - **KVKK süpürmesine dahil değil** (`lib/kvkkRetention.ts` yalnızca
   `form-requests`i siler). Katılım kaydı kurumun sertifika/raporlama
   dayanağıdır; saklama süresi KVKK envanterinde ayrıca belirlenmeli.
-- **E-posta bildirimi yok.** Durum değişince kişiye posta gitmez; SMTP
-  yapılandırması ve metinler kurum kararı.
+- **Yalnızca onay e-postası var** (29.09.2026, `hooks/registrationApprovalEmail.ts`).
+  Ret ve tamamlanmada posta gitmez; SMTP yapılandırması ve metinlerin son hâli
+  kurum kararı.
 - **Kontenjan zorlanmıyor.** `TrainingPrograms.quota` bir bilgidir; onaylı
   kayıt sayısı kontenjanı aşarsa sistem uyarmaz.
 - **Sertifika belgesi saklanmıyor.** `completed` durumu "tamamlandı" bilgisidir;
@@ -1092,6 +1093,41 @@ Yeni değer `registration` (varsayılan). Eski `contact` kayıtları göçle
 `contact` artık "başvuru almıyoruz, iletişim birimine yazın" demektir.
 İki göç ayrıdır: Postgres, aynı işlemde eklenen enum değerinin kullanılmasını
 reddeder (`unsafe use of new value`) — ölçüldü.
+
+## 8B. Sanal sınıf — hesapla giriş ve giriş kaydı — **KURULDU (2026-10-01)**
+
+Proje kararı: odaya **hesapla** girilir, katılım şifresi **yedek** yol olarak
+kalır; her başarılı giriş kayda alınır. İki yol da aynı sonucu üretir: oda
+bazlı, imzalı, httpOnly bir jeton (`lib/virtualClassroom.ts`). Oda kapalıysa
+ya da saat dışındaysa **hiçbir yol** kapı açmaz.
+
+| Yol | Kim | Rol | Kayıttaki kimlik |
+|---|---|---|---|
+| Hesapla (`enterWithAccount`) | Oturumlu + o eğitime **kendi** başvurusu `approved`/`completed` | her zaman `attendee` | hesap + başvuru |
+| Şifreyle (`enterVirtualClassroom`) | Şifreyi bilen herkes (hesapsız katılımcı, eğitmen) | şifreye göre `attendee`/`moderator` | oturum açıksa hesap, değilse **anonim** |
+
+- **"Kendi" başvuru** = `user` ilişkisi **veya** e-posta eşleşmesi (büyük/küçük
+  harf yok sayılır, `like` ile aday bulunur, JS'te **tam** eşitlikle süzülür).
+  `registrationReadAccess` **kullanılmaz**: personele bütün başvuruları açtığı
+  için personel başkasının başvurusuyla girerdi (`lib/classroomAccess.ts`).
+- **Düğme davettir, karar sunucudadır.** Sayfa düğmeyi gösterdikten sonra
+  başvuru geri çekilirse tıklama reddedilir (E2E 18 bunu ölçer).
+- **Giriş kaydı** (`classroom-attendance`): okuma `canManageRegistrations`;
+  oluşturma/güncelleme `() => false` (yalnızca sunucu eylemi, Local API);
+  silme yalnızca yönetici. Ad/e-posta giriş anında kopyalanır, ilişkiler
+  `set null` — başvuru ya da oda silinse de geçmiş kalır. **IP tutulmaz.**
+  Kayıt yazılamazsa giriş **engellenmez** (günlüğe düşer).
+- **Onay e-postası** bitmemiş odaların bağlantısını taşır; şifreyi ve toplantı
+  adresini **taşımaz**. Profil, onaylı başvurunun **açık** odalarını listeler.
+- **Giriş sonrası dönüş** (`/giris?donus=`): yalnızca `/(tr|en|ru)/…` biçiminde
+  site içi bir yol kabul edilir, `//` içeren her şey yok sayılır — açık
+  yönlendirme kapalı.
+
+**Bilinçli olarak yapılmayanlar:** izleme **süresi** ölçülmez (toplantı
+platformu sitenin dışında; çıkış anını site bilemez — süre platform
+entegrasyonuyla gelir). Personel ve eğitmen hesapla girmez; eğitmen
+şifresiyle girer ("hangi eğitim benim" ilişkisi yok). Kayıt KVKK süpürmesine
+dahil değil; saklama süresi başvurularla birlikte belirlenmeli.
 
 ## 9. Ölçülmüş tuzaklar — kural yazmak yetmiyor, ÇAĞRILDIĞINI doğrulayın
 

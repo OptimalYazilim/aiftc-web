@@ -602,6 +602,23 @@ export const temizle = async (secenek: { egitimleriKoru?: boolean } = {}): Promi
     ile kırılır. Üretimde aynı durumu guardRegistrations kancası anlaşılır
     bir mesajla durdurur; burada sıra doğru kurulur.
   */
+  /*
+    SANAL SINIF (18): giriş kayıtları odaya, oda eğitime bağlıdır. Oda eğitimden
+    ÖNCE silinmeli — guardVirtualClassrooms, odası olan eğitimin silinmesini
+    durdurur. Kayıtlar odadan önce: bağ set null olsa da artık satır kalmasın.
+  */
+  const odalar = await payload.find({
+    collection: 'virtual-classrooms',
+    where: { title: { like: TEST_ONEKI } },
+    limit: 100,
+    depth: 0,
+    overrideAccess: true,
+  })
+  const odaIdleri = odalar.docs.map((oda) => oda.id)
+  await sil('classroom-attendance', {
+    or: [{ email: { like: TEST_ONEKI } }, ...(odaIdleri.length > 0 ? [{ room: { in: odaIdleri } }] : [])],
+  })
+  await sil('virtual-classrooms', { title: { like: TEST_ONEKI } })
   /* Konaklama talepleri başvuruya bağlıdır; önce onlar (bağ set null olsa da artık kalmasın). */
   await sil('accommodation-requests', { email: { like: TEST_ONEKI } })
   await sil('registrations', { email: { like: TEST_ONEKI } })

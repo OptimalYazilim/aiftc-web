@@ -279,6 +279,18 @@ export const VirtualClassrooms: CollectionConfig = {
         },
       },
     },
+    /*
+      Bu odaya yapılan girişler (collections/ClassroomAttendance.ts). Birleştirme
+      alanıdır, sütun açmaz; okuma kuralı katılım koleksiyonununkidir.
+    */
+    {
+      name: 'attendance',
+      type: 'join',
+      collection: 'classroom-attendance',
+      on: 'room',
+      label: { tr: 'Girişler', en: 'Entries', ru: 'Входы' },
+      admin: { defaultColumns: ['fullName', 'method', 'role', 'createdAt'] },
+    },
   ],
 }
 

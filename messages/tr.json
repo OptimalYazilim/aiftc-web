@@ -238,7 +238,18 @@
     "leaveRoom": "Odadan çık",
     "ctaHeading": "Canlı oturum",
     "joinButton": "Sanal Sınıfa Katıl",
-    "ctaNote": "Katılım için size iletilen şifre gerekir."
+    "ctaNote": "Onaylı başvurusu olanlar oturum açarak şifresiz, diğerleri kendilerine iletilen şifreyle katılır.",
+    "accountTitle": "Hesabınızla girin",
+    "accountIntro": "Bu eğitime onaylı başvurunuz var. Şifre gerekmeden oturuma katılabilirsiniz; girişiniz kayda alınır.",
+    "accountSubmit": "Hesabımla sınıfa gir",
+    "accountSubmitting": "Giriş yapılıyor…",
+    "accountNotRegistered": "Oturumunuz açık, ancak bu eğitime onaylı bir başvurunuz görünmüyor. Size bir katılım şifresi iletildiyse aşağıdan girebilirsiniz.",
+    "accountLoginHint": "Bu eğitime onaylı başvurunuz ve hesabınız varsa, oturum açarak şifresiz katılabilirsiniz.",
+    "accountLoginLink": "Oturum açın",
+    "gateFallbackTitle": "Katılım şifresiyle giriş",
+    "gateFallbackIntro": "Hesabınız yerine size iletilen katılım şifresini de kullanabilirsiniz.",
+    "errorLoginRequired": "Bu giriş için oturum açmanız gerekir.",
+    "errorNotRegistered": "Bu eğitime onaylı bir başvurunuz bulunamadı. Katılım şifresiyle girebilirsiniz."
   },
   "cookies": {
     "regionLabel": "Çerez tercihleri",
@@ -630,7 +641,8 @@
     "certificatesIntro": "Tamamlandı olarak işaretlenen eğitimleriniz.",
     "certificatesEmpty": "Tamamlanmış bir eğitiminiz henüz yok.",
     "completedOn": "Tamamlanma",
-    "certificateNote": "Sertifika ve katılım belgesinin kendisi bu sistemde saklanmaz; belgeniz için merkezle iletişime geçin."
+    "certificateNote": "Sertifika ve katılım belgesinin kendisi bu sistemde saklanmaz; belgeniz için merkezle iletişime geçin.",
+    "liveSessionLink": "Canlı oturuma katıl: {title}"
   },
   "edevletMock": {
     "sandboxHeadline": "Bu bir test (sandbox) ortamıdır — gerçek e-Devlet Kapısı değildir",
@@ -719,6 +731,8 @@
     "accErrOrder": "Çıkış tarihi giriş tarihinden sonra olmalıdır.",
     "accErrTooLong": "En fazla {max} gece seçebilirsiniz.",
     "accErrClosed": "Seçtiğiniz tarihler {from} – {to} kapalı dönemine denk geliyor.",
-    "accErrFull": "{night} gecesi dolu; başka tarih seçin."
+    "accErrFull": "{night} gecesi dolu; başka tarih seçin.",
+    "approvalEmailClassroomAccount": "Canlı oturuma hesabınızla oturum açarak şifresiz katılabilirsiniz: {url}",
+    "approvalEmailClassroomCode": "Canlı oturum sayfası: {url} — sayfa sizden katılım şifresini ister."
   }
 }

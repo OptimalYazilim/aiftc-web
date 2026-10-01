@@ -73,6 +73,7 @@ export interface Config {
     'accommodation-requests': AccommodationRequest;
     'simulation-systems': SimulationSystem;
     'virtual-classrooms': VirtualClassroom;
+    'classroom-attendance': ClassroomAttendance;
     news: News;
     'international-guide': InternationalGuide;
     faqs: Faq;
@@ -101,6 +102,10 @@ export interface Config {
   collectionsJoins: {
     registrations: {
       accommodationRequests: 'accommodation-requests';
+      classroomAttendance: 'classroom-attendance';
+    };
+    'virtual-classrooms': {
+      attendance: 'classroom-attendance';
     };
   };
   collectionsSelect: {
@@ -110,6 +115,7 @@ export interface Config {
     'accommodation-requests': AccommodationRequestsSelect<false> | AccommodationRequestsSelect<true>;
     'simulation-systems': SimulationSystemsSelect<false> | SimulationSystemsSelect<true>;
     'virtual-classrooms': VirtualClassroomsSelect<false> | VirtualClassroomsSelect<true>;
+    'classroom-attendance': ClassroomAttendanceSelect<false> | ClassroomAttendanceSelect<true>;
     news: NewsSelect<false> | NewsSelect<true>;
     'international-guide': InternationalGuideSelect<false> | InternationalGuideSelect<true>;
     faqs: FaqsSelect<false> | FaqsSelect<true>;
@@ -1006,6 +1012,11 @@ export interface Registration {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  classroomAttendance?: {
+    docs?: (number | ClassroomAttendance)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * The applicant cannot see this note.
    */
@@ -1178,6 +1189,28 @@ export interface AccommodationRequest {
   createdAt: string;
 }
 /**
+ * Every successful entry through a virtual classroom page. Created automatically; not editable.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "classroom-attendance".
+ */
+export interface ClassroomAttendance {
+  id: number;
+  room?: (number | null) | VirtualClassroom;
+  training?: (number | null) | TrainingProgram;
+  method: 'account' | 'code';
+  role: 'attendee' | 'moderator';
+  /**
+   * Empty when the code was used without signing in.
+   */
+  fullName?: string | null;
+  email?: string | null;
+  user?: (number | null) | User;
+  registration?: (number | null) | Registration;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Live session rooms. Passwords are visible to admin/editor roles only.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1224,6 +1257,11 @@ export interface VirtualClassroom {
    * The code announced to participants; asked for on the join page.
    */
   attendeePassword?: string | null;
+  attendance?: {
+    docs?: (number | ClassroomAttendance)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -2274,6 +2312,10 @@ export interface PayloadLockedDocument {
         value: number | VirtualClassroom;
       } | null)
     | ({
+        relationTo: 'classroom-attendance';
+        value: number | ClassroomAttendance;
+      } | null)
+    | ({
         relationTo: 'news';
         value: number | News;
       } | null)
@@ -2575,6 +2617,7 @@ export interface RegistrationsSelect<T extends boolean = true> {
         id?: T;
       };
   accommodationRequests?: T;
+  classroomAttendance?: T;
   adminNotes?: T;
   reviewedBy?: T;
   reviewedAt?: T;
@@ -2692,6 +2735,23 @@ export interface VirtualClassroomsSelect<T extends boolean = true> {
   meetingId?: T;
   moderatorPassword?: T;
   attendeePassword?: T;
+  attendance?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "classroom-attendance_select".
+ */
+export interface ClassroomAttendanceSelect<T extends boolean = true> {
+  room?: T;
+  training?: T;
+  method?: T;
+  role?: T;
+  fullName?: T;
+  email?: T;
+  user?: T;
+  registration?: T;
   updatedAt?: T;
   createdAt?: T;
 }

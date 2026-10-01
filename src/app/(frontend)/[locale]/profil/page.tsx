@@ -6,7 +6,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 import { AUDIENCE_ROLES, REGISTRATION_STATUSES, SUBMISSION_STATUSES, SUBMISSION_TYPES } from '@/fields/options'
 import { isLocale, type Locale } from '@/i18n/locales'
-import { authHref, detailHref, href } from '@/i18n/routes'
+import { authHref, classroomHref, detailHref, href } from '@/i18n/routes'
+import { ONAYLI_DURUMLAR } from '@/lib/classroomAccess'
 import { formatDateRange } from '@/lib/dates'
 import { optionLabel } from '@/lib/optionLabel'
 import { payloadClient } from '@/lib/queries'
@@ -151,9 +152,44 @@ export default async function ProfilePage({ params }: Props) {
     status?: string | null
     createdAt?: string | null
     completedAt?: string | null
-    training?: { slug?: string | null; title?: string | null } | number | null
+    training?: { id?: number; slug?: string | null; title?: string | null } | number | null
   }[]
   const tamamlananlar = kayitListesi.filter((k) => k.status === 'completed')
+
+  /*
+    CANLI OTURUMLAR — onaylı başvurusu olan eğitimlerin AÇIK ve henüz bitmemiş
+    sanal sınıf odaları. Bağlantı katılım sayfasına gider; orada hesapla
+    şifresiz giriş düğmesi çıkar (lib/classroomAccess.ts). Sorgu yalnızca
+    başlığı seçer: toplantı adresi ve şifreler bu sayfaya hiç gelmez.
+  */
+  const onayliEgitimler = kayitListesi
+    .filter((k) => (ONAYLI_DURUMLAR as readonly string[]).includes(String(k.status)))
+    .map((k) => (typeof k.training === 'object' && k.training !== null ? k.training.id : k.training))
+    .filter((id): id is number => typeof id === 'number')
+  const odalarByEgitim = new Map<number, { id: number; title?: string | null }[]>()
+  if (onayliEgitimler.length > 0) {
+    const odalar = await payload.find({
+      collection: 'virtual-classrooms',
+      locale,
+      where: {
+        and: [
+          { training: { in: onayliEgitimler } },
+          { roomStatus: { equals: 'active' } },
+          { endsAt: { greater_than_equal: new Date().toISOString() } },
+        ],
+      },
+      sort: 'startsAt',
+      limit: 50,
+      depth: 0,
+      select: { title: true, training: true } as never,
+      overrideAccess: true,
+    })
+    for (const oda of odalar.docs as unknown as { id: number; title?: string | null; training?: number | { id: number } | null }[]) {
+      const egitimId = typeof oda.training === 'object' && oda.training !== null ? oda.training.id : oda.training
+      if (typeof egitimId !== 'number') continue
+      odalarByEgitim.set(egitimId, [...(odalarByEgitim.get(egitimId) ?? []), { id: oda.id, title: oda.title }])
+    }
+  }
   const basvuruHref = href('application', locale)
 
   const abonelik = abonelikDurumu(user)
@@ -359,6 +395,18 @@ export default async function ProfilePage({ params }: Props) {
                           (egitim?.title ?? t('trainingUnavailable'))
                         )}
                       </p>
+                      {(ONAYLI_DURUMLAR as readonly string[]).includes(String(kayit.status)) && egitim?.id
+                        ? (odalarByEgitim.get(egitim.id) ?? []).map((oda) => (
+                            <p key={oda.id} className="mt-2">
+                              <Link
+                                href={classroomHref(locale, oda.id)}
+                                className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-800 underline underline-offset-4 hover:text-brand-900 focus-visible:text-brand-900"
+                              >
+                                {t('liveSessionLink', { title: oda.title ?? '' })}
+                              </Link>
+                            </p>
+                          ))
+                        : null}
                     </li>
                   )
                 })}

@@ -17,6 +17,7 @@ import * as migration_20260930_101849_daire_bazli_erisim from './20260930_101849
 import * as migration_20260930_103718_egitim_basvuru_sorulari from './20260930_103718_egitim_basvuru_sorulari';
 import * as migration_20260930_110025_konaklama_on_basvurusu from './20260930_110025_konaklama_on_basvurusu';
 import * as migration_20260930_130257_genel_kayit_anahtari from './20260930_130257_genel_kayit_anahtari';
+import * as migration_20261001_032706_sanal_sinif_katilim from './20261001_032706_sanal_sinif_katilim';
 
 export const migrations = [
   {
@@ -113,5 +114,10 @@ export const migrations = [
     up: migration_20260930_130257_genel_kayit_anahtari.up,
     down: migration_20260930_130257_genel_kayit_anahtari.down,
     name: '20260930_130257_genel_kayit_anahtari'
+  },
+  {
+    up: migration_20261001_032706_sanal_sinif_katilim.up,
+    down: migration_20261001_032706_sanal_sinif_katilim.down,
+    name: '20261001_032706_sanal_sinif_katilim'
   },
 ];

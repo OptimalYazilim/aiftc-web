@@ -93,8 +93,23 @@ export default async function LoginPage({ params, searchParams }: Props) {
 
   const t = await getTranslations('auth')
 
-  const ham = (await searchParams).edevlet_hata
+  const sorgu = await searchParams
+  const ham = sorgu.edevlet_hata
   const edevletHata = (Array.isArray(ham) ? ham[0] : ham) ?? null
+
+  /*
+    GİRİŞTEN SONRA DÖNÜLECEK SAYFA (`?donus=`) — ör. sanal sınıf sayfası
+    "oturum açın" bağlantısıyla buraya gönderir ve giriş sonrası oraya döner.
+    AÇIK YÖNLENDİRME KORUMASI: yalnızca bu sitenin bir dil önekiyle başlayan
+    YOLU kabul edilir (`/tr/...`). `//kotu.example`, `https://…`, ters
+    eğik çizgi ya da başka bir şey gelirse yok sayılır ve varsayılana
+    (kütüphane) dönülür.
+  */
+  const donusHam = Array.isArray(sorgu.donus) ? sorgu.donus[0] : sorgu.donus
+  const donus =
+    typeof donusHam === 'string' && /^\/(tr|en|ru)\/[A-Za-z0-9\-/]*$/.test(donusHam) && !donusHam.includes('//')
+      ? donusHam
+      : null
 
   /*
     KARAR SUNUCUDA. `edevletKullanilabilir()` gerçek kapı ayarlarını da okur;
@@ -128,6 +143,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
             edevletHata={edevletHata}
             edevletKumHavuzu={mockModuAktif()}
             kayitAcik={kayitAcik}
+            donus={donus}
           />
         </div>
       </div>

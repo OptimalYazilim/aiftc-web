@@ -113,7 +113,12 @@ export const LoginForm: React.FC<{
    * `false`: değer geçilmezse bağlantı GÖSTERİLMEZ — kapalı tarafa düşer.
    */
   kayitAcik?: boolean
-}> = ({ locale, edevletAktif = false, edevletHata = null, edevletKumHavuzu = false, kayitAcik = false }) => {
+  /**
+   * Girişten sonra gidilecek yol. Sunucuda doğrulanmış olarak gelir
+   * (giris/page.tsx — yalnızca `/tr|en|ru/...` yolları); yoksa kütüphane.
+   */
+  donus?: string | null
+}> = ({ locale, edevletAktif = false, edevletHata = null, edevletKumHavuzu = false, kayitAcik = false, donus = null }) => {
   const t = useTranslations('auth')
 
   /** Hata ozetinde kullanilacak GORUNUR etiketler (Madde 89). */
@@ -205,7 +210,7 @@ export const LoginForm: React.FC<{
           tarafı gezinme önbellekteki anonim HTML'i gösterirdi.
         */
         window.setTimeout(() => {
-          window.location.assign(routeHref('library', locale))
+          window.location.assign(donus ?? routeHref('library', locale))
         }, 1200)
         return
       }

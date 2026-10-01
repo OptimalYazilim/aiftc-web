@@ -6,14 +6,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
  * Bu modül SUNUCUDA çalışır. İstemci bileşenlerinden import EDİLMEMELİDİR;
  * `node:crypto` ve `PAYLOAD_SECRET` istemci paketine sızmamalıdır.
  *
- * NEDEN JETON, NEDEN OTURUM DEĞİL
- * Sitede ziyaretçi oturumu yoktur (Users koleksiyonu yalnızca personel
- * panelidir). Katılımcılar kuruma kayıtlı kişilerdir ama sitede hesapları
- * yoktur. Şartnamenin istediği "yalnızca şifresi olan kullanıcı girebilsin"
- * kuralı bu yüzden ODA BAZLI bir erişim jetonuyla karşılanır:
+ * NEDEN JETON, NEDEN DOĞRUDAN OTURUM DEĞİL
+ * Odaya iki yoldan girilir: hesapla (oturum açmış, eğitime onaylı başvurusu
+ * olan kişi — lib/classroomAccess.ts) ve katılım şifresiyle (hesabı olmayan
+ * katılımcılar, eğitmen). İkisinin sonucu AYNI biçimde saklanır: ODA BAZLI,
+ * imzalı bir erişim jetonu. Böylece sahneyi gösteren sayfa girişin hangi
+ * yoldan yapıldığını bilmek zorunda kalmaz:
  *
- *   1. Ziyaretçi katılım şifresini girer (sunucu eylemi).
- *   2. Şifre doğruysa sunucu HMAC ile imzalı bir jeton üretir ve httpOnly
+ *   1. Ziyaretçi hesabıyla girer ya da katılım şifresini yazar (sunucu eylemi).
+ *   2. Giriş geçerliyse sunucu HMAC ile imzalı bir jeton üretir ve httpOnly
  *      çerezine yazar.
  *   3. Sayfa her açılışta jetonu DOĞRULAR; geçersizse yeniden şifre sorar.
  *

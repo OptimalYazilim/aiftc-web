@@ -283,6 +283,19 @@ export const Registrations: CollectionConfig = {
       label: { tr: 'Konaklama Talebi', en: 'Accommodation request', ru: 'Запрос на проживание' },
       admin: { defaultColumns: ['checkIn', 'checkOut', 'nights', 'status'] },
     },
+    /*
+      SANAL SINIF GİRİŞLERİ — bu başvuruyla hesabından giren kişinin girişleri
+      (collections/ClassroomAttendance.ts). Şifreyle yapılan anonim girişler
+      bir başvuruya bağlanamaz; onlar odanın kendi "Girişler" listesindedir.
+    */
+    {
+      name: 'classroomAttendance',
+      type: 'join',
+      collection: 'classroom-attendance',
+      on: 'registration',
+      label: { tr: 'Sanal Sınıf Girişleri', en: 'Classroom entries', ru: 'Входы в класс' },
+      admin: { defaultColumns: ['room', 'method', 'createdAt'] },
+    },
 
     // --- Değerlendirme (yalnızca personel) -----------------------------------
     {

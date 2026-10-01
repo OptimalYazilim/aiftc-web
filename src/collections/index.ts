@@ -14,6 +14,7 @@ import { Pages } from './Pages'
 import { Projects } from './Projects'
 import { Quotes } from './Quotes'
 import { AccommodationRequests } from './AccommodationRequests'
+import { ClassroomAttendance } from './ClassroomAttendance'
 import { Registrations } from './Registrations'
 import { SimulationSystems } from './SimulationSystems'
 import { SubscriptionPlans } from './SubscriptionPlans'
@@ -34,6 +35,7 @@ export const collections: CollectionConfig[] = [
   AccommodationRequests,
   SimulationSystems,
   VirtualClassrooms,
+  ClassroomAttendance,
 
   // İçerik
   News,
