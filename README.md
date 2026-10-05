@@ -60,10 +60,12 @@ docker compose up -d db
 docker compose ps            # db "healthy" olmalı
 ```
 
-Yerel MinIO (S3 uyumlu depolama) denenecekse:
+Yerel MinIO (S3 uyumlu depolama) denenecekse — resmî `minio/minio` imajı Docker
+Hub'dan kaldırıldığı için erişilebilir bir imajı `MINIO_IMAGE` / `MINIO_MC_IMAGE`
+ile vermek gerekir (bkz. `docker-compose.yml`):
 
 ```bash
-docker compose --profile s3 up -d minio    # konsol: http://localhost:9001
+docker compose --env-file .env.production --profile minio up -d minio minio-init
 ```
 
 ### 1.5 İlk çalıştırma
@@ -74,8 +76,15 @@ pnpm dev                     # http://localhost:3000
 ```
 
 İlk `pnpm dev` çalışmasında Payload şemayı Postgres'e uygular
-(`push: true`, yalnızca geliştirme ortamında) ve `http://localhost:3000/admin`
-adresinde ilk yönetici hesabını oluşturmanızı ister.
+(`push: true`, yalnızca geliştirme ortamında).
+
+**İlk yönetici hesabı** panelin "ilk kullanıcıyı oluştur" ekranından AÇILMAZ:
+oradan açılan hesap güvenlik kuralı gereği rolsüz ve onaysız doğar
+(`Users.beforeValidate`). Hesap komut satırından açılır:
+
+```bash
+ILK_YONETICI_EPOSTA=ad@kurum.gov.tr ILK_YONETICI_PAROLA='…' pnpm ilk-yonetici
+```
 
 ```bash
 pnpm generate:types          # payload-types.ts'i gerçek şemadan üret
@@ -98,9 +107,11 @@ değişikliği **sadece** migration ile yapılır (Şartname 11.1 — sürdürü
 
 ### 1.7 Tümünü konteynerde çalıştırma
 
-```bash
-docker compose --profile app up -d --build
-```
+Tek sunucu (veritabanı + uygulama aynı makinede): komut sırası
+`docker-compose.yml` başında. Sıra zorunludur — önce göç, sonra derleme;
+derleme statik sayfaları veritabanından üretir.
+
+Kurumun iki sunucusu (`dbaiftc` + `webaiftc`): **[deploy/README.md](deploy/README.md)**.
 
 ### 1.8 Günlük komutlar
 
@@ -118,7 +129,8 @@ pnpm generate:importmap # admin bileşeni eklendiyse/değiştiyse
 
 ```
 aiftc-web/
-├─ docker-compose.yml            Postgres (+ opsiyonel MinIO, app profilleri)
+├─ docker-compose.yml            Tek sunuculu yığın (Postgres, göç, uygulama; opsiyonel MinIO profili)
+├─ deploy/                       İki sunuculu kurulum (db/ + web/ + nginx) ve kılavuzu
 ├─ Dockerfile                    Çok aşamalı üretim imajı (standalone)
 ├─ next.config.mjs               withPayload + next-intl + güvenlik başlıkları
 ├─ .env.example

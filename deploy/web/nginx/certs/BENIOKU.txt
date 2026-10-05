@@ -1,0 +1,1 @@
+# Sertifika ve özel anahtar buraya konur; bu klasördeki dosyalar git'e GİRMEZ (.gitignore).

@@ -1,0 +1,60 @@
+# ===========================================================================
+# AIFTC — VERİTABANI SUNUCUSU (dbaiftc)
+# ===========================================================================
+# Yalnızca PostgreSQL çalışır. Uygulama web sunucusundadır (deploy/web).
+# Kurulum adımları: deploy/README.md
+#
+#     cp .env.example .env && chmod 600 .env     # değerleri doldurun
+#     # pg_hba.conf içindeki WEB_SUNUCU_IP'yi web sunucusunun IP'siyle değiştirin
+#     docker compose up -d
+#
+# ERİŞİM İKİ KATMANDA SINIRLANIR
+#   1. Port yalnızca DB_BIND_ADDR adresinde (sunucunun iç ağ IP'si) yayınlanır.
+#   2. pg_hba.conf yalnızca web sunucusunun IP'sinden parola ile bağlantı kabul
+#      eder. Bu kural Postgres'in İÇİNDEDİR ve Docker'dan bağımsız çalışır.
+#
+# DİKKAT — UFW TEK BAŞINA YETMEZ: Docker yayınladığı portlar için iptables
+# kurallarını kendisi yazar ve UFW'nin "deny" kurallarını ATLAR. Erişim bu
+# yüzden UFW'ye değil pg_hba.conf'a ve kurumun ağ güvenlik duvarına dayanır.
+# ===========================================================================
+name: aiftc-db
+
+services:
+  db:
+    # Ana sürüm sabit (16): küçük sürüm güncellemeleri veri dizinini değiştirmez.
+    image: postgres:16-alpine
+    container_name: aiftc-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER tanimlanmali}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimlanmali}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB tanimlanmali}
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C.UTF-8'
+    command:
+      - postgres
+      - -c
+      - listen_addresses=*
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+      - -c
+      - password_encryption=scram-sha-256
+      # 16 GB RAM'li sunucu için başlangıç değerleri (varsayılan 128 MB çok düşük).
+      - -c
+      - shared_buffers=2GB
+      - -c
+      - effective_cache_size=8GB
+    ports:
+      # Yalnızca iç ağ adresinde dinle; 0.0.0.0'a AÇILMAZ.
+      - '${DB_BIND_ADDR:?DB_BIND_ADDR tanimlanmali (sunucunun ic ag IP adresi)}:5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  pgdata:

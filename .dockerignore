@@ -57,3 +57,15 @@ Thumbs.db
 
 # Belgeler — çalışma zamanı için gerekli değil
 README.md
+
+# Kurulum (deploy/): alt dizinlerdeki ortam dosyaları, TLS anahtarları ve
+# yerel yüklemeler imaja GİRMEZ. Yukarıdaki `.env` / `.env.*` kuralları yalnızca
+# KÖK dizine uyar; derleme bağlamı depo kökü olduğu için deploy/web/.env.production
+# (gerçek parolalar) bu satırlar olmadan göç imajına kopyalanırdı.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.production.example
+deploy/web/nginx/certs
+private/documents
+.next-*

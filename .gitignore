@@ -109,3 +109,7 @@ Thumbs.db
 # migration'ın farkını bu anlık görüntülerle hesaplar. Silinirlerse
 # `payload migrate:create` şemayı sıfırdan varsayar ve mevcut tabloları
 # yeniden oluşturmaya çalışan bir migration üretir.
+
+# Kurulum (deploy/): sertifika, özel anahtar ve ortam dosyaları ASLA depoya girmez.
+deploy/web/nginx/certs/*
+!deploy/web/nginx/certs/BENIOKU.txt

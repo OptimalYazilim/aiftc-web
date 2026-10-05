@@ -1,0 +1,77 @@
+# ===========================================================================
+# AIFTC — nginx, TLS BU SUNUCUDA SONLANDIRILIRSA (ÖRNEK)
+# ===========================================================================
+# YALNIZCA HTTPS'i F5 / kurum vekili DEĞİL de bu sunucu yapacaksa kullanılır.
+#
+#   1. Sertifika ve anahtarı koyun (git'e GİRMEZ, .gitignore):
+#        deploy/web/nginx/certs/aiftc.crt   (sunucu sertifikası + ara sertifikalar)
+#        deploy/web/nginx/certs/aiftc.key   (özel anahtar, chmod 600)
+#   2. Bu dosyayı şablonun YERİNE koyun:
+#        cp nginx/aiftc-tls.conf.ornek nginx/templates/aiftc.conf.template
+#   3. docker compose --env-file .env.production up -d nginx
+#
+# Uygulama HSTS başlığını kendisi gönderir; site düz HTTP ile yayımlanmamalıdır.
+# ===========================================================================
+
+limit_req_zone $binary_remote_addr zone=kimlik:10m rate=10r/m;
+
+upstream aiftc_app {
+  server app:3000;
+  keepalive 32;
+}
+
+# 80 → 443 yönlendirmesi
+server {
+  listen 80 default_server;
+  server_name _;
+  server_tokens off;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl default_server;
+  http2 on;
+  server_name _;
+  server_tokens off;
+
+  ssl_certificate     /etc/nginx/certs/aiftc.crt;
+  ssl_certificate_key /etc/nginx/certs/aiftc.key;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+  ssl_session_cache shared:SSL:10m;
+  ssl_session_timeout 1d;
+
+  set_real_ip_from ${GUVENILIR_VEKIL};
+  real_ip_header X-Forwarded-For;
+  real_ip_recursive on;
+
+  client_max_body_size ${MAX_UPLOAD_MB}m;
+  client_body_timeout 300s;
+
+  proxy_request_buffering off;
+  proxy_max_temp_file_size 0;
+  proxy_read_timeout 300s;
+  proxy_send_timeout 300s;
+
+  proxy_http_version 1.1;
+  proxy_set_header Connection "";
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $remote_addr;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-Proto https;
+  proxy_set_header X-Forwarded-Host $host;
+
+  gzip on;
+  gzip_min_length 1024;
+  gzip_types text/css application/javascript application/json image/svg+xml text/plain application/xml;
+
+  location ~ ^/api/users/(login|forgot-password|reset-password)$ {
+    limit_req zone=kimlik burst=5 nodelay;
+    limit_req_status 429;
+    proxy_pass http://aiftc_app;
+  }
+
+  location / {
+    proxy_pass http://aiftc_app;
+  }
+}

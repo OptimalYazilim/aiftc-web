@@ -1,0 +1,114 @@
+# ===========================================================================
+# AIFTC — WEB SUNUCUSU (webaiftc)
+# ===========================================================================
+# Uygulama (Next.js + Payload), göç adımı ve nginx ters vekili. Veritabanı
+# AYRI sunucudadır (deploy/db); bağlantı DATABASE_URI ile verilir.
+# Kurulum adımları: deploy/README.md
+#
+#     cp ../../.env.production.example .env.production && chmod 600 .env.production
+#     # README'deki "iki sunuculu düzen için değişiklikler" bölümünü uygulayın
+#     ./kur.sh          # ilk kurulum ve her güncelleme
+#
+# SIRA ÖNEMLİ ve kur.sh onu uygular: göç imajı → göç → uygulama derlemesi →
+# başlatma. Uygulama DERLENİRKEN veritabanına bağlanır (statik sayfalar
+# derlemede üretilir; bkz. Dockerfile başı). `up -d --build` doğrudan
+# kullanılırsa boş veritabanında derleme göçten ÖNCE çalışır ve düşer.
+#
+# `--env-file` ŞART: NEXT_PUBLIC_* değerleri DERLEME ANINDA imaja gömülür ve
+# compose onları bu dosyadan okur. Unutulursa derleme "tanimlanmali" diye durur.
+#
+# DOSYALAR: MEDIA_STORAGE_ADAPTER=local iken yüklenen dosyalar bu sunucunun
+# diskinde, `media` ve `documents` birimlerinde durur. Kurum S3 uyumlu bir
+# depolama verdiğinde `.env.production`da s3'e geçilir (README → Depolama).
+#
+# MinIO bu dosyada YOKTUR: resmî `minio/minio` ve `minio/mc` imajları Docker
+# Hub'dan kaldırılmış durumda (2026-10-05'te ölçüldü: depo "object not found").
+# ===========================================================================
+name: aiftc-web
+
+x-derleme-argumanlari: &derleme-argumanlari
+  NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:?NEXT_PUBLIC_SERVER_URL tanimlanmali}
+  NEXT_PUBLIC_LIBRARY_URL: ${NEXT_PUBLIC_LIBRARY_URL:-}
+  NEXT_PUBLIC_PORTAL_URL: ${NEXT_PUBLIC_PORTAL_URL:-}
+  NEXT_PUBLIC_ANALYTICS_DOMAIN: ${NEXT_PUBLIC_ANALYTICS_DOMAIN:-}
+  NEXT_PUBLIC_ANALYTICS_SCRIPT_URL: ${NEXT_PUBLIC_ANALYTICS_SCRIPT_URL:-}
+
+x-calisma-ortami: &calisma-ortami
+  # Tek sunuculu kök compose'tan FARKI: veritabanı adresi elle verilir.
+  DATABASE_URI: ${DATABASE_URI:?DATABASE_URI tanimlanmali (postgres://KULLANICI:PAROLA@DB_IP:5432/aiftc)}
+  MEDIA_STORAGE_ADAPTER: ${MEDIA_STORAGE_ADAPTER:-local}
+
+services:
+  # Veritabanı göçleri: her `up`ta bir kez çalışır ve çıkar. Uygulama ancak
+  # bu adım BAŞARIYLA bittikten sonra başlar. İlk yönetici hesabı da bu
+  # imajla açılır (README → İlk yönetici).
+  migrate:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      # Next derlemesi İÇERMEZ; veritabanı ve NEXT_PUBLIC_* değerleri gerekmez.
+      target: migrator
+    image: aiftc-migrate:${APP_SURUM:-yerel}
+    container_name: aiftc-migrate
+    env_file: [.env.production]
+    environment: *calisma-ortami
+    networks: [aiftc]
+    restart: 'no'
+
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: runner
+      args: *derleme-argumanlari
+      # Veritabanı adresi derlemeye SIR olarak gider; imaja ve geçmişine yazılmaz.
+      secrets: [database_uri]
+    image: aiftc-app:${APP_SURUM:-yerel}
+    container_name: aiftc-app
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file: [.env.production]
+    environment: *calisma-ortami
+    # Ana makineye port AÇILMAZ; dışarıya yalnızca nginx bakar.
+    volumes:
+      - media:/app/public/media
+      - documents:/app/private/documents
+    networks: [aiftc]
+
+  nginx:
+    image: nginx:1.30-alpine
+    container_name: aiftc-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      # Yükleme sınırı uygulamayla AYNI olmalı (aksi hâlde büyük dosya 413 alır).
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-512}
+      # Önde F5 / kurum vekili varsa onun IP'si ya da ağı (ör. 10.200.0.0/16).
+      # İstemcinin gerçek adresi bu vekilin gönderdiği X-Forwarded-For'dan okunur.
+      GUVENILIR_VEKIL: ${GUVENILIR_VEKIL:-127.0.0.1}
+    ports:
+      - '${HTTP_BIND:-0.0.0.0}:80:80'
+      - '${HTTP_BIND:-0.0.0.0}:443:443'
+    volumes:
+      # *.template dosyaları açılışta ortam değişkenleriyle conf.d'ye yazılır.
+      - ./nginx/templates:/etc/nginx/templates:ro
+      # Yalnızca TLS bu sunucuda sonlandırılacaksa (README → TLS):
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks: [aiftc]
+
+networks:
+  aiftc:
+    driver: bridge
+
+volumes:
+  media:
+  documents:
+
+secrets:
+  # kur.sh bu değişkeni .env.production'dan okuyup kabuğa aktarır.
+  database_uri:
+    environment: DATABASE_URI

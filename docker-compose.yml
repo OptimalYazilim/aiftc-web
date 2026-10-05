@@ -1,12 +1,20 @@
 # ============================================================================
 # AIFTC WEB — ÜRETİM YIĞINI
 # ============================================================================
-# Kullanım:
+# Kullanım (TEK sunucu; kurumun iki sunucusu için deploy/README.md):
 #   cp .env.production.example .env.production   ve İÇİNİ DOLDURUN
-#   docker compose --env-file .env.production up -d --build
+#   E='--env-file .env.production'
+#   docker compose $E up -d db
+#   docker compose $E run --rm migrate                      # 1. göç
+#   export DATABASE_URI_DERLEME='postgres://KULLANICI:PAROLA@127.0.0.1:5432/VERITABANI'
+#   docker compose $E build app                             # 2. derleme (veritabanına bağlanır)
+#   docker compose $E up -d                                 # 3. başlat
 #
-# Servisler tek bir özel ağdadır (`aiftc`). Yalnızca `app` dışarı port açar;
-# veritabanı ve MinIO ana makineye AÇILMAZ.
+# SIRA ZORUNLU: derleme statik sayfaları veritabanından üretir; boş
+# veritabanında göçten önce derlenirse düşer (ölçüldü — bkz. Dockerfile başı).
+#
+# Servisler tek bir özel ağdadır (`aiftc`). `app` ve `db` ana makinede
+# YALNIZCA 127.0.0.1'e bağlanır; dışarıya ters vekil açılır.
 #
 # ---------------------------------------------------------------------------
 # ÖNCEKİ SÜRÜMDEN FARKLAR — hepsi üretim gerekçeli
@@ -14,8 +22,9 @@
 #   - Şifreler artık gömülü değil; `${VAR:?}` sözdizimi eksik değişkende
 #     yığını BAŞLATMAZ. Eskiden `aiftc:aiftc` sabitti ve üretime öylece
 #     çıkabilirdi.
-#   - `db` ve `minio` ana makineye port AÇMIYOR. Eskiden 5432 dışarıdaydı:
-#     sunucuda güvenlik duvarı yoksa veritabanı internete açıktı.
+#   - `db` dış arayüzlere port AÇMIYOR (yalnızca 127.0.0.1, derleme için);
+#     `minio` hiç açmıyor. Eskiden 5432 dışarıdaydı: sunucuda güvenlik
+#     duvarı yoksa veritabanı internete açıktı.
 #   - Göçler ayrı ve tek seferlik bir servisle çalışır; `app` ancak göç
 #     BAŞARIYLA bittikten sonra başlar.
 #   - MinIO kovası `minio-init` ile otomatik oluşturulur; elle kurulum adımı
@@ -44,8 +53,11 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks: [aiftc]
-    # Ana makineye port AÇILMAZ. Yedekleme/inceleme için:
+    # YALNIZCA 127.0.0.1: uygulama derlemesi (network: host) veritabanına
+    # buradan ulaşır. Dış arayüzlere AÇILMAZ. İnceleme için:
     #   docker compose exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+    ports:
+      - '127.0.0.1:5432:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 10s
@@ -53,11 +65,19 @@ services:
       retries: 5
       start_period: 20s
 
-  # --- Nesne depolama (S3 uyumlu) -------------------------------------------
-  # MEDIA_STORAGE_ADAPTER=local ise bu iki servise gerek yoktur:
-  #   docker compose --env-file .env.production up -d db migrate app
+  # --- Nesne depolama (S3 uyumlu) — İSTEĞE BAĞLI, `minio` profili ----------
+  # ÖLÇÜLDÜ (2026-10-05): resmî `minio/minio` ve `minio/mc` imajları Docker
+  # Hub'dan kaldırılmış ("object not found"); `latest` artık ÇEKİLEMİYOR.
+  # Bu yüzden iki servis varsayılan olarak BAŞLAMAZ ve `up` onlar yüzünden
+  # düşmez. Erişebildiğiniz bir imaj (kaynaktan derlenmiş ya da kurum aynası)
+  # varsa MINIO_IMAGE / MINIO_MC_IMAGE ile verip profille açın:
+  #   docker compose --env-file .env.production --profile minio up -d
+  # Profilsiz (MEDIA_STORAGE_ADAPTER=local ya da kurumun harici S3'ü):
+  #   docker compose --env-file .env.production up -d
+  # İki sunuculu kurulum (dbaiftc + webaiftc) için bu dosya değil deploy/ kullanılır.
   minio:
-    image: minio/minio:latest
+    profiles: [minio]
+    image: ${MINIO_IMAGE:-minio/minio:latest}
     container_name: aiftc-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -80,8 +100,15 @@ services:
 
   # Kovayı bir kez oluşturur ve çıkar. Elle oluşturma adımı unutulduğunda
   # Payload yüklemeleri "NoSuchBucket" ile düşüyordu.
+  #
+  # KOVA KAPALI (`anonymous set none`). Önceki sürüm `download` yazıyordu:
+  # kova herkese açık indirmeye açılıyor, dağıtım kontrol listesinin şartı
+  # (`pnpm s3:denetle` → "KOVA HERKESE AÇIK" = canlıya geçilmez) kendi
+  # compose dosyamızca bozuluyordu. Dosyalar her zaman Payload üzerinden,
+  # erişim kuralıyla sunulur; kovanın kendisi kimseye açık olmamalı.
   minio-init:
-    image: minio/mc:latest
+    profiles: [minio]
+    image: ${MINIO_MC_IMAGE:-minio/mc:latest}
     container_name: aiftc-minio-init
     depends_on:
       minio:
@@ -95,7 +122,7 @@ services:
       /bin/sh -c "
       mc alias set aiftc http://minio:9000 \"$$S3_ACCESS_KEY_ID\" \"$$S3_SECRET_ACCESS_KEY\" &&
       mc mb --ignore-existing aiftc/\"$$S3_BUCKET\" &&
-      mc anonymous set download aiftc/\"$$S3_BUCKET\" &&
+      mc anonymous set none aiftc/\"$$S3_BUCKET\" &&
       echo 'MinIO kovasi hazir.'
       "
     restart: 'no'
@@ -131,6 +158,11 @@ services:
         NEXT_PUBLIC_PORTAL_URL: ${NEXT_PUBLIC_PORTAL_URL:-}
         NEXT_PUBLIC_ANALYTICS_DOMAIN: ${NEXT_PUBLIC_ANALYTICS_DOMAIN:-}
         NEXT_PUBLIC_ANALYTICS_SCRIPT_URL: ${NEXT_PUBLIC_ANALYTICS_SCRIPT_URL:-}
+      # Derleme statik sayfalar için VERİTABANINA bağlanır (Dockerfile başı).
+      # Derleme konteyneri compose ağında değildir; `db`ye ana makinenin
+      # 127.0.0.1:5432'si üzerinden ulaşır (aşağıda db'nin `ports` satırı).
+      network: host
+      secrets: [database_uri]
     container_name: aiftc-app
     restart: unless-stopped
     depends_on:
@@ -167,3 +199,10 @@ volumes:
   miniodata:
   media:
   documents:
+
+secrets:
+  # Derleme anındaki veritabanı adresi (ana makineden görüldüğü hâliyle):
+  #   DATABASE_URI_DERLEME=postgres://KULLANICI:PAROLA@127.0.0.1:5432/VERITABANI
+  # Kabukta export edilmelidir (dosyanın başındaki kullanım sırası).
+  database_uri:
+    environment: DATABASE_URI_DERLEME

@@ -1,0 +1,75 @@
+# ===========================================================================
+# AIFTC — nginx ters vekil (HTTP, 80)
+# ===========================================================================
+# Bu dosya bir ŞABLONDUR: nginx imajı açılışta ${MAX_UPLOAD_MB} ve
+# ${GUVENILIR_VEKIL} değerlerini ortamdan doldurup conf.d'ye yazar. nginx'in
+# kendi değişkenleri ($host, $remote_addr …) TANIMLI ortam değişkeni
+# olmadıkları için olduğu gibi kalır.
+#
+# TLS'i F5 / kurum vekili sonlandırıyorsa bu dosya yeterlidir.
+# TLS bu sunucuda sonlandırılacaksa: README → TLS.
+#
+# Karşıladığı dağıtım kontrol listesi maddeleri (.env.production.example):
+#   client_max_body_size, client_body_timeout, proxy_read_timeout,
+#   oturum uçlarında hız sınırı, X-Forwarded-For'u vekilin KENDİSİNİN yazması.
+# ===========================================================================
+
+# Oturum uçlarında kaba kuvvete karşı: IP başına dakikada 10 istek, anlık 5.
+# Uygulamanın kendi sınırlayıcısı (middleware.ts) da vardır; bu onu tamamlar.
+limit_req_zone $binary_remote_addr zone=kimlik:10m rate=10r/m;
+
+# Önde TLS sonlandıran bir vekil varsa onun söylediği protokol, yoksa kendimizinki.
+map $http_x_forwarded_proto $ileri_proto {
+  default $http_x_forwarded_proto;
+  ''      $scheme;
+}
+
+upstream aiftc_app {
+  server app:3000;
+  keepalive 32;
+}
+
+server {
+  listen 80 default_server;
+  server_name _;
+  server_tokens off;
+
+  # Gerçek istemci adresi: YALNIZCA güvenilir vekilden gelen X-Forwarded-For
+  # okunur. Başka biri bu başlığı gönderirse dikkate alınmaz.
+  set_real_ip_from ${GUVENILIR_VEKIL};
+  real_ip_header X-Forwarded-For;
+  real_ip_recursive on;
+
+  client_max_body_size ${MAX_UPLOAD_MB}m;
+  client_body_timeout 300s;
+
+  # Büyük yükleme ve indirmeler diske ara kopya yazılmadan aktarılır.
+  proxy_request_buffering off;
+  proxy_max_temp_file_size 0;
+  proxy_read_timeout 300s;
+  proxy_send_timeout 300s;
+
+  proxy_http_version 1.1;
+  proxy_set_header Connection "";
+  proxy_set_header Host $host;
+  # Uygulamanın hız sınırlayıcısı bu başlığa güvenir; istemcinin gönderdiği
+  # değer EZİLİR, vekil kendi gördüğü adresi yazar.
+  proxy_set_header X-Forwarded-For $remote_addr;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-Proto $ileri_proto;
+  proxy_set_header X-Forwarded-Host $host;
+
+  gzip on;
+  gzip_min_length 1024;
+  gzip_types text/css application/javascript application/json image/svg+xml text/plain application/xml;
+
+  location ~ ^/api/users/(login|forgot-password|reset-password)$ {
+    limit_req zone=kimlik burst=5 nodelay;
+    limit_req_status 429;
+    proxy_pass http://aiftc_app;
+  }
+
+  location / {
+    proxy_pass http://aiftc_app;
+  }
+}

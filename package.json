@@ -20,6 +20,7 @@
     "migrate": "pnpm payload migrate",
     "migrate:status": "pnpm payload migrate:status",
     "seed": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/seed.ts",
+    "ilk-yonetici": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/ilk-yonetici.ts",
     "s3:denetle": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/s3-gizlilik-denetimi.ts",
     "test:e2e": "dotenv -e .env.test -- playwright test",
     "test:e2e:ui": "dotenv -e .env.test -- playwright test --ui",
