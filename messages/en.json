@@ -734,5 +734,17 @@
     "accErrFull": "The night of {night} is full; please choose other dates.",
     "approvalEmailClassroomAccount": "You can join the live session without a code by signing in to your account: {url}",
     "approvalEmailClassroomCode": "Live session page: {url} — the page will ask for your access code."
+  },
+  "errors": {
+    "notFoundEyebrow": "Error 404",
+    "notFoundTitle": "Page not found",
+    "notFoundIntro": "The page you are looking for may have been moved or removed, or the address may be mistyped.",
+    "notFoundLinksHeading": "You can continue from here",
+    "errorEyebrow": "Unexpected error",
+    "errorTitle": "This page cannot be displayed right now",
+    "errorIntro": "Something went wrong. Please try again in a moment; if the problem persists, let us know through the contact page.",
+    "errorRetry": "Try again",
+    "errorReference": "Error code: {code}",
+    "backHome": "Back to the home page"
   }
 }

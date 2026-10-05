@@ -1260,6 +1260,19 @@ const yonetici = (await payload.find({ collection: 'users', limit: 1, overrideAc
 await payload.create({ collection: 'users', overrideAccess: true, user: yonetici, data: { roles: ['author'], … } })
 ```
 
+### 9.5 Yedek dil (`fallback: true`) OKUMADA çalışır, SORGUDA çalışmaz
+
+`slug = <tr slug>` koşulu `locale: 'en'` ile sorulunca İngilizce slug sütununa
+bakılır; yalnızca Türkçe girilmiş kayıt **bulunamaz**. Oysa aynı kaydı listeleyen
+sorgu okumada yedek dili uygular ve Türkçe slug'ı basar. **Ölçüm (2026-10
+denetimi):** EN/RU liste sayfalarındaki 8 bağlantı 404 veriyordu.
+
+Detay sayfaları artık bu durumu ayrıca çözer (`lib/slugFallback.ts`): kaydın
+o dilde slug'ı yoksa sayfa Türkçe içerikle ve çeviri eksiği notuyla basılır,
+`noindex` alır. **Erişim burada da korunur:** kütüphane künyesinde hem diller
+arası arama hem yedek sorgu kullanıcının erişimiyle yapılır; yetkisiz
+ziyaretçi için seviyeli kayıt yine 404'tür (E2E 03 ve 11 bunu ölçer).
+
 ---
 
 ## 10. Dosya erişimi — ölçülmüş matris

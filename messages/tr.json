@@ -734,5 +734,17 @@
     "accErrFull": "{night} gecesi dolu; başka tarih seçin.",
     "approvalEmailClassroomAccount": "Canlı oturuma hesabınızla oturum açarak şifresiz katılabilirsiniz: {url}",
     "approvalEmailClassroomCode": "Canlı oturum sayfası: {url} — sayfa sizden katılım şifresini ister."
+  },
+  "errors": {
+    "notFoundEyebrow": "Hata 404",
+    "notFoundTitle": "Sayfa bulunamadı",
+    "notFoundIntro": "Aradığınız sayfa taşınmış, kaldırılmış ya da adresi yanlış yazılmış olabilir.",
+    "notFoundLinksHeading": "Buradan devam edebilirsiniz",
+    "errorEyebrow": "Beklenmeyen hata",
+    "errorTitle": "Sayfa şu anda görüntülenemiyor",
+    "errorIntro": "Bir sorun oluştu. Lütfen biraz sonra yeniden deneyin; sorun sürerse iletişim sayfasından bize bildirin.",
+    "errorRetry": "Yeniden dene",
+    "errorReference": "Hata kodu: {code}",
+    "backHome": "Ana sayfaya dön"
   }
 }

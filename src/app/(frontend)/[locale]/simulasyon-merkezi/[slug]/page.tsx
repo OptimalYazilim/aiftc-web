@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import type { Where } from 'payload'
 
 import { PageHero } from '@/components/ui/PageHero'
 import { TranslationNotice } from '@/components/ui/TranslationNotice'
@@ -13,6 +14,7 @@ import { formatDateRange } from '@/lib/dates'
 import { resolveMedia } from '@/lib/media'
 import { buildMetadata } from '@/lib/metadata'
 import { payloadClient } from '@/lib/queries'
+import { slugKarari, yedekCeviriDurumu } from '@/lib/slugFallback'
 import { trainingStatusClasses, trainingStatusLabel } from '@/lib/trainingStatus'
 
 /**
@@ -32,6 +34,12 @@ import { trainingStatusClasses, trainingStatusLabel } from '@/lib/trainingStatus
  *                                alanları, teknik özellikler, uluslararası
  *                                katılımcıya faydası, eğitimlerdeki kullanımı
  * İçerik iki sayfada TEKRARLANMAZ; özet kart ile ayrıntı birbirini tamamlar.
+ *
+ * SLUG ÇÖZÜMLEME diğer detay sayfalarıyla AYNIDIR: bu dilde bul → başka dilin
+ * slug'ıysa doğru adrese yönlendir → bu dilde çevirisi yoksa Türkçe içerikle
+ * ve notla bas (lib/slugFallback.ts) → 404. Bu sayfada önceden yalnızca ilk
+ * adım vardı; Türkçe slug'la EN adresine gelen ziyaretçi 404 alıyordu ve
+ * hreflang adresleri her dilde AYNI slug'la kuruluyordu (2026-10 denetimi).
  * ============================================================================
  */
 export const revalidate = 300
@@ -84,38 +92,88 @@ type SystemDoc = {
   technicalSpecs?: { label?: string | null; value?: string | null }[] | null
 }
 
-const findBySlug = async (locale: Locale, slug: string): Promise<SystemDoc | null> => {
+/** Yayımlanmış tek sistemi verilen dilde arar (slug ya da id koşuluyla). */
+const findOne = async (locale: Locale, where: Where): Promise<SystemDoc | null> => {
   const payload = await payloadClient()
   const result = await payload.find({
     collection: 'simulation-systems',
     locale,
-    where: { slug: { equals: slug }, _status: { equals: 'published' } },
+    where: { ...where, _status: { equals: 'published' } },
     limit: 1,
     depth: 2,
   })
   return (result.docs[0] as unknown as SystemDoc | undefined) ?? null
 }
 
+const findBySlug = (locale: Locale, slug: string) => findOne(locale, { slug: { equals: slug } })
+
+/** Slug hangi dilde olursa olsun kaydı bulur; tüm dillerdeki slug'ları döner. */
+const findInAnyLocale = async (slug: string): Promise<AllLocaleSlugs | null> => {
+  const payload = await payloadClient()
+  const result = await payload.find({
+    collection: 'simulation-systems',
+    locale: 'all',
+    where: {
+      _status: { equals: 'published' },
+      or: LOCALE_CODES.map((locale) => ({ [`slug.${locale}`]: { equals: slug } })),
+    },
+    limit: 1,
+    depth: 0,
+    overrideAccess: false,
+  })
+  return (result.docs[0] as unknown as AllLocaleSlugs | undefined) ?? null
+}
+
+/** Kayıt, yönlendirme, yedek (çevrilmemiş) ya da hiçbiri — lib/slugFallback.ts. */
+const resolve = async (
+  locale: Locale,
+  slug: string,
+): Promise<{ doc: SystemDoc | null; yedek?: boolean; yonlendir?: string }> => {
+  const doc = await findBySlug(locale, slug)
+  if (doc) return { doc }
+
+  const karar = slugKarari(await findInAnyLocale(slug), locale, slug)
+  if (karar.tur === 'yonlendir') return { doc: null, yonlendir: karar.slug }
+  if (karar.tur === 'yedek') return { doc: await findOne(locale, { id: { equals: karar.id } }), yedek: true }
+  return { doc: null }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params
   if (!isLocale(locale)) return {}
 
-  const doc = await findBySlug(locale, slug)
-  if (!doc) return {}
+  const { doc, yedek, yonlendir } = await resolve(locale, slug)
+  /*
+    404'te sekme başlığı 404 sayfasından gelsin: Next, meta veride `notFound()`
+    görünce not-found.tsx'in meta verisine geçer. Boş nesne dönülürse başlık
+    site adına düşüyordu (üretimde ölçüldü).
+  */
+  if (!doc) {
+    if (yonlendir) return {}
+    notFound()
+  }
+
+  /** Çevirisi girilmemiş bir dil hreflang listesine HİÇ girmez. */
+  const alternates = await findInAnyLocale(slug)
+  const pathByLocale: Partial<Record<Locale, string>> = {}
+  for (const code of LOCALE_CODES) {
+    const localeSlug = alternates?.slug?.[code]
+    if (localeSlug) pathByLocale[code] = DETAIL_ROUTES['simulation-system'][code].replace('[slug]', localeSlug)
+  }
 
   const cover = resolveMedia(doc.coverImage, 'og')
 
-  return buildMetadata({
-    locale,
-    title: doc.title ?? slug,
-    description: doc.summary,
-    pathByLocale: {
-      tr: DETAIL_ROUTES['simulation-system'].tr.replace('[slug]', slug),
-      en: DETAIL_ROUTES['simulation-system'].en.replace('[slug]', slug),
-      ru: DETAIL_ROUTES['simulation-system'].ru.replace('[slug]', slug),
-    },
-    image: cover ? { ...cover, alt: cover.alt || (doc.title ?? '') } : null,
-  })
+  return {
+    ...buildMetadata({
+      locale,
+      title: doc.title ?? slug,
+      description: doc.summary,
+      pathByLocale,
+      image: cover ? { ...cover, alt: cover.alt || (doc.title ?? '') } : null,
+    }),
+    /* Çevrilmemiş kaydın yedek sayfası dizine girmez — lib/slugFallback.ts. */
+    ...(yedek ? { robots: { index: false, follow: true } } : {}),
+  }
 }
 
 export default async function SimulationSystemPage({ params }: Props) {
@@ -124,7 +182,9 @@ export default async function SimulationSystemPage({ params }: Props) {
 
   setRequestLocale(locale)
 
-  const doc = await findBySlug(locale, slug)
+  const { doc, yedek, yonlendir } = await resolve(locale, slug)
+
+  if (yonlendir) redirect(detailHref('simulation-system', locale, yonlendir))
   if (!doc) notFound()
 
   const [t, tt, tn] = await Promise.all([
@@ -185,7 +245,10 @@ export default async function SimulationSystemPage({ params }: Props) {
         intro={doc.summary || null}
       />
 
-      <TranslationNotice locale={locale} status={(doc as { translationStatus?: unknown }).translationStatus} />
+      <TranslationNotice
+        locale={locale}
+        status={yedek ? yedekCeviriDurumu(locale) : (doc as { translationStatus?: unknown }).translationStatus}
+      />
 
       <div className="container-page section-block grid gap-10 lg:grid-cols-12 lg:gap-12">
         {/* --- Ana kolon --------------------------------------------------- */}

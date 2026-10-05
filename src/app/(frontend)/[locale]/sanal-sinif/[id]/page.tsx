@@ -133,10 +133,12 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
   if (!isLocale(locale)) return {}
 
   const room = await findPublicRoom(locale, id)
+  /* Oda yoksa başlık da 404 sayfasından gelir (sayfa aşağıda 404 verir). */
+  if (!room) notFound()
   const t = await getTranslations({ locale, namespace: 'classroom' })
 
   return {
-    title: room?.title ?? t('pageTitle'),
+    title: room.title ?? t('pageTitle'),
     /*
       Korumalı sayfa dizine EKLENMEZ. `buildMetadata` kanonik/alternate
       üretir; burada onu kullanmıyoruz çünkü bu adresin paylaşılabilir bir

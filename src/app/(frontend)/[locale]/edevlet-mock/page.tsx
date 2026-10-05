@@ -63,6 +63,8 @@ type Props = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
+  /* Kum havuzu kapalıyken "SANDBOX" başlığı bile basılmaz: rota 404'tür. */
+  if (!mockModuAktif() || !(await edevletSitedeAcik())) notFound()
   /*
     Başlık bile arama motoruna sızmamalı; `noindex, nofollow` ikisi birden
     verilir (giriş sayfasında `follow` açıktı çünkü orada gerçek bağlantılar

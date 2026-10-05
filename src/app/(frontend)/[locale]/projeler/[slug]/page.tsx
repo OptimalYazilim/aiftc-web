@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import type { Where } from 'payload'
 
 import type { Project } from '@/payload-types'
 
@@ -18,6 +19,7 @@ import { resolveMedia } from '@/lib/media'
 import { buildMetadata } from '@/lib/metadata'
 import { optionLabels } from '@/lib/optionLabel'
 import { payloadClient } from '@/lib/queries'
+import { slugKarari, yedekCeviriDurumu } from '@/lib/slugFallback'
 
 /**
  * PROJE KÜNYE SAYFASI  (Şartname EK-1 / 10.1–10.2)
@@ -67,18 +69,20 @@ export async function generateStaticParams() {
   }
 }
 
-const findBySlug = async (locale: Locale, slug: string): Promise<Project | null> => {
+const findOne = async (locale: Locale, where: Where): Promise<Project | null> => {
   const payload = await payloadClient()
   const result = await payload.find({
     collection: 'projects',
     locale,
-    where: { slug: { equals: slug }, _status: { equals: 'published' } },
+    where: { ...where, _status: { equals: 'published' } },
     limit: 1,
     depth: 2,
     overrideAccess: false,
   })
   return (result.docs[0] as Project | undefined) ?? null
 }
+
+const findBySlug = (locale: Locale, slug: string) => findOne(locale, { slug: { equals: slug } })
 
 const findInAnyLocale = async (slug: string): Promise<AllLocaleSlugs | null> => {
   const payload = await payloadClient()
@@ -96,12 +100,34 @@ const findInAnyLocale = async (slug: string): Promise<AllLocaleSlugs | null> => 
   return (result.docs[0] as unknown as AllLocaleSlugs | undefined) ?? null
 }
 
+/** Kayıt, yönlendirme, yedek (çevrilmemiş) ya da hiçbiri — lib/slugFallback.ts. */
+const resolve = async (
+  locale: Locale,
+  slug: string,
+): Promise<{ doc: Project | null; yedek?: boolean; yonlendir?: string }> => {
+  const doc = await findBySlug(locale, slug)
+  if (doc) return { doc }
+
+  const karar = slugKarari(await findInAnyLocale(slug), locale, slug)
+  if (karar.tur === 'yonlendir') return { doc: null, yonlendir: karar.slug }
+  if (karar.tur === 'yedek') return { doc: await findOne(locale, { id: { equals: karar.id } }), yedek: true }
+  return { doc: null }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params
   if (!isLocale(locale)) return {}
 
-  const doc = await findBySlug(locale, slug)
-  if (!doc) return {}
+  const { doc, yedek, yonlendir } = await resolve(locale, slug)
+  /*
+    404'te sekme başlığı 404 sayfasından gelsin: Next, meta veride `notFound()`
+    görünce not-found.tsx'in meta verisine geçer. Boş nesne dönülürse başlık
+    site adına düşüyordu (üretimde ölçüldü).
+  */
+  if (!doc) {
+    if (yonlendir) return {}
+    notFound()
+  }
 
   const alternates = await findInAnyLocale(slug)
 
@@ -111,12 +137,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (localeSlug) pathByLocale[code] = DETAIL_ROUTES.project[code].replace('[slug]', localeSlug)
   }
 
-  return buildMetadata({
-    locale,
-    title: doc.title,
-    description: richTextExcerpt(doc.objective, 155),
-    pathByLocale,
-  })
+  return {
+    ...buildMetadata({
+      locale,
+      title: doc.title,
+      description: richTextExcerpt(doc.objective, 155),
+      pathByLocale,
+    }),
+    /* Çevrilmemiş kaydın yedek sayfası dizine girmez — lib/slugFallback.ts. */
+    ...(yedek ? { robots: { index: false, follow: true } } : {}),
+  }
 }
 
 export default async function ProjectDetailPage({ params }: Props) {
@@ -125,15 +155,9 @@ export default async function ProjectDetailPage({ params }: Props) {
 
   setRequestLocale(locale)
 
-  let doc = await findBySlug(locale, slug)
+  const { doc, yedek, yonlendir } = await resolve(locale, slug)
 
-  if (!doc) {
-    const anyLocale = await findInAnyLocale(slug)
-    const correctSlug = anyLocale?.slug?.[locale]
-    if (correctSlug && correctSlug !== slug) redirect(detailHref('project', locale, correctSlug))
-    if (correctSlug) doc = await findBySlug(locale, correctSlug)
-  }
-
+  if (yonlendir) redirect(detailHref('project', locale, yonlendir))
   if (!doc) notFound()
 
   const [t, tn] = await Promise.all([getTranslations('projects'), getTranslations('nav')])
@@ -181,7 +205,7 @@ export default async function ProjectDetailPage({ params }: Props) {
         title={doc.title}
       />
 
-      <TranslationNotice locale={locale} status={doc.translationStatus} />
+      <TranslationNotice locale={locale} status={yedek ? yedekCeviriDurumu(locale) : doc.translationStatus} />
 
       {/* --- Gövde: içerik + künye rayı ----------------------------------- */}
       <div className="container-page section-block">

@@ -70,6 +70,8 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
   if (!isLocale(locale)) return {}
+  /* Kapalıyken başlık da 404 sayfasından gelir (sayfa aşağıda 404 verir). */
+  if (!(await genelKayitAcik(await payloadClient()))) notFound()
 
   const t = await getTranslations({ locale, namespace: 'auth' })
 

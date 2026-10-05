@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import type { Where } from 'payload'
 import React from 'react'
 
 import type { ExternalService, TrainingProgram, TrainingTopic } from '@/payload-types'
@@ -18,6 +19,7 @@ import { resolveMedia } from '@/lib/media'
 import { buildMetadata } from '@/lib/metadata'
 import { optionLabel } from '@/lib/optionLabel'
 import { getExternalServices, payloadClient } from '@/lib/queries'
+import { slugKarari, yedekCeviriDurumu } from '@/lib/slugFallback'
 import { trainingStatusClasses, trainingStatusLabel } from '@/lib/trainingStatus'
 
 /**
@@ -32,11 +34,15 @@ import { trainingStatusClasses, trainingStatusLabel } from '@/lib/trainingStatus
  *      DOĞRU adrese 308 ile yönlendirilir. Böylece paylaşılan eski/karışık
  *      bağlantılar çalışmaya devam eder ve arama motorunda tek kanonik
  *      adres kalır (Şartname 3.5).
- *   3. Hiçbir dilde yok               → 404.
+ *   3. Kaydın bu dilde slug'ı YOK     → çevrilmemiştir; listeler onu Türkçe
+ *      slug'ıyla basar. Sayfa Türkçe içerikle ve çeviri eksiği notuyla
+ *      basılır, arama motoruna kapatılır (lib/slugFallback.ts).
+ *   4. Hiçbir dilde yok               → 404.
  *
- * Payload'in `fallback: true` ayarı, çevirisi girilmemiş bir dilde TR
- * değerini döndürür; bu yüzden 1. adım çoğu zaman doğrudan eşleşir.
- * 2. adım, çeviri GİRİLMİŞ kayıtlar için gereklidir.
+ * Payload'in `fallback: true` ayarı OKUMADA çalışır, SORGUDA çalışmaz:
+ * `slug = <tr slug>` koşulu `locale: 'en'` ile sorulunca İngilizce slug
+ * sütununa bakılır ve çevrilmemiş kayıt bulunamaz. 3. durum bu yüzden
+ * ayrıca ele alınır (ölçüldü: 2026-10-01 denetiminde 404 veriyordu).
  *
  * `notFound()` ve `redirect()` içeriden özel bir istisna fırlatır; bu yüzden
  * asla `try` bloğu içinde çağrılmazlar (yakalanırlarsa çalışmazlar).
@@ -82,20 +88,23 @@ export async function generateStaticParams() {
   }
 }
 
-/** Slug'ı verilen dilde arar. Bulamazsa null. */
-const findBySlug = async (locale: Locale, slug: string): Promise<TrainingProgram | null> => {
+/** Yayımlanmış tek kaydı verilen dilde arar (slug ya da id koşuluyla). Bulamazsa null. */
+const findOne = async (locale: Locale, where: Where): Promise<TrainingProgram | null> => {
   const payload = await payloadClient()
 
   const result = await payload.find({
     collection: 'training-programs',
     locale,
-    where: { slug: { equals: slug }, _status: { equals: 'published' } },
+    where: { ...where, _status: { equals: 'published' } },
     limit: 1,
     depth: 2,
   })
 
   return (result.docs[0] as TrainingProgram | undefined) ?? null
 }
+
+/** Slug'ı verilen dilde arar. Bulamazsa null. */
+const findBySlug = (locale: Locale, slug: string) => findOne(locale, { slug: { equals: slug } })
 
 /** Slug hangi dilde olursa olsun kaydı bulur; tüm dillerdeki slug'ları döner. */
 const findInAnyLocale = async (slug: string): Promise<AllLocaleSlugs | null> => {
@@ -116,12 +125,34 @@ const findInAnyLocale = async (slug: string): Promise<AllLocaleSlugs | null> => 
   return (result.docs[0] as unknown as AllLocaleSlugs | undefined) ?? null
 }
 
+/** Dosya başındaki dört durum: kayıt, yönlendirme, yedek (çevrilmemiş) ya da hiçbiri. */
+const resolve = async (
+  locale: Locale,
+  slug: string,
+): Promise<{ doc: TrainingProgram | null; yedek?: boolean; yonlendir?: string }> => {
+  const doc = await findBySlug(locale, slug)
+  if (doc) return { doc }
+
+  const karar = slugKarari(await findInAnyLocale(slug), locale, slug)
+  if (karar.tur === 'yonlendir') return { doc: null, yonlendir: karar.slug }
+  if (karar.tur === 'yedek') return { doc: await findOne(locale, { id: { equals: karar.id } }), yedek: true }
+  return { doc: null }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params
   if (!isLocale(locale)) return {}
 
-  const doc = await findBySlug(locale, slug)
-  if (!doc) return {}
+  const { doc, yedek, yonlendir } = await resolve(locale, slug)
+  /*
+    404'te sekme başlığı 404 sayfasından gelsin: Next, meta veride `notFound()`
+    görünce not-found.tsx'in meta verisine geçer. Boş nesne dönülürse başlık
+    site adına düşüyordu (üretimde ölçüldü).
+  */
+  if (!doc) {
+    if (yonlendir) return {}
+    notFound()
+  }
 
   const alternates = await findInAnyLocale(slug)
 
@@ -135,15 +166,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const cover = resolveMedia(doc.coverImage, 'og')
 
-  return buildMetadata({
-    locale,
-    title: doc.title,
-    description: doc.summary,
-    pathByLocale,
-    type: 'article',
-    publishedTime: doc.publishedAt,
-    image: cover ? { ...cover, alt: cover.alt || doc.title } : null,
-  })
+  return {
+    ...buildMetadata({
+      locale,
+      title: doc.title,
+      description: doc.summary,
+      pathByLocale,
+      type: 'article',
+      publishedTime: doc.publishedAt,
+      image: cover ? { ...cover, alt: cover.alt || doc.title } : null,
+    }),
+    /* Çevrilmemiş kaydın yedek sayfası dizine girmez — lib/slugFallback.ts. */
+    ...(yedek ? { robots: { index: false, follow: true } } : {}),
+  }
 }
 
 /**
@@ -174,21 +209,10 @@ export default async function TrainingDetailPage({ params }: Props) {
 
   setRequestLocale(locale)
 
-  let doc = await findBySlug(locale, slug)
+  const { doc, yedek, yonlendir } = await resolve(locale, slug)
 
   // 2. durum: slug başka bir dile ait — bu dildeki doğru adrese yönlendir.
-  if (!doc) {
-    const anyLocale = await findInAnyLocale(slug)
-    const correctSlug = anyLocale?.slug?.[locale]
-
-    if (correctSlug && correctSlug !== slug) {
-      redirect(detailHref('training-program', locale, correctSlug))
-    }
-
-    // Slug bu dilde de aynıysa ama sorgu bulamıyorsa kayıt yayında değildir.
-    if (correctSlug) doc = await findBySlug(locale, correctSlug)
-  }
-
+  if (yonlendir) redirect(detailHref('training-program', locale, yonlendir))
   if (!doc) notFound()
 
   const [t, tc, tn, services] = await Promise.all([
@@ -269,7 +293,7 @@ export default async function TrainingDetailPage({ params }: Props) {
         </dl>
       </PageHero>
 
-      <TranslationNotice locale={locale} status={doc.translationStatus} />
+      <TranslationNotice locale={locale} status={yedek ? yedekCeviriDurumu(locale) : doc.translationStatus} />
 
       {/* --- İki kolonlu asimetrik yerleşim -------------------------------- */}
       <div className="container-page section-block grid gap-10 lg:grid-cols-12">

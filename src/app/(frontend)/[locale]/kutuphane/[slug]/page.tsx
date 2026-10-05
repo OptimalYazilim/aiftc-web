@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import type { Where } from 'payload'
 
 import type { LibraryResource } from '@/payload-types'
 
@@ -35,6 +36,7 @@ import {
 import { buildMetadata } from '@/lib/metadata'
 import { optionLabel, optionLabels } from '@/lib/optionLabel'
 import { payloadClient } from '@/lib/queries'
+import { slugKarari, yedekCeviriDurumu } from '@/lib/slugFallback'
 
 /**
  * KÜTÜPHANE KÜNYE (DETAY) SAYFASI  (Şartname EK-2 Madde 1.5)
@@ -140,17 +142,14 @@ const oturumKullanicisi = async () => {
 
 type Kullanici = Awaited<ReturnType<typeof oturumKullanicisi>>
 
-const findBySlug = async (
-  locale: Locale,
-  slug: string,
-  user: Kullanici,
-): Promise<LibraryResource | null> => {
+/** Yayımlanmış tek kaydı verilen dilde, KULLANICININ erişimiyle arar (slug ya da id koşulu). */
+const findOne = async (locale: Locale, where: Where, user: Kullanici): Promise<LibraryResource | null> => {
   const payload = await payloadClient()
 
   const result = await payload.find({
     collection: 'library-resources',
     locale,
-    where: { slug: { equals: slug }, _status: { equals: 'published' } },
+    where: { ...where, _status: { equals: 'published' } },
     limit: 1,
     /*
       depth 2: dosya → url/mimeType/boyut, kapak → türevler, ilişkili eğitim
@@ -163,6 +162,9 @@ const findBySlug = async (
 
   return (result.docs[0] as LibraryResource | undefined) ?? null
 }
+
+const findBySlug = (locale: Locale, slug: string, user: Kullanici) =>
+  findOne(locale, { slug: { equals: slug } }, user)
 
 const findInAnyLocale = async (slug: string, user: Kullanici): Promise<AllLocaleSlugs | null> => {
   const payload = await payloadClient()
@@ -183,6 +185,25 @@ const findInAnyLocale = async (slug: string, user: Kullanici): Promise<AllLocale
   return (result.docs[0] as unknown as AllLocaleSlugs | undefined) ?? null
 }
 
+/**
+ * Kayıt, yönlendirme, yedek (çevrilmemiş) ya da hiçbiri — lib/slugFallback.ts.
+ * Her sorgu kullanıcının erişimiyle yapılır: yedek yol, seviyeli bir kaydı
+ * yetkisiz ziyaretçiye AÇMAZ (diller arası arama da erişime tabidir).
+ */
+const resolve = async (
+  locale: Locale,
+  slug: string,
+  user: Kullanici,
+): Promise<{ doc: LibraryResource | null; yedek?: boolean; yonlendir?: string }> => {
+  const doc = await findBySlug(locale, slug, user)
+  if (doc) return { doc }
+
+  const karar = slugKarari(await findInAnyLocale(slug, user), locale, slug)
+  if (karar.tur === 'yonlendir') return { doc: null, yonlendir: karar.slug }
+  if (karar.tur === 'yedek') return { doc: await findOne(locale, { id: { equals: karar.id } }, user), yedek: true }
+  return { doc: null }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params
   if (!isLocale(locale)) return {}
@@ -194,8 +215,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   */
   const user = await oturumKullanicisi()
 
-  const doc = await findBySlug(locale, slug, user)
-  if (!doc) return {}
+  const { doc, yedek, yonlendir } = await resolve(locale, slug, user)
+  /*
+    404'te sekme başlığı 404 sayfasından gelsin: Next, meta veride `notFound()`
+    görünce not-found.tsx'in meta verisine geçer. Boş nesne dönülürse başlık
+    site adına düşüyordu (üretimde ölçüldü).
+  */
+  if (!doc) {
+    if (yonlendir) return {}
+    notFound()
+  }
 
   const alternates = await findInAnyLocale(slug, user)
 
@@ -210,14 +239,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const cover = resolveMedia(doc.coverImage, 'og')
 
-  return buildMetadata({
-    locale,
-    title: doc.title,
-    description: doc.description,
-    pathByLocale,
-    type: 'article',
-    image: cover ? { ...cover, alt: cover.alt || doc.title } : null,
-  })
+  return {
+    ...buildMetadata({
+      locale,
+      title: doc.title,
+      description: doc.description,
+      pathByLocale,
+      type: 'article',
+      image: cover ? { ...cover, alt: cover.alt || doc.title } : null,
+    }),
+    /* Çevrilmemiş kaydın yedek sayfası dizine girmez — lib/slugFallback.ts. */
+    ...(yedek ? { robots: { index: false, follow: true } } : {}),
+  }
 }
 
 /** Künye satırı: etiket + değer. Değeri boş olan satır HİÇ BASILMAZ. */
@@ -237,19 +270,9 @@ export default async function LibraryDetailPage({ params }: Props) {
 
   const user = await oturumKullanicisi()
 
-  let doc = await findBySlug(locale, slug, user)
+  const { doc, yedek, yonlendir } = await resolve(locale, slug, user)
 
-  if (!doc) {
-    const anyLocale = await findInAnyLocale(slug, user)
-    const correctSlug = anyLocale?.slug?.[locale]
-
-    if (correctSlug && correctSlug !== slug) {
-      redirect(detailHref('library-resource', locale, correctSlug))
-    }
-
-    if (correctSlug) doc = await findBySlug(locale, correctSlug, user)
-  }
-
+  if (yonlendir) redirect(detailHref('library-resource', locale, yonlendir))
   if (!doc) notFound()
 
   const [t, tn] = await Promise.all([getTranslations('library'), getTranslations('nav')])
@@ -368,7 +391,7 @@ export default async function LibraryDetailPage({ params }: Props) {
         }
       />
 
-      <TranslationNotice locale={locale} status={doc.translationStatus} />
+      <TranslationNotice locale={locale} status={yedek ? yedekCeviriDurumu(locale) : doc.translationStatus} />
 
       {/* --- Gövde: sol içerik + sağ künye rayı --------------------------- */}
       <div className="container-page section-block">
